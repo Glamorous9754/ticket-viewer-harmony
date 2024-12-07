@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface ZohoCredentials {
   clientId: string;
   clientSecret: string;
-  refreshToken: string;
+  organizationId: string;
 }
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
@@ -15,13 +15,13 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const [zohoCredentials, setZohoCredentials] = useState<ZohoCredentials>({
     clientId: "",
     clientSecret: "",
-    refreshToken: "",
+    organizationId: "",
   });
 
   const handleConnectZoho = async () => {
-    const { clientId, clientSecret, refreshToken } = zohoCredentials;
+    const { clientId, clientSecret, organizationId } = zohoCredentials;
 
-    if (!clientId || !clientSecret || !refreshToken) {
+    if (!clientId || !clientSecret || !organizationId) {
       toast({
         title: "Error",
         description: "All fields are required",
@@ -43,7 +43,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
           auth_tokens: {
             client_id: clientId,
             client_secret: clientSecret,
-            refresh_token: refreshToken,
+            organization_id: organizationId,
           },
         });
 
@@ -105,16 +105,16 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
           />
         </div>
         <div>
-          <label className="text-sm font-medium">Refresh Token</label>
+          <label className="text-sm font-medium">Organization ID</label>
           <Input
-            value={zohoCredentials.refreshToken}
+            value={zohoCredentials.organizationId}
             onChange={(e) =>
               setZohoCredentials((prev) => ({
                 ...prev,
-                refreshToken: e.target.value,
+                organizationId: e.target.value,
               }))
             }
-            placeholder="Enter your Zoho Refresh Token"
+            placeholder="Enter your Zoho Organization ID"
           />
         </div>
         <Button onClick={handleConnectZoho}>
