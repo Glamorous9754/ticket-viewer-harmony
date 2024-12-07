@@ -6,8 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function getZohoAccessToken(clientId: string, clientSecret: string) {
+async function getZohoAccessToken() {
   try {
+    const clientId = Deno.env.get('ZOHO_CLIENT_ID');
+    const clientSecret = Deno.env.get('ZOHO_CLIENT_SECRET');
+    
+    if (!clientId || !clientSecret) {
+      throw new Error('Zoho credentials not configured');
+    }
+
     const response = await fetch(
       'https://accounts.zoho.com/oauth/v2/token',
       {
@@ -38,8 +45,13 @@ async function getZohoAccessToken(clientId: string, clientSecret: string) {
   }
 }
 
-async function fetchZohoTickets(accessToken: string, organizationId: string) {
+async function fetchZohoTickets(accessToken: string) {
   try {
+    const organizationId = Deno.env.get('ZOHO_ORG_ID');
+    if (!organizationId) {
+      throw new Error('Zoho organization ID not configured');
+    }
+
     const response = await fetch(
       'https://desk.zoho.com/api/v1/tickets',
       {
@@ -68,24 +80,26 @@ serve(async (req) => {
   }
 
   try {
-    const { clientId, clientSecret, organizationId } = await req.json();
-
-    if (!clientId || !clientSecret || !organizationId) {
-      throw new Error('Missing required credentials');
-    }
-
+    console.log('Starting Zoho ticket sync...');
+    
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get Zoho access token
+    // Get user ID from request
+    const userId = req.headers.get('x-user-id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get Zoho access token using secrets
     console.log('Getting Zoho access token...');
-    const accessToken = await getZohoAccessToken(clientId, clientSecret);
+    const accessToken = await getZohoAccessToken();
     
     // Fetch tickets from Zoho
     console.log('Fetching tickets from Zoho...');
-    const tickets = await fetchZohoTickets(accessToken, organizationId);
+    const tickets = await fetchZohoTickets(accessToken);
 
     // Process and store tickets
     console.log('Processing tickets...');
@@ -95,7 +109,7 @@ serve(async (req) => {
       const { error: upsertError } = await supabase
         .from('tickets')
         .upsert({
-          profile_id: req.headers.get('x-user-id'),
+          profile_id: userId,
           external_ticket_id: ticket.id,
           created_date: ticket.createdTime,
           resolved_date: ticket.closedTime || null,
@@ -105,6 +119,7 @@ serve(async (req) => {
           comments: ticket.comments || [],
           agent_name: ticket.assignee?.name || null,
           customer_id: ticket.contactId || null,
+          summary: ticket.subject || null,
           last_fetched_at: new Date().toISOString(),
         });
 
