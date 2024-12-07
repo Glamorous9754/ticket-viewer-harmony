@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,6 +20,38 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     organizationId: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [existingConnection, setExistingConnection] = useState<any>(null);
+
+  useEffect(() => {
+    checkExistingConnection();
+  }, []);
+
+  const checkExistingConnection = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: connection, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('platform_name', 'zoho')
+        .eq('profile_id', session.user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (connection) {
+        setExistingConnection(connection);
+        setZohoCredentials({
+          clientId: connection.auth_tokens.client_id || "",
+          clientSecret: connection.auth_tokens.client_secret || "",
+          organizationId: connection.auth_tokens.organization_id || "",
+        });
+      }
+    } catch (error) {
+      console.error('Error checking existing connection:', error);
+    }
+  };
 
   const handleConnectZoho = async () => {
     const { clientId, clientSecret, organizationId } = zohoCredentials;
@@ -49,10 +81,10 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         return;
       }
 
-      // Store Zoho credentials
+      // Update or insert Zoho credentials
       const { error: connectionError } = await supabase
         .from('platform_connections')
-        .insert({
+        .upsert({
           profile_id: session.user.id,
           platform_name: 'zoho',
           auth_tokens: {
@@ -60,6 +92,9 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
             client_secret: clientSecret,
             organization_id: organizationId,
           },
+          ...(existingConnection && { id: existingConnection.id }),
+        }, {
+          onConflict: 'profile_id,platform_name'
         });
 
       if (connectionError) throw connectionError;
@@ -83,7 +118,9 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       toast({
         title: "Success",
-        description: "Zoho account connected and tickets synced successfully",
+        description: existingConnection 
+          ? "Zoho connection updated and tickets synced successfully"
+          : "Zoho account connected and tickets synced successfully",
       });
 
       onSuccess();
@@ -101,7 +138,9 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
-      <h2 className="text-xl font-semibold">Connect Zoho Account</h2>
+      <h2 className="text-xl font-semibold">
+        {existingConnection ? "Update Zoho Connection" : "Connect Zoho Account"}
+      </h2>
       <div className="grid gap-4">
         <div>
           <label className="text-sm font-medium">Client ID</label>
@@ -148,7 +187,12 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
           disabled={isLoading}
           className="w-full"
         >
-          {isLoading ? "Connecting..." : "Connect & Sync Tickets"}
+          {isLoading 
+            ? "Connecting..." 
+            : existingConnection 
+              ? "Update & Sync Tickets" 
+              : "Connect & Sync Tickets"
+          }
         </Button>
       </div>
     </div>
