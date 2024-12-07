@@ -12,26 +12,30 @@ async function getZohoAccessToken() {
     const clientSecret = Deno.env.get('ZOHO_CLIENT_SECRET');
     
     if (!clientId || !clientSecret) {
+      console.error('Missing Zoho credentials:', { clientId: !!clientId, clientSecret: !!clientSecret });
       throw new Error('Zoho credentials not configured in Supabase secrets');
     }
 
-    console.log('Requesting Zoho access token...');
+    console.log('Requesting Zoho access token with credentials...');
     
-    const response = await fetch(
-      'https://accounts.zoho.com/oauth/v2/token',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: clientId,
-          client_secret: clientSecret,
-          scope: 'Desk.tickets.READ',
-        }),
-      }
-    );
+    const tokenUrl = 'https://accounts.zoho.com/oauth/v2/token';
+    const params = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+      scope: 'Desk.tickets.READ',
+    });
+
+    console.log('Making request to:', tokenUrl);
+    
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+    });
 
     const responseText = await response.text();
+    console.log('Zoho token response status:', response.status);
     console.log('Zoho token response:', responseText);
     
     if (!response.ok) {
@@ -42,13 +46,16 @@ async function getZohoAccessToken() {
     try {
       data = JSON.parse(responseText);
     } catch (e) {
+      console.error('Failed to parse Zoho response:', e);
       throw new Error(`Invalid JSON response from Zoho: ${responseText}`);
     }
 
     if (!data.access_token) {
-      throw new Error('No access token received from Zoho');
+      console.error('No access token in response:', data);
+      throw new Error('No access token received from Zoho. Response: ' + JSON.stringify(data));
     }
     
+    console.log('Successfully obtained Zoho access token');
     return data.access_token;
   } catch (error) {
     console.error('Error getting Zoho access token:', error);
@@ -60,6 +67,7 @@ async function fetchZohoTickets(accessToken: string) {
   try {
     const organizationId = Deno.env.get('ZOHO_ORG_ID');
     if (!organizationId) {
+      console.error('Missing Zoho organization ID');
       throw new Error('Zoho organization ID not configured in Supabase secrets');
     }
 
@@ -76,6 +84,7 @@ async function fetchZohoTickets(accessToken: string) {
     );
     
     const responseText = await response.text();
+    console.log('Zoho tickets response status:', response.status);
     console.log('Zoho tickets response:', responseText);
 
     if (!response.ok) {
@@ -85,6 +94,7 @@ async function fetchZohoTickets(accessToken: string) {
     try {
       return JSON.parse(responseText);
     } catch (e) {
+      console.error('Failed to parse Zoho tickets response:', e);
       throw new Error(`Invalid JSON response from Zoho tickets API: ${responseText}`);
     }
   } catch (error) {
