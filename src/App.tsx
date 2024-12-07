@@ -9,6 +9,7 @@ import CustomerIntelligence from "./pages/CustomerIntelligence";
 import FeatureRequests from "./pages/FeatureRequests";
 import BusinessIntelligence from "./pages/BusinessIntelligence";
 import Chat from "./pages/Chat";
+import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/login" element={<Login />} />
             <Route element={<Layout />}>
               <Route path="/" element={<CustomerIntelligence />} />
               <Route path="/features" element={<FeatureRequests />} />

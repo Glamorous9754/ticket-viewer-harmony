@@ -8,7 +8,6 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -18,7 +17,6 @@ const Login = () => {
 
     checkUser();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (session) {
@@ -31,14 +29,14 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary-foreground">Support AI</h1>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+    <div className="min-h-screen bg-accent flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-primary-foreground">Support AI</h1>
+          <p className="mt-2 text-gray-600">Sign in to access your dashboard</p>
         </div>
         
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
           <Auth
             supabaseClient={supabase}
             appearance={{
@@ -50,6 +48,16 @@ const Login = () => {
                     brandAccent: '#00683D',
                   },
                 },
+                radii: {
+                  borderRadiusButton: '8px',
+                  buttonBorderRadius: '8px',
+                  inputBorderRadius: '8px',
+                },
+              },
+              className: {
+                button: 'bg-primary hover:bg-primary/90 text-white',
+                input: 'rounded-lg border-gray-200',
+                label: 'text-gray-600',
               },
             }}
             theme="light"
