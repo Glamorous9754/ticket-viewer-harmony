@@ -47,11 +47,9 @@ const Login = () => {
                     brand: '#85DE6E',
                     brandAccent: '#00683D',
                   },
-                },
-                radii: {
-                  borderRadiusButton: '8px',
-                  buttonBorderRadius: '8px',
-                  inputBorderRadius: '8px',
+                  radii: {
+                    borderRadius: '8px',
+                  },
                 },
               },
               className: {
