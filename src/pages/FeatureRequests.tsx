@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Feature {
   summary: string;
@@ -23,23 +24,24 @@ const fetchFeatureRequests = async () => {
   const { data, error } = await supabase
     .from("tickets")
     .select("*")
+    .not('summary', 'is', null)
     .order("created_date", { ascending: false });
 
   if (error) throw error;
 
-  // Transform tickets into feature requests
-  // This is a placeholder transformation until we implement AI processing
+  // Transform tickets into feature requests using the AI-generated summaries
   return data.map((ticket) => ({
     summary: ticket.summary || "Feature request from ticket",
-    priority: 4.5, // Placeholder until we implement priority scoring
-    segments: ["Enterprise"], // Placeholder until we implement segment detection
-    complexity: "Medium" as const, // Placeholder until we implement complexity analysis
+    priority: 4.5, // This could be enhanced with AI scoring
+    segments: ["Enterprise"], // This could be enhanced with customer segmentation
+    complexity: "Medium" as const,
   }));
 };
 
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
   const [filterBy, setFilterBy] = useState("all");
+  const { toast } = useToast();
 
   const { data: features, isLoading } = useQuery({
     queryKey: ["features"],
@@ -60,6 +62,48 @@ const FeatureRequests = () => {
     return feature.segments.includes(filterBy);
   });
 
+  const handleConnectZoho = async () => {
+    const clientId = prompt("Enter your Zoho Client ID:");
+    const clientSecret = prompt("Enter your Zoho Client Secret:");
+    const refreshToken = prompt("Enter your Zoho Refresh Token:");
+
+    if (!clientId || !clientSecret || !refreshToken) {
+      toast({
+        title: "Error",
+        description: "All fields are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const response = await supabase.functions.invoke('connect-zoho', {
+        body: {
+          clientId,
+          clientSecret,
+          refreshToken,
+          profileId: user.id,
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      toast({
+        title: "Success",
+        description: "Zoho account connected successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -72,6 +116,10 @@ const FeatureRequests = () => {
       </div>
       
       <div className="flex gap-4">
+        <Button onClick={handleConnectZoho}>
+          Connect Zoho Account
+        </Button>
+        
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort by" />
@@ -97,7 +145,6 @@ const FeatureRequests = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {isLoading ? (
-          // Show loading skeletons
           Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="space-y-4 p-4 border rounded-lg">
               <Skeleton className="h-4 w-3/4" />

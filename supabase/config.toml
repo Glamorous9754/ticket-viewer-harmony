@@ -1,1 +1,35 @@
 project_id = "iedlbysyadijjcpwgbvd"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+
+[[functions]]
+name = "connect-zoho"
+verify_jwt = true
+
+[[functions]]
+name = "sync-zoho-tickets"
+verify_jwt = true
+
+[[functions]]
+name = "process-tickets"
+verify_jwt = true
