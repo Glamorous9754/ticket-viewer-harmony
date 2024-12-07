@@ -12,9 +12,11 @@ async function getZohoAccessToken() {
     const clientSecret = Deno.env.get('ZOHO_CLIENT_SECRET');
     
     if (!clientId || !clientSecret) {
-      throw new Error('Zoho credentials not configured');
+      throw new Error('Zoho credentials not configured in Supabase secrets');
     }
 
+    console.log('Requesting Zoho access token...');
+    
     const response = await fetch(
       'https://accounts.zoho.com/oauth/v2/token',
       {
@@ -28,12 +30,21 @@ async function getZohoAccessToken() {
         }),
       }
     );
+
+    const responseText = await response.text();
+    console.log('Zoho token response:', responseText);
     
     if (!response.ok) {
-      throw new Error(`Failed to get access token: ${response.statusText}`);
+      throw new Error(`Failed to get access token: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`Invalid JSON response from Zoho: ${responseText}`);
+    }
+
     if (!data.access_token) {
       throw new Error('No access token received from Zoho');
     }
@@ -49,9 +60,11 @@ async function fetchZohoTickets(accessToken: string) {
   try {
     const organizationId = Deno.env.get('ZOHO_ORG_ID');
     if (!organizationId) {
-      throw new Error('Zoho organization ID not configured');
+      throw new Error('Zoho organization ID not configured in Supabase secrets');
     }
 
+    console.log('Fetching Zoho tickets...');
+    
     const response = await fetch(
       'https://desk.zoho.com/api/v1/tickets',
       {
@@ -62,11 +75,18 @@ async function fetchZohoTickets(accessToken: string) {
       }
     );
     
+    const responseText = await response.text();
+    console.log('Zoho tickets response:', responseText);
+
     if (!response.ok) {
-      throw new Error(`Failed to fetch tickets: ${response.statusText}`);
+      throw new Error(`Failed to fetch tickets: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
-    return response.json();
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`Invalid JSON response from Zoho tickets API: ${responseText}`);
+    }
   } catch (error) {
     console.error('Error fetching Zoho tickets:', error);
     throw error;
@@ -87,12 +107,6 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user ID from request
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
     // Get Zoho access token using secrets
     console.log('Getting Zoho access token...');
     const accessToken = await getZohoAccessToken();
@@ -101,15 +115,21 @@ serve(async (req) => {
     console.log('Fetching tickets from Zoho...');
     const tickets = await fetchZohoTickets(accessToken);
 
+    if (!tickets || !tickets.data) {
+      throw new Error('No ticket data received from Zoho');
+    }
+
     // Process and store tickets
     console.log('Processing tickets...');
     const processedTickets = [];
     
-    for (const ticket of tickets.data || []) {
+    for (const ticket of tickets.data) {
+      console.log('Processing ticket:', ticket.id);
+      
       const { error: upsertError } = await supabase
         .from('tickets')
         .upsert({
-          profile_id: userId,
+          profile_id: req.headers.get('x-user-id'),
           external_ticket_id: ticket.id,
           created_date: ticket.createdTime,
           resolved_date: ticket.closedTime || null,
@@ -131,6 +151,8 @@ serve(async (req) => {
       processedTickets.push(ticket.id);
     }
 
+    console.log('Sync completed successfully');
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -147,13 +169,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in sync-zoho-tickets function:', error);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: error.message || 'An unexpected error occurred' 
       }),
       { 
-        status: 400,
+        status: 500,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json' 

@@ -9,19 +9,23 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
   const handleSyncZoho = async () => {
     setIsLoading(true);
+    console.log("Starting Zoho sync...");
 
     try {
-      // Trigger sync with edge function using secrets
-      const syncResponse = await supabase.functions.invoke('sync-zoho-tickets', {
-        body: {} // No need to pass credentials, they'll be accessed from secrets
+      const { data: response, error: functionError } = await supabase.functions.invoke('sync-zoho-tickets', {
+        body: {},
       });
 
-      if (syncResponse.error) {
-        throw new Error(syncResponse.error.message || 'Failed to sync tickets');
+      console.log("Edge function response:", response);
+      
+      if (functionError) {
+        console.error("Function error:", functionError);
+        throw new Error(functionError.message || 'Failed to sync tickets');
       }
 
-      if (!syncResponse.data.success) {
-        throw new Error(syncResponse.data.error || 'Failed to sync tickets');
+      if (!response?.success) {
+        console.error("Response error:", response?.error);
+        throw new Error(response?.error || 'Failed to sync tickets');
       }
 
       toast({
@@ -46,7 +50,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
       <h2 className="text-xl font-semibold">Sync Zoho Tickets</h2>
       <p className="text-sm text-gray-600">
-        Click the button below to sync tickets from Zoho using the configured credentials.
+        Click the button below to sync tickets from Zoho.
       </p>
       <Button 
         onClick={handleSyncZoho} 
