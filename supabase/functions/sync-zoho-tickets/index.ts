@@ -22,6 +22,9 @@ async function getZohoAccessToken(refreshToken: string, clientId: string, client
   );
   
   const data = await response.json();
+  if (!data.access_token) {
+    throw new Error('Failed to get access token: ' + JSON.stringify(data));
+  }
   return data.access_token;
 }
 
@@ -36,6 +39,9 @@ async function fetchZohoTickets(accessToken: string, from: string) {
     }
   );
   
+  if (!response.ok) {
+    throw new Error('Failed to fetch tickets: ' + await response.text());
+  }
   return response.json();
 }
 
@@ -58,6 +64,7 @@ serve(async (req) => {
 
     if (connectionsError) throw connectionsError;
 
+    const results = [];
     for (const connection of connections) {
       const { client_id, client_secret, refresh_token } = connection.auth_tokens;
       
@@ -73,7 +80,7 @@ serve(async (req) => {
       
       // Transform and store tickets
       for (const ticket of tickets.data) {
-        await supabase
+        const { error: upsertError } = await supabase
           .from('tickets')
           .upsert({
             profile_id: connection.profile_id,
@@ -91,17 +98,24 @@ serve(async (req) => {
           }, {
             onConflict: 'profile_id,platform_connection_id,external_ticket_id'
           });
+
+        if (upsertError) throw upsertError;
+        results.push(ticket.id);
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ success: true, processed: results.length }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Error in sync-zoho-tickets function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });

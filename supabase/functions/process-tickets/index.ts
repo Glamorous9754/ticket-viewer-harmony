@@ -16,7 +16,7 @@ async function summarizeWithGemini(text: string) {
     body: JSON.stringify({
       contents: [{
         parts: [{
-          text: `Summarize this support ticket concisely: ${text}`,
+          text: `Summarize this support ticket concisely, focusing on any feature requests or product feedback: ${text}`,
         }],
       }],
     }),
@@ -45,13 +45,15 @@ async function analyzeWithClaude(summaries: string[]) {
           3. Customer pain points
           4. Suggested improvements
           
+          Format the response as JSON with these keys: themes, features, painPoints, improvements
+          
           Summaries: ${JSON.stringify(summaries)}`,
       }],
     }),
   });
 
   const data = await response.json();
-  return data.content[0].text;
+  return JSON.parse(data.content[0].text);
 }
 
 serve(async (req) => {
@@ -69,18 +71,22 @@ serve(async (req) => {
       .from('tickets')
       .select('*')
       .is('summary', null)
-      .limit(50); // Process in batches
+      .limit(50);
 
     if (ticketsError) throw ticketsError;
+    console.log(`Processing ${tickets.length} tickets without summaries`);
 
     // Process each ticket with Gemini
     for (const ticket of tickets) {
       const summary = await summarizeWithGemini(ticket.thread);
+      console.log(`Generated summary for ticket ${ticket.id}`);
       
-      await supabase
+      const { error: updateError } = await supabase
         .from('tickets')
         .update({ summary })
         .eq('id', ticket.id);
+
+      if (updateError) throw updateError;
     }
 
     // Get all summaries for Claude analysis
@@ -91,21 +97,27 @@ serve(async (req) => {
       .limit(100);
 
     if (allTicketsError) throw allTicketsError;
+    console.log(`Analyzing ${allTickets.length} ticket summaries`);
 
     const summaries = allTickets.map(t => t.summary);
     const analysis = await analyzeWithClaude(summaries);
 
-    // Store analysis results (you might want to create a new table for this)
-    console.log('Claude Analysis:', analysis);
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        processed: tickets.length,
+        analysis 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Error in process-tickets function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });

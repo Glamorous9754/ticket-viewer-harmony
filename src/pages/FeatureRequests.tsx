@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
 
 interface Feature {
   summary: string;
@@ -21,7 +22,7 @@ interface Feature {
 }
 
 const fetchFeatureRequests = async () => {
-  const { data, error } = await supabase
+  const { data: tickets, error } = await supabase
     .from("tickets")
     .select("*")
     .not('summary', 'is', null)
@@ -29,8 +30,8 @@ const fetchFeatureRequests = async () => {
 
   if (error) throw error;
 
-  // Transform tickets into feature requests using the AI-generated summaries
-  return data.map((ticket) => ({
+  // Transform tickets into feature requests
+  return tickets.map((ticket) => ({
     summary: ticket.summary || "Feature request from ticket",
     priority: 4.5, // This could be enhanced with AI scoring
     segments: ["Enterprise"], // This could be enhanced with customer segmentation
@@ -42,11 +43,72 @@ const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
   const [filterBy, setFilterBy] = useState("all");
   const { toast } = useToast();
+  const [zohoCredentials, setZohoCredentials] = useState({
+    clientId: "",
+    clientSecret: "",
+    refreshToken: "",
+  });
 
-  const { data: features, isLoading } = useQuery({
+  const { data: features, isLoading, refetch } = useQuery({
     queryKey: ["features"],
     queryFn: fetchFeatureRequests,
   });
+
+  const handleConnectZoho = async () => {
+    const { clientId, clientSecret, refreshToken } = zohoCredentials;
+
+    if (!clientId || !clientSecret || !refreshToken) {
+      toast({
+        title: "Error",
+        description: "All fields are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Store Zoho credentials
+      const { error: connectionError } = await supabase
+        .from('platform_connections')
+        .insert({
+          profile_id: user.id,
+          platform_name: 'zoho',
+          auth_tokens: {
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+          },
+        });
+
+      if (connectionError) throw connectionError;
+
+      // Trigger initial sync
+      const response = await supabase.functions.invoke('sync-zoho-tickets');
+      if (response.error) throw response.error;
+
+      // Process tickets with AI
+      const aiResponse = await supabase.functions.invoke('process-tickets');
+      if (aiResponse.error) throw aiResponse.error;
+
+      toast({
+        title: "Success",
+        description: "Zoho account connected and tickets processed successfully",
+      });
+
+      // Refresh the feature requests list
+      refetch();
+    } catch (error) {
+      console.error('Error connecting Zoho:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const sortedFeatures = features
     ? [...features].sort((a, b) => {
@@ -62,48 +124,6 @@ const FeatureRequests = () => {
     return feature.segments.includes(filterBy);
   });
 
-  const handleConnectZoho = async () => {
-    const clientId = prompt("Enter your Zoho Client ID:");
-    const clientSecret = prompt("Enter your Zoho Client Secret:");
-    const refreshToken = prompt("Enter your Zoho Refresh Token:");
-
-    if (!clientId || !clientSecret || !refreshToken) {
-      toast({
-        title: "Error",
-        description: "All fields are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const response = await supabase.functions.invoke('connect-zoho', {
-        body: {
-          clientId,
-          clientSecret,
-          refreshToken,
-          profileId: user.id,
-        },
-      });
-
-      if (response.error) throw response.error;
-
-      toast({
-        title: "Success",
-        description: "Zoho account connected successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -111,15 +131,60 @@ const FeatureRequests = () => {
           Feature Requests & Ideas
         </h1>
         <p className="text-gray-500">
-          Track and prioritize customer feature requests
+          Connect your Zoho account to analyze customer feature requests
         </p>
       </div>
       
+      <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
+        <h2 className="text-xl font-semibold">Connect Zoho Account</h2>
+        <div className="grid gap-4">
+          <div>
+            <label className="text-sm font-medium">Client ID</label>
+            <Input
+              value={zohoCredentials.clientId}
+              onChange={(e) =>
+                setZohoCredentials((prev) => ({
+                  ...prev,
+                  clientId: e.target.value,
+                }))
+              }
+              placeholder="Enter your Zoho Client ID"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Client Secret</label>
+            <Input
+              type="password"
+              value={zohoCredentials.clientSecret}
+              onChange={(e) =>
+                setZohoCredentials((prev) => ({
+                  ...prev,
+                  clientSecret: e.target.value,
+                }))
+              }
+              placeholder="Enter your Zoho Client Secret"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Refresh Token</label>
+            <Input
+              value={zohoCredentials.refreshToken}
+              onChange={(e) =>
+                setZohoCredentials((prev) => ({
+                  ...prev,
+                  refreshToken: e.target.value,
+                }))
+              }
+              placeholder="Enter your Zoho Refresh Token"
+            />
+          </div>
+          <Button onClick={handleConnectZoho}>
+            Connect & Sync Tickets
+          </Button>
+        </div>
+      </div>
+
       <div className="flex gap-4">
-        <Button onClick={handleConnectZoho}>
-          Connect Zoho Account
-        </Button>
-        
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort by" />
