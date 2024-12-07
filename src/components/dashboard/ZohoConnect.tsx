@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface ZohoCredentials {
   clientId: string;
@@ -12,11 +13,13 @@ interface ZohoCredentials {
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [zohoCredentials, setZohoCredentials] = useState<ZohoCredentials>({
     clientId: "",
     clientSecret: "",
     organizationId: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleConnectZoho = async () => {
     const { clientId, clientSecret, organizationId } = zohoCredentials;
@@ -30,15 +33,27 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      // First check if user is authenticated
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError || !session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to connect your Zoho account",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
 
       // Store Zoho credentials
       const { error: connectionError } = await supabase
         .from('platform_connections')
         .insert({
-          profile_id: user.id,
+          profile_id: session.user.id,
           platform_name: 'zoho',
           auth_tokens: {
             client_id: clientId,
@@ -50,7 +65,10 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       if (connectionError) throw connectionError;
 
       // Trigger initial sync
-      const response = await supabase.functions.invoke('sync-zoho-tickets');
+      const response = await supabase.functions.invoke('sync-zoho-tickets', {
+        body: { organizationId }
+      });
+      
       if (response.error) throw response.error;
 
       // Process tickets with AI
@@ -67,9 +85,11 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       console.error('Error connecting Zoho:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to connect Zoho account",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,8 +137,11 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
             placeholder="Enter your Zoho Organization ID"
           />
         </div>
-        <Button onClick={handleConnectZoho}>
-          Connect & Sync Tickets
+        <Button 
+          onClick={handleConnectZoho} 
+          disabled={isLoading}
+        >
+          {isLoading ? "Connecting..." : "Connect & Sync Tickets"}
         </Button>
       </div>
     </div>
