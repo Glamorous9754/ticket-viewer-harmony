@@ -64,20 +64,26 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       if (connectionError) throw connectionError;
 
-      // Trigger initial sync
-      const response = await supabase.functions.invoke('sync-zoho-tickets', {
-        body: { organizationId }
+      // Trigger initial sync with proper error handling
+      const syncResponse = await supabase.functions.invoke('sync-zoho-tickets', {
+        body: { 
+          clientId,
+          clientSecret,
+          organizationId
+        }
       });
-      
-      if (response.error) throw response.error;
 
-      // Process tickets with AI
-      const aiResponse = await supabase.functions.invoke('process-tickets');
-      if (aiResponse.error) throw aiResponse.error;
+      if (syncResponse.error) {
+        throw new Error(syncResponse.error.message || 'Failed to sync tickets');
+      }
+
+      if (!syncResponse.data.success) {
+        throw new Error(syncResponse.data.error || 'Failed to sync tickets');
+      }
 
       toast({
         title: "Success",
-        description: "Zoho account connected and tickets processed successfully",
+        description: "Zoho account connected and tickets synced successfully",
       });
 
       onSuccess();
@@ -140,6 +146,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         <Button 
           onClick={handleConnectZoho} 
           disabled={isLoading}
+          className="w-full"
         >
           {isLoading ? "Connecting..." : "Connect & Sync Tickets"}
         </Button>
