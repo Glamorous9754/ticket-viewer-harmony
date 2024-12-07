@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import FeatureCard from "../components/dashboard/FeatureCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,38 +10,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const mockFeatures = [
-  {
-    summary: "Dark Mode Support",
-    priority: 4.5,
-    segments: ["Pro Users", "Enterprise"],
-    complexity: "Low" as const,
-  },
-  {
-    summary: "Bulk Export Functionality",
-    priority: 4.8,
-    segments: ["Enterprise", "Small Business"],
-    complexity: "Medium" as const,
-  },
-  {
-    summary: "API Rate Limit Increase",
-    priority: 4.2,
-    segments: ["Enterprise"],
-    complexity: "High" as const,
-  },
-];
+interface Feature {
+  summary: string;
+  priority: number;
+  segments: string[];
+  complexity: "Low" | "Medium" | "High";
+}
+
+const fetchFeatureRequests = async () => {
+  const { data, error } = await supabase
+    .from("tickets")
+    .select("*")
+    .order("created_date", { ascending: false });
+
+  if (error) throw error;
+
+  // Transform tickets into feature requests
+  // This is a placeholder transformation until we implement AI processing
+  return data.map((ticket) => ({
+    summary: ticket.summary || "Feature request from ticket",
+    priority: 4.5, // Placeholder until we implement priority scoring
+    segments: ["Enterprise"], // Placeholder until we implement segment detection
+    complexity: "Medium" as const, // Placeholder until we implement complexity analysis
+  }));
+};
 
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
   const [filterBy, setFilterBy] = useState("all");
 
-  const sortedFeatures = [...mockFeatures].sort((a, b) => {
-    if (sortBy === "priority") {
-      return b.priority - a.priority;
-    }
-    return 0;
+  const { data: features, isLoading } = useQuery({
+    queryKey: ["features"],
+    queryFn: fetchFeatureRequests,
   });
+
+  const sortedFeatures = features
+    ? [...features].sort((a, b) => {
+        if (sortBy === "priority") {
+          return b.priority - a.priority;
+        }
+        return 0;
+      })
+    : [];
 
   const filteredFeatures = sortedFeatures.filter((feature) => {
     if (filterBy === "all") return true;
@@ -82,9 +96,26 @@ const FeatureRequests = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredFeatures.map((feature, index) => (
-          <FeatureCard key={index} {...feature} />
-        ))}
+        {isLoading ? (
+          // Show loading skeletons
+          Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="space-y-4 p-4 border rounded-lg">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-1/4" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          filteredFeatures.map((feature, index) => (
+            <FeatureCard key={index} {...feature} />
+          ))
+        )}
       </div>
     </div>
   );

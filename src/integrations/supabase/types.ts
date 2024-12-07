@@ -9,7 +9,134 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      platform_connections: {
+        Row: {
+          auth_tokens: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          last_fetched_at: string
+          platform_name: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          auth_tokens: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_fetched_at?: string
+          platform_name: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          auth_tokens?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_fetched_at?: string
+          platform_name?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_connections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          agent_name: string | null
+          comments: Json | null
+          created_at: string
+          created_date: string
+          customer_id: string | null
+          external_ticket_id: string
+          id: string
+          last_fetched_at: string
+          platform_connection_id: string
+          profile_id: string
+          resolved_date: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          summary: string | null
+          thread: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_name?: string | null
+          comments?: Json | null
+          created_at?: string
+          created_date: string
+          customer_id?: string | null
+          external_ticket_id: string
+          id?: string
+          last_fetched_at?: string
+          platform_connection_id: string
+          profile_id: string
+          resolved_date?: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          summary?: string | null
+          thread?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_name?: string | null
+          comments?: Json | null
+          created_at?: string
+          created_date?: string
+          customer_id?: string | null
+          external_ticket_id?: string
+          id?: string
+          last_fetched_at?: string
+          platform_connection_id?: string
+          profile_id?: string
+          resolved_date?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          summary?: string | null
+          thread?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_platform_connection_id_fkey"
+            columns: ["platform_connection_id"]
+            isOneToOne: false
+            referencedRelation: "platform_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +145,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      ticket_status: "Open" | "Closed" | "In_Progress"
     }
     CompositeTypes: {
       [_ in never]: never
