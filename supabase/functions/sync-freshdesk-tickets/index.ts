@@ -15,6 +15,14 @@ const STATUS_MAP = {
   5: "Closed",
 };
 
+// Helper function to clean HTML content
+function cleanText(html) {
+  return html
+    .replace(/<\/?[^>]+(>|$)/g, "") // Remove HTML tags
+    .replace(/\s+/g, " ") // Normalize whitespace
+    .trim();
+}
+
 // Fetch all tickets using pagination
 async function fetchTickets(domain, apiKey) {
   const tickets = [];
@@ -70,7 +78,13 @@ async function fetchThreads(domain, apiKey, ticketId) {
   }
 
   const threads = await response.json();
-  return threads.map((thread) => thread.body_text || thread.body || "");
+
+  // Combine and clean conversation content
+  const combinedThread = threads
+    .map((thread) => cleanText(thread.body_text || thread.body || ""))
+    .join("\n");
+
+  return combinedThread;
 }
 
 // Process tickets and structure data
@@ -80,7 +94,7 @@ async function processTickets(domain, apiKey, connection) {
 
   const processedTickets = await Promise.all(
     tickets.map(async (ticket) => {
-      const threads = await fetchThreads(domain, apiKey, ticket.id.toString());
+      const thread = await fetchThreads(domain, apiKey, ticket.id.toString());
 
       return {
         profile_id: connection.profile_id,
@@ -89,8 +103,8 @@ async function processTickets(domain, apiKey, connection) {
         created_date: ticket.created_at,
         resolved_date: ticket.status === 5 ? ticket.updated_at : null, // Status 5 = Closed
         status: STATUS_MAP[ticket.status] || "Unknown", // Convert status to text
-        thread: threads.join("\n"), // Changed "AllMessages" to "Thread"
-        comments: JSON.stringify(threads),
+        thread, // Populated from combined threads
+        comments: null, // Set comments to null or remove if unnecessary
         agent_name: ticket.responder_name,
         customer_id: ticket.requester_id?.toString(),
         summary: ticket.subject,
