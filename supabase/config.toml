@@ -33,3 +33,7 @@ verify_jwt = true
 [[functions]]
 name = "process-tickets"
 verify_jwt = true
+
+[[functions]]
+name = "validate-zoho-credentials"
+verify_jwt = true

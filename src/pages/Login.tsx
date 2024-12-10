@@ -1,27 +1,16 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
-      }
-    };
-
-    checkUser();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session) {
-          navigate("/");
-        }
+      (event, session) => {
+        if (event === "SIGNED_IN") navigate("/");
       }
     );
 
@@ -29,14 +18,14 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-accent flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary-foreground">Support AI</h1>
-          <p className="mt-2 text-gray-600">Sign in to access your dashboard</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
         </div>
-        
-        <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        <div className="mt-8">
           <Auth
             supabaseClient={supabase}
             appearance={{
@@ -44,23 +33,17 @@ const Login = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#85DE6E',
-                    brandAccent: '#00683D',
-                  },
-                  radii: {
-                    borderRadius: '8px',
+                    brand: "#2563eb",
+                    brandAccent: "#1d4ed8",
                   },
                 },
               },
               className: {
-                button: 'bg-primary hover:bg-primary/90 text-white',
-                input: 'rounded-lg border-gray-200',
-                label: 'text-gray-600',
+                button: "bg-blue-600 hover:bg-blue-700",
+                input: "rounded-md",
               },
             }}
-            theme="light"
-            providers={[]}
-            redirectTo={window.location.origin}
+            providers={["google"]}
           />
         </div>
       </div>
