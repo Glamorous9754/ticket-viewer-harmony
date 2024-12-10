@@ -6,6 +6,61 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function fetchTickets(domain: string, apiKey: string) {
+  const tickets = [];
+  let page = 1;
+  
+  while (true) {
+    console.log(`Fetching page ${page} of tickets...`);
+    const response = await fetch(
+      `https://${domain}.freshdesk.com/api/v2/tickets?page=${page}&per_page=100`,
+      {
+        headers: {
+          'Authorization': `Basic ${btoa(apiKey + ':X')}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Error fetching tickets page ${page}:`, response.status);
+      const errorText = await response.text();
+      console.error('Error details:', errorText);
+      break;
+    }
+
+    const data = await response.json();
+    tickets.push(...data);
+    
+    if (data.length < 100) break; // No more pages
+    page++;
+  }
+
+  return tickets;
+}
+
+async function fetchThreads(domain: string, apiKey: string, ticketId: string) {
+  console.log(`Fetching threads for ticket ${ticketId}...`);
+  const response = await fetch(
+    `https://${domain}.freshdesk.com/api/v2/tickets/${ticketId}/conversations`,
+    {
+      headers: {
+        'Authorization': `Basic ${btoa(apiKey + ':X')}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    console.error(`Error fetching threads for ticket ${ticketId}:`, response.status);
+    const errorText = await response.text();
+    console.error('Error details:', errorText);
+    return [];
+  }
+
+  return await response.json();
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -13,7 +68,7 @@ serve(async (req) => {
 
   try {
     const { connectionId } = await req.json();
-    console.log(`Fetching tickets for connection ${connectionId}`);
+    console.log(`Processing tickets for connection ${connectionId}`);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -36,66 +91,51 @@ serve(async (req) => {
     const apiKey = auth_tokens.apiKey;
     const domain = auth_tokens.domain;
 
-    // Calculate date 3 months ago
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    
-    // Construct proper FreshDesk URL with the .freshdesk.com domain and date filter
-    const freshdeskUrl = `https://${domain}.freshdesk.com/api/v2/tickets?updated_since=${threeMonthsAgo.toISOString()}`;
-    console.log('Fetching tickets from:', freshdeskUrl);
+    // Fetch all tickets
+    const tickets = await fetchTickets(domain, apiKey);
+    console.log(`Fetched ${tickets.length} tickets`);
 
-    // Fetch tickets from FreshDesk
-    const response = await fetch(
-      freshdeskUrl,
-      {
-        headers: {
-          'Authorization': `Basic ${btoa(apiKey + ':X')}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // Process each ticket and its threads
+    const processedTickets = await Promise.all(
+      tickets.map(async (ticket: any) => {
+        const threads = await fetchThreads(domain, apiKey, ticket.id.toString());
+        const threadTexts = threads.map((thread: any) => thread.body_text || thread.body || '');
 
-    if (!response.ok) {
-      console.error('FreshDesk API error:', response.status, response.statusText);
-      const errorBody = await response.text();
-      console.error('Error details:', errorBody);
-      throw new Error(`FreshDesk API error: ${response.statusText}`);
-    }
-
-    const tickets = await response.json();
-    console.log(`Fetched ${tickets.length} tickets from FreshDesk`);
-
-    // Store tickets in database
-    const { error: insertError } = await supabase
-      .from('tickets')
-      .upsert(
-        tickets.map((ticket: any) => ({
+        return {
           profile_id: connection.profile_id,
           platform_connection_id: connectionId,
           external_ticket_id: ticket.id.toString(),
           created_date: ticket.created_at,
           resolved_date: ticket.status === 5 ? ticket.updated_at : null,
           status: ticket.status === 5 ? 'Closed' : 'Open',
-          thread: ticket.description_text,
-          customer_id: ticket.requester_id?.toString(),
+          thread: threadTexts.join('\n'),
+          comments: JSON.stringify(threadTexts),
           agent_name: ticket.responder_name,
+          customer_id: ticket.requester_id?.toString(),
           summary: ticket.subject,
-        }))
-      );
+          last_fetched_at: new Date().toISOString(),
+        };
+      })
+    );
+
+    // Upsert processed tickets to database
+    const { error: insertError } = await supabase
+      .from('tickets')
+      .upsert(processedTickets);
 
     if (insertError) {
       console.error('Error inserting tickets:', insertError);
       throw insertError;
     }
 
-    // Update last_fetched_at
+    // Update last_fetched_at for the connection
     await supabase
       .from('platform_connections')
       .update({ last_fetched_at: new Date().toISOString() })
       .eq('id', connectionId);
 
     return new Response(
-      JSON.stringify({ success: true, count: tickets.length }),
+      JSON.stringify({ success: true, count: processedTickets.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
