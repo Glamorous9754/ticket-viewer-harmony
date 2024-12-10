@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Form,
   FormControl,
@@ -15,6 +14,8 @@ import { Input } from "@/components/ui/input";
 
 type ZohoCredentialsForm = {
   orgId: string;
+  clientId: string;
+  clientSecret: string;
 };
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
@@ -24,43 +25,34 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
   const handleConnectZoho = async (data: ZohoCredentialsForm) => {
     setIsLoading(true);
-    console.log("Starting Zoho connection with org ID:", data.orgId);
+    console.log("Starting Zoho connection validation...");
 
     try {
-      // Store org_id temporarily and validate it
-      const { error: credentialsError } = await supabase
-        .from("zoho_credentials")
-        .upsert({
-          org_id: data.orgId,
-          profile_id: (await supabase.auth.getUser()).data.user?.id,
-        });
-
-      if (credentialsError) {
-        console.error("Error storing credentials:", credentialsError);
-        throw new Error("Failed to store organization ID");
-      }
-
-      // Call the validation function
+      // Call the validation function with all credentials
       const { data: validationResponse, error: validationError } = await supabase.functions.invoke(
         "validate-zoho-credentials",
         {
-          body: { orgId: data.orgId },
+          body: { 
+            orgId: data.orgId,
+            clientId: data.clientId,
+            clientSecret: data.clientSecret
+          },
         }
       );
 
       if (validationError) {
         console.error("Validation function error:", validationError);
-        throw new Error(validationError.message || "Failed to validate organization ID");
+        throw new Error(validationError.message || "Failed to validate credentials");
       }
 
       if (!validationResponse?.success) {
         console.error("Validation failed:", validationResponse?.error);
-        throw new Error(validationResponse?.error || "Invalid organization ID");
+        throw new Error(validationResponse?.error || "Invalid credentials");
       }
 
       toast({
         title: "Success",
-        description: "Organization ID validated successfully.",
+        description: "Successfully connected to Zoho!",
       });
 
       onSuccess();
@@ -68,7 +60,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       console.error("Error in Zoho connection process:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to validate organization ID",
+        description: error.message || "Failed to validate credentials",
         variant: "destructive",
       });
     } finally {
@@ -80,7 +72,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zoho</h2>
       <p className="text-sm text-gray-600">
-        Enter your Zoho organization ID to connect and validate.
+        Enter your Zoho credentials to validate the connection.
       </p>
       
       <Form {...form}>
@@ -98,13 +90,45 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="clientId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Client ID</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter your Zoho client ID" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="clientSecret"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Client Secret</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="password"
+                    placeholder="Enter your Zoho client secret" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
           <Button 
             type="submit"
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? "Connecting..." : "Connect & Validate"}
+            {isLoading ? "Validating..." : "Validate Connection"}
           </Button>
         </form>
       </Form>

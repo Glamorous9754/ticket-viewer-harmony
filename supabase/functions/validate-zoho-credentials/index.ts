@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,7 +39,7 @@ async function getZohoAccessToken(clientId: string, clientSecret: string) {
 
 async function validateOrgId(accessToken: string, orgId: string) {
   console.log('Validating org ID...');
-  const testUrl = "https://desk.zoho.com/api/v1/tickets";
+  const testUrl = "https://desk.zoho.com/api/v1/tickets?limit=1";
   const response = await fetch(testUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -64,38 +63,15 @@ serve(async (req) => {
 
   try {
     console.log('Starting validation process...');
-    const { orgId } = await req.json();
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const clientId = Deno.env.get("ZOHO_CLIENT_ID")!;
-    const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET")!;
+    const { orgId, clientId, clientSecret } = await req.json();
 
-    if (!clientId || !clientSecret) {
-      console.error('Missing Zoho credentials');
-      throw new Error('Zoho credentials not configured');
+    if (!orgId || !clientId || !clientSecret) {
+      throw new Error("Missing required credentials");
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Fetch Zoho Access Token
+    // Get access token and validate
     const accessToken = await getZohoAccessToken(clientId, clientSecret);
-
-    // Validate orgId with Zoho
     await validateOrgId(accessToken, orgId);
-
-    // Update database with access token
-    const { error: updateError } = await supabase
-      .from("zoho_credentials")
-      .update({ 
-        access_token: accessToken,
-        status: 'active'
-      })
-      .eq("org_id", orgId);
-
-    if (updateError) {
-      console.error('Error updating credentials:', updateError);
-      throw new Error("Failed to update database with access token");
-    }
 
     console.log('Validation successful');
     return new Response(JSON.stringify({ success: true }), {
