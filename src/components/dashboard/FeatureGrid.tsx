@@ -6,6 +6,10 @@ interface Feature {
   priority: number;
   segments: string[];
   complexity: "Low" | "Medium" | "High";
+  status?: string;
+  createdAt?: string;
+  resolvedAt?: string | null;
+  agentName?: string;
 }
 
 interface FeatureGridProps {
