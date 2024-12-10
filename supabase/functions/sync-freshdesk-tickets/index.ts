@@ -35,9 +35,13 @@ serve(async (req) => {
     const apiKey = auth_tokens.apiKey;
     const domain = auth_tokens.domain;
 
+    // Construct proper FreshDesk URL with the .freshdesk.com domain
+    const freshdeskUrl = `https://${domain}.freshdesk.com/api/v2/tickets`;
+    console.log('Fetching tickets from:', freshdeskUrl);
+
     // Fetch tickets from FreshDesk
     const response = await fetch(
-      `https://${domain}/api/v2/tickets`,
+      freshdeskUrl,
       {
         headers: {
           'Authorization': `Basic ${btoa(apiKey + ':X')}`,
@@ -47,6 +51,9 @@ serve(async (req) => {
     );
 
     if (!response.ok) {
+      console.error('FreshDesk API error:', response.status, response.statusText);
+      const errorBody = await response.text();
+      console.error('Error details:', errorBody);
       throw new Error(`FreshDesk API error: ${response.statusText}`);
     }
 
@@ -71,6 +78,7 @@ serve(async (req) => {
       );
 
     if (insertError) {
+      console.error('Error inserting tickets:', insertError);
       throw insertError;
     }
 
