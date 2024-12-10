@@ -22,52 +22,53 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<ZohoCredentialsForm>();
 
-  const handleSyncZoho = async (data: ZohoCredentialsForm) => {
+  const handleConnectZoho = async (data: ZohoCredentialsForm) => {
     setIsLoading(true);
-    console.log("Starting Zoho sync with org ID:", data.orgId);
+    console.log("Starting Zoho connection with org ID:", data.orgId);
 
     try {
-      // First, store the credentials
+      // Store org_id temporarily and validate it
       const { error: credentialsError } = await supabase
-        .from('zoho_credentials')
+        .from("zoho_credentials")
         .upsert({
           org_id: data.orgId,
           profile_id: (await supabase.auth.getUser()).data.user?.id,
         });
 
       if (credentialsError) {
-        console.error("Credentials error:", credentialsError);
-        throw new Error(credentialsError.message || 'Failed to store credentials');
+        console.error("Error storing credentials:", credentialsError);
+        throw new Error("Failed to store organization ID");
       }
 
-      // Then sync tickets
-      const { data: response, error: functionError } = await supabase.functions.invoke('sync-zoho-tickets', {
-        body: {},
-      });
+      // Call the validation function
+      const { data: validationResponse, error: validationError } = await supabase.functions.invoke(
+        "validate-zoho-credentials",
+        {
+          body: { orgId: data.orgId },
+        }
+      );
 
-      console.log("Edge function response:", response);
-      
-      if (functionError) {
-        console.error("Function error:", functionError);
-        throw new Error(functionError.message || 'Failed to sync tickets');
+      if (validationError) {
+        console.error("Validation function error:", validationError);
+        throw new Error(validationError.message || "Failed to validate organization ID");
       }
 
-      if (!response?.success) {
-        console.error("Response error:", response?.error);
-        throw new Error(response?.error || 'Failed to sync tickets');
+      if (!validationResponse?.success) {
+        console.error("Validation failed:", validationResponse?.error);
+        throw new Error(validationResponse?.error || "Invalid organization ID");
       }
 
       toast({
         title: "Success",
-        description: "Zoho credentials saved and tickets synced successfully",
+        description: "Organization ID validated successfully.",
       });
 
       onSuccess();
     } catch (error) {
-      console.error('Error in Zoho sync process:', error);
+      console.error("Error in Zoho connection process:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to complete Zoho sync process",
+        description: error.message || "Failed to validate organization ID",
         variant: "destructive",
       });
     } finally {
@@ -79,11 +80,11 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zoho</h2>
       <p className="text-sm text-gray-600">
-        Enter your Zoho organization ID to sync tickets.
+        Enter your Zoho organization ID to connect and validate.
       </p>
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSyncZoho)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleConnectZoho)} className="space-y-4">
           <FormField
             control={form.control}
             name="orgId"
@@ -103,7 +104,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? "Connecting..." : "Connect & Sync"}
+            {isLoading ? "Connecting..." : "Connect & Validate"}
           </Button>
         </form>
       </Form>
