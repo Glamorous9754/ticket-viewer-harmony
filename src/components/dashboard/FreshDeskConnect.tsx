@@ -28,6 +28,12 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     console.log("Starting FreshDesk connection validation...");
 
     try {
+      // Get the current user's session
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        throw new Error("You must be logged in to connect FreshDesk");
+      }
+
       // First validate the credentials
       const { data: validationResponse, error: validationError } = await supabase.functions.invoke(
         "validate-freshdesk-credentials",
@@ -53,6 +59,7 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       const { error: insertError } = await supabase
         .from('platform_connections')
         .insert({
+          profile_id: session.session.user.id,
           platform_name: 'freshdesk',
           auth_tokens: {
             apiKey: data.apiKey,
