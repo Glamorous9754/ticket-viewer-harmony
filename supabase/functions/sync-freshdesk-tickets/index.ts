@@ -28,6 +28,7 @@ serve(async (req) => {
       .single();
 
     if (connectionError || !connection) {
+      console.error('Connection not found:', connectionError);
       throw new Error('Connection not found');
     }
 
@@ -78,6 +79,7 @@ serve(async (req) => {
           thread: ticket.description_text,
           customer_id: ticket.requester_id?.toString(),
           agent_name: ticket.responder_name,
+          summary: ticket.subject,
         }))
       );
 
