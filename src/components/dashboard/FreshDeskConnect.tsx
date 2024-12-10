@@ -28,6 +28,7 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     console.log("Starting FreshDesk connection validation...");
 
     try {
+      // First validate the credentials
       const { data: validationResponse, error: validationError } = await supabase.functions.invoke(
         "validate-freshdesk-credentials",
         {
@@ -46,6 +47,22 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       if (!validationResponse?.success) {
         console.error("Validation failed:", validationResponse?.error);
         throw new Error(validationResponse?.error || "Invalid credentials");
+      }
+
+      // After successful validation, store the credentials
+      const { error: insertError } = await supabase
+        .from('platform_connections')
+        .insert({
+          platform_name: 'freshdesk',
+          auth_tokens: {
+            apiKey: data.apiKey,
+            domain: data.domain
+          }
+        });
+
+      if (insertError) {
+        console.error("Error storing credentials:", insertError);
+        throw new Error("Failed to store credentials");
       }
 
       toast({
