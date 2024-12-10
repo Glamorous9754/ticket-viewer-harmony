@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ZohoConnect } from "../components/dashboard/ZohoConnect";
+import { FreshDeskConnect } from "../components/dashboard/FreshDeskConnect";
 import { FeatureFilters } from "../components/dashboard/FeatureFilters";
 import { FeatureGrid } from "../components/dashboard/FeatureGrid";
 
@@ -52,11 +52,11 @@ const FeatureRequests = () => {
           Feature Requests & Ideas
         </h1>
         <p className="text-gray-500">
-          Connect your Zoho account to analyze customer feature requests
+          Connect your FreshDesk account to analyze customer feature requests
         </p>
       </div>
       
-      <ZohoConnect onSuccess={refetch} />
+      <FreshDeskConnect onSuccess={refetch} />
 
       <FeatureFilters
         sortBy={sortBy}
