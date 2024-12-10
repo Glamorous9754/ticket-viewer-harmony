@@ -6,10 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function fetchTickets(domain: string, apiKey: string) {
+// Fetch all tickets using pagination
+async function fetchTickets(domain: string, apiKey: string): Promise<any[]> {
   const tickets = [];
   let page = 1;
-  
+
   while (true) {
     console.log(`Fetching page ${page} of tickets...`);
     const response = await fetch(
@@ -31,15 +32,16 @@ async function fetchTickets(domain: string, apiKey: string) {
 
     const data = await response.json();
     tickets.push(...data);
-    
-    if (data.length < 100) break; // No more pages
+
+    if (data.length < 100) break; // Exit if no more pages
     page++;
   }
 
   return tickets;
 }
 
-async function fetchThreads(domain: string, apiKey: string, ticketId: string) {
+// Fetch threads for a specific ticket
+async function fetchThreads(domain: string, apiKey: string, ticketId: string): Promise<string[]> {
   console.log(`Fetching threads for ticket ${ticketId}...`);
   const response = await fetch(
     `https://${domain}.freshdesk.com/api/v2/tickets/${ticketId}/conversations`,
@@ -58,7 +60,37 @@ async function fetchThreads(domain: string, apiKey: string, ticketId: string) {
     return [];
   }
 
-  return await response.json();
+  const threads = await response.json();
+  return threads.map((thread: any) => thread.body_text || thread.body || '');
+}
+
+// Process tickets and structure data
+async function processTickets(domain: string, apiKey: string, connection: any) {
+  const tickets = await fetchTickets(domain, apiKey);
+  console.log(`Fetched ${tickets.length} tickets`);
+
+  const processedTickets = await Promise.all(
+    tickets.map(async (ticket: any) => {
+      const threads = await fetchThreads(domain, apiKey, ticket.id.toString());
+
+      return {
+        profile_id: connection.profile_id,
+        platform_connection_id: connection.id,
+        external_ticket_id: ticket.id.toString(),
+        created_date: ticket.created_at,
+        resolved_date: ticket.status === 5 ? ticket.updated_at : null, // Status 5 = Closed
+        status: ticket.status === 5 ? 'Closed' : 'Open',
+        thread: threads.join('\n'),
+        comments: JSON.stringify(threads),
+        agent_name: ticket.responder_name,
+        customer_id: ticket.requester_id?.toString(),
+        summary: ticket.subject,
+        last_fetched_at: new Date().toISOString(),
+      };
+    })
+  );
+
+  return processedTickets;
 }
 
 serve(async (req) => {
@@ -75,7 +107,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get connection details
+    // Retrieve connection details
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
@@ -91,34 +123,10 @@ serve(async (req) => {
     const apiKey = auth_tokens.apiKey;
     const domain = auth_tokens.domain;
 
-    // Fetch all tickets
-    const tickets = await fetchTickets(domain, apiKey);
-    console.log(`Fetched ${tickets.length} tickets`);
+    // Process and fetch ticket data
+    const processedTickets = await processTickets(domain, apiKey, connection);
 
-    // Process each ticket and its threads
-    const processedTickets = await Promise.all(
-      tickets.map(async (ticket: any) => {
-        const threads = await fetchThreads(domain, apiKey, ticket.id.toString());
-        const threadTexts = threads.map((thread: any) => thread.body_text || thread.body || '');
-
-        return {
-          profile_id: connection.profile_id,
-          platform_connection_id: connectionId,
-          external_ticket_id: ticket.id.toString(),
-          created_date: ticket.created_at,
-          resolved_date: ticket.status === 5 ? ticket.updated_at : null,
-          status: ticket.status === 5 ? 'Closed' : 'Open',
-          thread: threadTexts.join('\n'),
-          comments: JSON.stringify(threadTexts),
-          agent_name: ticket.responder_name,
-          customer_id: ticket.requester_id?.toString(),
-          summary: ticket.subject,
-          last_fetched_at: new Date().toISOString(),
-        };
-      })
-    );
-
-    // Upsert processed tickets to database
+    // Upsert tickets into database
     const { error: insertError } = await supabase
       .from('tickets')
       .upsert(processedTickets);
@@ -128,7 +136,7 @@ serve(async (req) => {
       throw insertError;
     }
 
-    // Update last_fetched_at for the connection
+    // Update last_fetched_at timestamp for the connection
     await supabase
       .from('platform_connections')
       .update({ last_fetched_at: new Date().toISOString() })
@@ -142,9 +150,9 @@ serve(async (req) => {
     console.error('Error in sync-freshdesk-tickets:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
