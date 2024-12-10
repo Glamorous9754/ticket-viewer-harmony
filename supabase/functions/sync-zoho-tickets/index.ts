@@ -8,12 +8,14 @@ const corsHeaders = {
 
 async function getZohoAccessToken(supabase: any, userId: string) {
   try {
+    console.log('Starting Zoho access token request process...');
+    
     const clientId = Deno.env.get('ZOHO_CLIENT_ID');
     const clientSecret = Deno.env.get('ZOHO_CLIENT_SECRET');
     
     if (!clientId || !clientSecret) {
       console.error('Missing Zoho credentials:', { clientId: !!clientId, clientSecret: !!clientSecret });
-      throw new Error('Zoho credentials not configured in Supabase secrets');
+      throw new Error('Zoho credentials not configured');
     }
 
     // Get user's Zoho credentials
@@ -28,7 +30,7 @@ async function getZohoAccessToken(supabase: any, userId: string) {
       throw new Error('No Zoho credentials found for user');
     }
 
-    console.log('Requesting Zoho access token with credentials...');
+    console.log('Found Zoho credentials, requesting access token...');
     
     const tokenUrl = 'https://accounts.zoho.com/oauth/v2/token';
     const params = new URLSearchParams({
@@ -38,8 +40,6 @@ async function getZohoAccessToken(supabase: any, userId: string) {
       scope: 'Desk.tickets.READ',
     });
 
-    console.log('Making request to:', tokenUrl);
-    
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -49,10 +49,11 @@ async function getZohoAccessToken(supabase: any, userId: string) {
     if (!response.ok) {
       const responseText = await response.text();
       console.error('Token request failed:', response.status, responseText);
-      throw new Error(`Failed to get access token: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to get access token: ${response.status} ${responseText}`);
     }
 
     const data = await response.json();
+    console.log('Received response from Zoho:', { hasAccessToken: !!data.access_token });
     
     if (!data.access_token) {
       console.error('No access token in response:', data);
@@ -71,23 +72,32 @@ async function getZohoAccessToken(supabase: any, userId: string) {
 
     if (updateError) {
       console.error('Error updating credentials:', updateError);
-      // Continue anyway since we have the token
     }
     
-    console.log('Successfully obtained Zoho access token');
+    console.log('Successfully obtained and stored Zoho access token');
     return { accessToken: data.access_token, orgId: credentials.org_id };
   } catch (error) {
-    console.error('Error getting Zoho access token:', error);
+    console.error('Error in getZohoAccessToken:', error);
     throw error;
   }
 }
 
 async function fetchZohoTickets(accessToken: string, orgId: string) {
   try {
-    console.log('Fetching Zoho tickets...');
+    console.log('Starting Zoho ticket fetch...');
     
+    // Calculate date range for last 3 months
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 3);
+    
+    const params = new URLSearchParams({
+      createdTimeRange: `${startDate.toISOString()},${endDate.toISOString()}`,
+      limit: '100',
+    });
+
     const response = await fetch(
-      'https://desk.zoho.com/api/v1/tickets',
+      `https://desk.zoho.com/api/v1/tickets?${params}`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -99,14 +109,14 @@ async function fetchZohoTickets(accessToken: string, orgId: string) {
     if (!response.ok) {
       const responseText = await response.text();
       console.error('Tickets request failed:', response.status, responseText);
-      throw new Error(`Failed to fetch tickets: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to fetch tickets: ${response.status} ${responseText}`);
     }
 
     const data = await response.json();
-    console.log('Successfully fetched tickets:', data);
+    console.log('Successfully fetched tickets:', { count: data.data?.length || 0 });
     return data;
   } catch (error) {
-    console.error('Error fetching Zoho tickets:', error);
+    console.error('Error in fetchZohoTickets:', error);
     throw error;
   }
 }
@@ -118,7 +128,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting Zoho ticket sync...');
+    console.log('Starting Zoho ticket sync process...');
     
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -136,7 +146,7 @@ serve(async (req) => {
       throw new Error('Failed to get user');
     }
 
-    // Get Zoho access token using secrets
+    // Get Zoho access token
     console.log('Getting Zoho access token...');
     const { accessToken, orgId } = await getZohoAccessToken(supabase, user.id);
     
@@ -153,8 +163,6 @@ serve(async (req) => {
     const processedTickets = [];
     
     for (const ticket of tickets.data) {
-      console.log('Processing ticket:', ticket.id);
-      
       const { error: upsertError } = await supabase
         .from('tickets')
         .upsert({
