@@ -93,6 +93,48 @@ async function processTickets(domain: string, apiKey: string, connection: any) {
   return processedTickets;
 }
 
+// Sync tickets into the database with conflict handling
+async function syncTickets(domain: string, apiKey: string, connectionId: string, supabase: any) {
+  // Fetch connection details
+  const { data: connection, error: connectionError } = await supabase
+    .from('platform_connections')
+    .select('*')
+    .eq('id', connectionId)
+    .single();
+
+  if (connectionError || !connection) {
+    console.error('Connection not found:', connectionError);
+    throw new Error('Connection not found');
+  }
+
+  const processedTickets = await processTickets(domain, apiKey, connection);
+
+  if (processedTickets.length === 0) {
+    console.log('No tickets to process.');
+    return { success: true, count: 0 };
+  }
+
+  // Upsert tickets with conflict resolution
+  const { error: upsertError } = await supabase
+    .from('tickets')
+    .upsert(processedTickets, { onConflict: ['platform_connection_id', 'external_ticket_id'] });
+
+  if (upsertError) {
+    console.error('Error upserting tickets:', upsertError);
+    throw upsertError;
+  }
+
+  // Update last_fetched_at for the connection
+  await supabase
+    .from('platform_connections')
+    .update({ last_fetched_at: new Date().toISOString() })
+    .eq('id', connectionId);
+
+  console.log(`Successfully synced ${processedTickets.length} tickets.`);
+  return { success: true, count: processedTickets.length };
+}
+
+// Serve the edge function
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -107,53 +149,33 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Retrieve connection details
+    // Fetch connection credentials and sync tickets
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
-      .select('*')
+      .select('auth_tokens')
       .eq('id', connectionId)
       .single();
 
     if (connectionError || !connection) {
-      console.error('Connection not found:', connectionError);
-      throw new Error('Connection not found');
+      console.error('Error fetching connection:', connectionError);
+      throw new Error('Connection not found.');
     }
 
     const { auth_tokens } = connection;
     const apiKey = auth_tokens.apiKey;
     const domain = auth_tokens.domain;
 
-    // Process and fetch ticket data
-    const processedTickets = await processTickets(domain, apiKey, connection);
-
-    // Upsert tickets into database
-    const { error: insertError } = await supabase
-      .from('tickets')
-      .upsert(processedTickets);
-
-    if (insertError) {
-      console.error('Error inserting tickets:', insertError);
-      throw insertError;
-    }
-
-    // Update last_fetched_at timestamp for the connection
-    await supabase
-      .from('platform_connections')
-      .update({ last_fetched_at: new Date().toISOString() })
-      .eq('id', connectionId);
+    const result = await syncTickets(domain, apiKey, connectionId, supabase);
 
     return new Response(
-      JSON.stringify({ success: true, count: processedTickets.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, count: result.count }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
     console.error('Error in sync-freshdesk-tickets:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
