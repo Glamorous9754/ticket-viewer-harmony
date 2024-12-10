@@ -35,8 +35,12 @@ serve(async (req) => {
     const apiKey = auth_tokens.apiKey;
     const domain = auth_tokens.domain;
 
-    // Construct proper FreshDesk URL with the .freshdesk.com domain
-    const freshdeskUrl = `https://${domain}.freshdesk.com/api/v2/tickets`;
+    // Calculate date 3 months ago
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    
+    // Construct proper FreshDesk URL with the .freshdesk.com domain and date filter
+    const freshdeskUrl = `https://${domain}.freshdesk.com/api/v2/tickets?updated_since=${threeMonthsAgo.toISOString()}`;
     console.log('Fetching tickets from:', freshdeskUrl);
 
     // Fetch tickets from FreshDesk
