@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { FreshDeskConnection, FreshDeskCredentials } from "./types";
+import { FreshDeskConnection, FreshDeskCredentials, isFreshDeskCredentials } from "./types";
 import { FreshDeskConnectionCard } from "./FreshDeskConnectionCard";
 import { FreshDeskConnectionForm } from "./FreshDeskConnectionForm";
 
@@ -27,7 +27,11 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       .eq('platform_name', 'freshdesk');
     
     if (data) {
-      setConnections(data as FreshDeskConnection[]);
+      // Convert and validate the data
+      const validConnections = data.filter((conn): conn is FreshDeskConnection => {
+        return isFreshDeskCredentials(conn.auth_tokens);
+      });
+      setConnections(validConnections);
     }
   };
 
@@ -61,10 +65,10 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       const { error: insertError } = await supabase
         .from('platform_connections')
         .upsert({
-          id: editingConnection?.id || undefined,
+          id: editingConnection?.id,
           profile_id: session.session.user.id,
           platform_name: 'freshdesk',
-          auth_tokens: credentials
+          auth_tokens: credentials as any // Type assertion needed due to Supabase's JSON handling
         });
 
       if (insertError) {

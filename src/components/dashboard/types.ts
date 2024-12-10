@@ -13,3 +13,15 @@ export interface FreshDeskConnection {
   platform_name: string;
   profile_id: string;
 }
+
+// Type guard to check if a JSON object is FreshDeskCredentials
+export function isFreshDeskCredentials(obj: any): obj is FreshDeskCredentials {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'domain' in obj &&
+    'apiKey' in obj &&
+    typeof obj.domain === 'string' &&
+    typeof obj.apiKey === 'string'
+  );
+}
