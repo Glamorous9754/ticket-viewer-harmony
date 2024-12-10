@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function getZohoAccessToken() {
+async function getZohoAccessToken(supabase: any, userId: string) {
   try {
     const clientId = Deno.env.get('ZOHO_CLIENT_ID');
     const clientSecret = Deno.env.get('ZOHO_CLIENT_SECRET');
@@ -14,6 +14,18 @@ async function getZohoAccessToken() {
     if (!clientId || !clientSecret) {
       console.error('Missing Zoho credentials:', { clientId: !!clientId, clientSecret: !!clientSecret });
       throw new Error('Zoho credentials not configured in Supabase secrets');
+    }
+
+    // Get user's Zoho credentials
+    const { data: credentials, error: credentialsError } = await supabase
+      .from('zoho_credentials')
+      .select('*')
+      .eq('profile_id', userId)
+      .single();
+
+    if (credentialsError || !credentials) {
+      console.error('Error fetching Zoho credentials:', credentialsError);
+      throw new Error('No Zoho credentials found for user');
     }
 
     console.log('Requesting Zoho access token with credentials...');
@@ -34,43 +46,44 @@ async function getZohoAccessToken() {
       body: params,
     });
 
-    const responseText = await response.text();
-    console.log('Zoho token response status:', response.status);
-    console.log('Zoho token response:', responseText);
-    
     if (!response.ok) {
-      throw new Error(`Failed to get access token: ${response.status} ${response.statusText} - ${responseText}`);
+      const responseText = await response.text();
+      console.error('Token request failed:', response.status, responseText);
+      throw new Error(`Failed to get access token: ${response.status} ${response.statusText}`);
     }
 
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse Zoho response:', e);
-      throw new Error(`Invalid JSON response from Zoho: ${responseText}`);
-    }
-
+    const data = await response.json();
+    
     if (!data.access_token) {
       console.error('No access token in response:', data);
-      throw new Error('No access token received from Zoho. Response: ' + JSON.stringify(data));
+      throw new Error('No access token received from Zoho');
+    }
+
+    // Update stored credentials with new token
+    const { error: updateError } = await supabase
+      .from('zoho_credentials')
+      .update({
+        access_token: data.access_token,
+        token_type: data.token_type,
+        expires_at: new Date(Date.now() + (data.expires_in * 1000)).toISOString(),
+      })
+      .eq('profile_id', userId);
+
+    if (updateError) {
+      console.error('Error updating credentials:', updateError);
+      // Continue anyway since we have the token
     }
     
     console.log('Successfully obtained Zoho access token');
-    return data.access_token;
+    return { accessToken: data.access_token, orgId: credentials.org_id };
   } catch (error) {
     console.error('Error getting Zoho access token:', error);
     throw error;
   }
 }
 
-async function fetchZohoTickets(accessToken: string) {
+async function fetchZohoTickets(accessToken: string, orgId: string) {
   try {
-    const organizationId = Deno.env.get('ZOHO_ORG_ID');
-    if (!organizationId) {
-      console.error('Missing Zoho organization ID');
-      throw new Error('Zoho organization ID not configured in Supabase secrets');
-    }
-
     console.log('Fetching Zoho tickets...');
     
     const response = await fetch(
@@ -78,25 +91,20 @@ async function fetchZohoTickets(accessToken: string) {
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'orgId': organizationId,
+          'orgId': orgId,
         },
       }
     );
     
-    const responseText = await response.text();
-    console.log('Zoho tickets response status:', response.status);
-    console.log('Zoho tickets response:', responseText);
-
     if (!response.ok) {
-      throw new Error(`Failed to fetch tickets: ${response.status} ${response.statusText} - ${responseText}`);
+      const responseText = await response.text();
+      console.error('Tickets request failed:', response.status, responseText);
+      throw new Error(`Failed to fetch tickets: ${response.status} ${response.statusText}`);
     }
 
-    try {
-      return JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse Zoho tickets response:', e);
-      throw new Error(`Invalid JSON response from Zoho tickets API: ${responseText}`);
-    }
+    const data = await response.json();
+    console.log('Successfully fetched tickets:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching Zoho tickets:', error);
     throw error;
@@ -117,13 +125,24 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get user ID from auth header
+    const authHeader = req.headers.get('Authorization')?.split(' ')[1];
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader);
+    if (userError || !user) {
+      throw new Error('Failed to get user');
+    }
+
     // Get Zoho access token using secrets
     console.log('Getting Zoho access token...');
-    const accessToken = await getZohoAccessToken();
+    const { accessToken, orgId } = await getZohoAccessToken(supabase, user.id);
     
     // Fetch tickets from Zoho
     console.log('Fetching tickets from Zoho...');
-    const tickets = await fetchZohoTickets(accessToken);
+    const tickets = await fetchZohoTickets(accessToken, orgId);
 
     if (!tickets || !tickets.data) {
       throw new Error('No ticket data received from Zoho');
@@ -139,7 +158,7 @@ serve(async (req) => {
       const { error: upsertError } = await supabase
         .from('tickets')
         .upsert({
-          profile_id: req.headers.get('x-user-id'),
+          profile_id: user.id,
           external_ticket_id: ticket.id,
           created_date: ticket.createdTime,
           resolved_date: ticket.closedTime || null,

@@ -137,6 +137,53 @@ export type Database = {
           },
         ]
       }
+      zoho_credentials: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          org_id: string
+          profile_id: string
+          refresh_token: string | null
+          status: Database["public"]["Enums"]["zoho_connection_status"] | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          org_id: string
+          profile_id: string
+          refresh_token?: string | null
+          status?: Database["public"]["Enums"]["zoho_connection_status"] | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          org_id?: string
+          profile_id?: string
+          refresh_token?: string | null
+          status?: Database["public"]["Enums"]["zoho_connection_status"] | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zoho_credentials_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -146,6 +193,7 @@ export type Database = {
     }
     Enums: {
       ticket_status: "Open" | "Closed" | "In_Progress"
+      zoho_connection_status: "active" | "expired" | "invalid"
     }
     CompositeTypes: {
       [_ in never]: never
