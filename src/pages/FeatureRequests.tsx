@@ -1,53 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FreshDeskConnect } from "../components/dashboard/FreshDeskConnect";
 import { FeatureFilters } from "../components/dashboard/FeatureFilters";
 import { FeatureGrid } from "../components/dashboard/FeatureGrid";
+import { PlatformSelector } from "../components/dashboard/PlatformSelector";
 import { toast } from "sonner";
-
-const fetchFeatureRequests = async () => {
-  // First get the user's FreshDesk connection
-  const { data: connections, error: connectionsError } = await supabase
-    .from("platform_connections")
-    .select("*")
-    .eq("platform_name", "freshdesk")
-    .single();
-
-  if (connectionsError) throw connectionsError;
-
-  if (connections) {
-    // Sync tickets first
-    const { error: syncError } = await supabase.functions.invoke(
-      "sync-freshdesk-tickets",
-      {
-        body: { connectionId: connections.id },
-      }
-    );
-
-    if (syncError) throw syncError;
-  }
-
-  // Then fetch tickets
-  const { data: tickets, error: ticketsError } = await supabase
-    .from("tickets")
-    .select("*")
-    .not('thread', 'is', null)
-    .order("created_date", { ascending: false });
-
-  if (ticketsError) throw ticketsError;
-
-  return tickets.map((ticket) => ({
-    summary: ticket.thread?.split('\n')[0] || "Feature request from ticket",
-    priority: ticket.status === 'Open' ? 4.5 : 3,
-    segments: ["Enterprise"],
-    complexity: "Medium" as const,
-    status: ticket.status,
-    createdAt: ticket.created_date,
-    resolvedAt: ticket.resolved_date,
-    agentName: ticket.agent_name,
-  }));
-};
 
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
@@ -55,7 +12,26 @@ const FeatureRequests = () => {
 
   const { data: features, isLoading, error, refetch } = useQuery({
     queryKey: ["features"],
-    queryFn: fetchFeatureRequests,
+    queryFn: async () => {
+      const { data: tickets, error: ticketsError } = await supabase
+        .from("tickets")
+        .select("*")
+        .not('thread', 'is', null)
+        .order("created_date", { ascending: false });
+
+      if (ticketsError) throw ticketsError;
+
+      return tickets.map((ticket) => ({
+        summary: ticket.thread?.split('\n')[0] || "Feature request from ticket",
+        priority: ticket.status === 'Open' ? 4.5 : 3,
+        segments: ["Enterprise"],
+        complexity: "Medium" as const,
+        status: ticket.status,
+        createdAt: ticket.created_date,
+        resolvedAt: ticket.resolved_date,
+        agentName: ticket.agent_name,
+      }));
+    }
   });
 
   if (error) {
@@ -88,11 +64,11 @@ const FeatureRequests = () => {
           Feature Requests & Ideas
         </h1>
         <p className="text-gray-500">
-          Connect your FreshDesk account to analyze customer feature requests
+          Connect your ticket management platform to analyze customer feature requests
         </p>
       </div>
       
-      <FreshDeskConnect onSuccess={refetch} />
+      <PlatformSelector />
 
       <FeatureFilters
         sortBy={sortBy}

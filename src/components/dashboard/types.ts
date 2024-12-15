@@ -11,6 +11,7 @@ export interface FreshDeskConnection {
   last_fetched_at: string;
   is_active: boolean;
   platform_name: string;
+  platform_type: 'freshdesk' | 'zoho_desk' | 'zendesk' | 'gmail';
   profile_id: string;
 }
 
