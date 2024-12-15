@@ -28,3 +28,7 @@ enabled = true
 [[functions]]
 name = "initiate-zoho-oauth"
 verify_jwt = true
+
+[[functions]]
+name = "zoho-oauth-callback"
+verify_jwt = true

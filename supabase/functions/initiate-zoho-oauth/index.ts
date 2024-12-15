@@ -13,16 +13,20 @@ serve(async (req) => {
 
   try {
     const { orgId } = await req.json();
+    console.log("Received organization ID:", orgId);
     
     // Get client credentials from environment
     const clientId = Deno.env.get("ZOHO_CLIENT_ID");
-    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/zoho-oauth-callback`;
+    const redirectUri = `${Deno.env.get("PUBLIC_URL")}/oauth/zoho`;
     
     if (!clientId) {
       throw new Error("Missing Zoho client configuration");
     }
 
-    // Store orgId in database for later use
+    // Generate a random state for CSRF protection
+    const state = crypto.randomUUID();
+    
+    // Store state and orgId in database for verification during callback
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -32,8 +36,22 @@ serve(async (req) => {
       throw new Error("User must be logged in");
     }
 
+    // Save the state and orgId to oauth_states table
+    const { error: stateError } = await supabase
+      .from('oauth_states')
+      .insert({
+        profile_id: session.session.user.id,
+        state: state,
+        platform_type: 'zoho_desk',
+      });
+
+    if (stateError) {
+      console.error("Error storing OAuth state:", stateError);
+      throw new Error("Failed to store OAuth state");
+    }
+
     // Save the org_id to zoho_credentials table
-    const { error: insertError } = await supabase
+    const { error: credentialsError } = await supabase
       .from('zoho_credentials')
       .upsert({
         profile_id: session.session.user.id,
@@ -41,19 +59,20 @@ serve(async (req) => {
         status: 'pending'
       });
 
-    if (insertError) {
-      console.error("Error storing credentials:", insertError);
+    if (credentialsError) {
+      console.error("Error storing credentials:", credentialsError);
       throw new Error("Failed to store credentials");
     }
 
     // Construct Zoho OAuth URL
     const scope = "Desk.tickets.READ";
-    const authUrl = `https://accounts.zoho.com/oauth/v2/auth?` +
+    const authUrl = `https://accounts.zoho.in/oauth/v2/auth?` +
       `response_type=code&` +
       `client_id=${clientId}&` +
       `scope=${scope}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `access_type=offline&` +
+      `state=${state}&` +
       `prompt=consent`;
 
     console.log("Generated auth URL:", authUrl);
