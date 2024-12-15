@@ -15,8 +15,6 @@ import { Input } from "@/components/ui/input";
 
 type ZohoCredentialsForm = {
   orgId: string;
-  clientId: string;
-  clientSecret: string;
 };
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
@@ -26,45 +24,39 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
   const handleConnectZoho = async (data: ZohoCredentialsForm) => {
     setIsLoading(true);
-    console.log("Starting Zoho connection validation...");
+    console.log("Starting Zoho OAuth process...");
 
     try {
-      // Call the validation function with all credentials
-      const { data: validationResponse, error: validationError } = await supabase.functions.invoke(
-        "validate-zoho-credentials",
+      // Call the edge function to start OAuth flow
+      const { data: authUrl, error: authError } = await supabase.functions.invoke(
+        "initiate-zoho-oauth",
         {
           body: { 
             orgId: data.orgId,
-            clientId: data.clientId,
-            clientSecret: data.clientSecret
           },
         }
       );
 
-      if (validationError) {
-        console.error("Validation function error:", validationError);
-        throw new Error(validationError.message || "Failed to validate credentials");
+      if (authError) {
+        console.error("Auth function error:", authError);
+        throw new Error(authError.message || "Failed to initiate OAuth flow");
       }
 
-      if (!validationResponse?.success) {
-        console.error("Validation failed:", validationResponse?.error);
-        throw new Error(validationResponse?.error || "Invalid credentials");
+      if (!authUrl?.url) {
+        console.error("No auth URL received");
+        throw new Error("Failed to get authentication URL");
       }
 
-      toast({
-        title: "Success",
-        description: "Successfully connected to Zoho!",
-      });
+      // Redirect to Zoho's OAuth page
+      window.location.href = authUrl.url;
 
-      onSuccess();
     } catch (error) {
       console.error("Error in Zoho connection process:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to validate credentials",
+        description: error.message || "Failed to start authentication",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -73,7 +65,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zoho</h2>
       <p className="text-sm text-gray-600">
-        Enter your Zoho credentials to validate the connection.
+        Enter your Zoho organization ID to connect your account.
       </p>
       
       <Form {...form}>
@@ -91,45 +83,13 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="clientId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Client ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your Zoho client ID" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="clientSecret"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Client Secret</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="password"
-                    placeholder="Enter your Zoho client secret" 
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           
           <Button 
             type="submit"
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? "Validating..." : "Validate Connection"}
+            {isLoading ? "Connecting..." : "Connect with Zoho"}
           </Button>
         </form>
       </Form>
