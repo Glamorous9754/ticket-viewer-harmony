@@ -9,41 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      oauth_states: {
-        Row: {
-          created_at: string
-          expires_at: string
-          id: string
-          platform_type: Database["public"]["Enums"]["platform_type"]
-          profile_id: string
-          state: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          platform_type: Database["public"]["Enums"]["platform_type"]
-          profile_id: string
-          state: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          platform_type?: Database["public"]["Enums"]["platform_type"]
-          profile_id?: string
-          state?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "oauth_states_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       platform_connections: {
         Row: {
           auth_tokens: Json
@@ -52,7 +17,6 @@ export type Database = {
           is_active: boolean
           last_fetched_at: string
           platform_name: string
-          platform_type: Database["public"]["Enums"]["platform_type"]
           profile_id: string
           updated_at: string
         }
@@ -63,7 +27,6 @@ export type Database = {
           is_active?: boolean
           last_fetched_at?: string
           platform_name: string
-          platform_type?: Database["public"]["Enums"]["platform_type"]
           profile_id: string
           updated_at?: string
         }
@@ -74,7 +37,6 @@ export type Database = {
           is_active?: boolean
           last_fetched_at?: string
           platform_name?: string
-          platform_type?: Database["public"]["Enums"]["platform_type"]
           profile_id?: string
           updated_at?: string
         }
@@ -230,7 +192,6 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      platform_type: "freshdesk" | "zoho_desk" | "zendesk" | "gmail"
       ticket_status: "Open" | "Closed" | "In_Progress"
       zoho_connection_status: "active" | "expired" | "invalid"
     }

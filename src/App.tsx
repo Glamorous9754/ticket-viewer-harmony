@@ -25,10 +25,6 @@ const App = () => {
             <Route element={<Layout />}>
               <Route path="/" element={<CustomerIntelligence />} />
               <Route path="/features" element={<FeatureRequests />} />
-              <Route path="/features/freshdesk" element={<FeatureRequests />} />
-              <Route path="/features/zoho" element={<FeatureRequests />} />
-              <Route path="/features/zendesk" element={<FeatureRequests />} />
-              <Route path="/features/gmail" element={<FeatureRequests />} />
               <Route path="/business" element={<BusinessIntelligence />} />
             </Route>
             <Route path="/chat" element={<Chat />} />
