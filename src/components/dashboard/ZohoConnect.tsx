@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -19,15 +20,36 @@ type ZohoCredentialsForm = {
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<ZohoCredentialsForm>();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to connect your Zoho account",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
+  };
 
   const handleConnectZoho = async (data: ZohoCredentialsForm) => {
     setIsLoading(true);
     console.log("Starting Zoho OAuth process...");
 
     try {
-      // Call the edge function to start OAuth flow
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        throw new Error("You must be logged in to connect Zoho");
+      }
+
       const { data: authUrl, error: authError } = await supabase.functions.invoke(
         "initiate-zoho-oauth",
         {
@@ -57,6 +79,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         description: error.message || "Failed to start authentication",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };

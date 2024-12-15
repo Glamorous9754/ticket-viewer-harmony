@@ -26,3 +26,16 @@ export function isFreshDeskCredentials(obj: any): obj is FreshDeskCredentials {
     typeof obj.apiKey === 'string'
   );
 }
+
+// Helper type for platform connections from database
+export type PlatformConnectionRow = {
+  id: string;
+  auth_tokens: any;
+  created_at: string;
+  updated_at: string;
+  last_fetched_at: string;
+  is_active: boolean;
+  platform_name: string;
+  platform_type: 'freshdesk' | 'zoho_desk' | 'zendesk' | 'gmail';
+  profile_id: string;
+}

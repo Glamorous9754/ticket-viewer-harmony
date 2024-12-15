@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { FreshDeskConnection, FreshDeskCredentials, isFreshDeskCredentials } from "./types";
+import { FreshDeskConnection, FreshDeskCredentials, isFreshDeskCredentials, PlatformConnectionRow } from "./types";
 import { FreshDeskConnectionCard } from "./FreshDeskConnectionCard";
 import { FreshDeskConnectionForm } from "./FreshDeskConnectionForm";
 
@@ -28,9 +28,13 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     
     if (data) {
       // Convert and validate the data
-      const validConnections = data.filter((conn): conn is FreshDeskConnection => {
-        return isFreshDeskCredentials(conn.auth_tokens);
-      });
+      const validConnections = data
+        .filter((conn): conn is PlatformConnectionRow => true)
+        .filter(conn => isFreshDeskCredentials(conn.auth_tokens))
+        .map(conn => ({
+          ...conn,
+          auth_tokens: conn.auth_tokens as FreshDeskCredentials
+        }));
       setConnections(validConnections);
     }
   };
