@@ -15,7 +15,7 @@ const STATUS_MAP = {
   5: "Closed",
 };
 
-// Helper function to clean HTML content and normalize spaces
+// Helper function to clean HTML content
 function cleanText(html) {
   return html
     .replace(/<\/?[^>]+(>|$)/g, "") // Remove HTML tags
@@ -57,32 +57,9 @@ async function fetchTickets(domain, apiKey) {
   return tickets;
 }
 
-// Fetch ticket details
-async function fetchTicketDetails(domain, apiKey, ticketId) {
-  console.log(`Fetching details for ticket ${ticketId}...`);
-  const response = await fetch(
-    `https://${domain}.freshdesk.com/api/v2/tickets/${ticketId}`,
-    {
-      headers: {
-        Authorization: `Basic ${btoa(apiKey + ":X")}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  if (!response.ok) {
-    console.error(`Error fetching details for ticket ${ticketId}:`, response.status);
-    const errorText = await response.text();
-    console.error("Error details:", errorText);
-    return null;
-  }
-
-  return await response.json();
-}
-
-// Fetch conversations for a specific ticket
-async function fetchConversations(domain, apiKey, ticketId) {
-  console.log(`Fetching conversations for ticket ${ticketId}...`);
+// Fetch threads for a specific ticket
+async function fetchThreads(domain, apiKey, ticketId) {
+  console.log(`Fetching threads for ticket ${ticketId}...`);
   const response = await fetch(
     `https://${domain}.freshdesk.com/api/v2/tickets/${ticketId}/conversations`,
     {
@@ -94,13 +71,20 @@ async function fetchConversations(domain, apiKey, ticketId) {
   );
 
   if (!response.ok) {
-    console.error(`Error fetching conversations for ticket ${ticketId}:`, response.status);
+    console.error(`Error fetching threads for ticket ${ticketId}:`, response.status);
     const errorText = await response.text();
     console.error("Error details:", errorText);
     return [];
   }
 
-  return await response.json();
+  const threads = await response.json();
+
+  // Combine and clean conversation content
+  const combinedThread = threads
+    .map((thread) => cleanText(thread.body_text || thread.body || ""))
+    .join("\n");
+
+  return combinedThread;
 }
 
 // Process tickets and structure data
@@ -110,20 +94,7 @@ async function processTickets(domain, apiKey, connection) {
 
   const processedTickets = await Promise.all(
     tickets.map(async (ticket) => {
-      // Fetch initial description
-      const ticketDetails = await fetchTicketDetails(domain, apiKey, ticket.id.toString());
-      const initialMessage = ticketDetails
-        ? cleanText(ticketDetails.description || "")
-        : "";
-
-      // Fetch and process conversations
-      const conversations = await fetchConversations(domain, apiKey, ticket.id.toString());
-      const conversationBodies = conversations.map((conv) =>
-        cleanText(conv.body_text || conv.body || "")
-      );
-
-      // Combine initial message and conversations
-      const thread = [initialMessage, ...conversationBodies].join("\n");
+      const thread = await fetchThreads(domain, apiKey, ticket.id.toString());
 
       return {
         profile_id: connection.profile_id,
@@ -132,7 +103,8 @@ async function processTickets(domain, apiKey, connection) {
         created_date: ticket.created_at,
         resolved_date: ticket.status === 5 ? ticket.updated_at : null, // Status 5 = Closed
         status: STATUS_MAP[ticket.status] || "Unknown", // Convert status to text
-        thread, // Combined description and conversations
+        thread, // Populated from combined threads
+        comments: null, // Set comments to null or remove if unnecessary
         agent_name: ticket.responder_name,
         customer_id: ticket.requester_id?.toString(),
         summary: ticket.subject,

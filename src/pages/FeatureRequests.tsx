@@ -2,13 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FreshDeskConnect } from "../components/dashboard/FreshDeskConnect";
-import { ZohoDeskConnect } from "../components/dashboard/ZohoDeskConnect";
 import { FeatureFilters } from "../components/dashboard/FeatureFilters";
 import { FeatureGrid } from "../components/dashboard/FeatureGrid";
 import { toast } from "sonner";
 
 const fetchFeatureRequests = async () => {
-  // Fetch user's FreshDesk connection
+  // First get the user's FreshDesk connection
   const { data: connections, error: connectionsError } = await supabase
     .from("platform_connections")
     .select("*")
@@ -18,7 +17,7 @@ const fetchFeatureRequests = async () => {
   if (connectionsError) throw connectionsError;
 
   if (connections) {
-    // Sync FreshDesk tickets
+    // Sync tickets first
     const { error: syncError } = await supabase.functions.invoke(
       "sync-freshdesk-tickets",
       {
@@ -29,18 +28,18 @@ const fetchFeatureRequests = async () => {
     if (syncError) throw syncError;
   }
 
-  // Fetch tickets from Supabase
+  // Then fetch tickets
   const { data: tickets, error: ticketsError } = await supabase
     .from("tickets")
     .select("*")
-    .not("thread", "is", null)
+    .not('thread', 'is', null)
     .order("created_date", { ascending: false });
 
   if (ticketsError) throw ticketsError;
 
   return tickets.map((ticket) => ({
-    summary: ticket.thread?.split("\n")[0] || "Feature request from ticket",
-    priority: ticket.status === "Open" ? 4.5 : 3,
+    summary: ticket.thread?.split('\n')[0] || "Feature request from ticket",
+    priority: ticket.status === 'Open' ? 4.5 : 3,
     segments: ["Enterprise"],
     complexity: "Medium" as const,
     status: ticket.status,
@@ -89,12 +88,11 @@ const FeatureRequests = () => {
           Feature Requests & Ideas
         </h1>
         <p className="text-gray-500">
-          Connect your support platforms to analyze customer feature requests
+          Connect your FreshDesk account to analyze customer feature requests
         </p>
       </div>
-
+      
       <FreshDeskConnect onSuccess={refetch} />
-      <ZohoDeskConnect onSuccess={refetch} />
 
       <FeatureFilters
         sortBy={sortBy}
@@ -102,7 +100,7 @@ const FeatureRequests = () => {
         onSortChange={setSortBy}
         onFilterChange={setFilterBy}
       />
-
+      
       <FeatureGrid features={filteredFeatures} isLoading={isLoading} />
     </div>
   );
