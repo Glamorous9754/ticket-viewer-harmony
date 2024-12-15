@@ -7,7 +7,7 @@ const corsHeaders = {
 
 async function getZohoAccessToken(clientId: string, clientSecret: string) {
   console.log('Getting Zoho access token...');
-  const tokenUrl = "https://accounts.zoho.com/oauth/v2/token";
+  const tokenUrl = "https://accounts.zoho.in/oauth/v2/token";
   const params = new URLSearchParams({
     grant_type: "client_credentials",
     client_id: clientId,
@@ -39,7 +39,7 @@ async function getZohoAccessToken(clientId: string, clientSecret: string) {
 
 async function validateOrgId(accessToken: string, orgId: string) {
   console.log('Validating org ID...');
-  const testUrl = "https://desk.zoho.com/api/v1/tickets?limit=1";
+  const testUrl = "https://desk.zoho.in/api/v1/tickets?limit=1";
   const response = await fetch(testUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
