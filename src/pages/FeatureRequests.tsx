@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FreshDeskConnect } from "../components/dashboard/FreshDeskConnect";
+import { ZohoDeskConnect } from "../components/dashboard/ZohoDeskConnect";
 import { FeatureFilters } from "../components/dashboard/FeatureFilters";
 import { FeatureGrid } from "../components/dashboard/FeatureGrid";
 import { PlatformSelector } from "../components/dashboard/PlatformSelector";
@@ -54,12 +55,13 @@ const FeatureRequests = () => {
           Connect your support platforms to analyze customer feature requests
         </p>
       </div>
-      
+
       {showPlatformSelector ? (
         <PlatformSelector />
       ) : (
         <>
           <FreshDeskConnect onSuccess={refetch} />
+          <ZohoDeskConnect onSuccess={refetch} />
           <FeatureFilters
             sortBy={sortBy}
             filterBy={filterBy}
@@ -72,5 +74,18 @@ const FeatureRequests = () => {
     </div>
   );
 };
+
+async function fetchFeatureRequests() {
+  try {
+    const { data, error } = await supabase.from("features").select("*");
+    if (error) {
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    console.error("Error fetching feature requests:", error);
+    throw error;
+  }
+}
 
 export default FeatureRequests;
