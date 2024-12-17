@@ -7,97 +7,92 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const url = new URL(req.url);
+  const code = url.searchParams.get("code"); // Authorization code from Zoho
+  const state = url.searchParams.get("state"); // CSRF state parameter
+
+  if (!code || !state) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Missing authorization code or state parameter" }),
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error("No authorization header");
-    }
-
-    // Create Supabase client
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from JWT
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Validate CSRF State from the Database
+    const { data: stateRecord, error: stateError } = await supabase
+      .from("oauth_states")
+      .select("*")
+      .eq("state", state)
+      .single();
 
-    if (userError || !user) {
-      console.error("User verification failed:", userError);
-      throw new Error("User must be logged in");
+    if (stateError || !stateRecord) {
+      throw new Error("Invalid state parameter");
     }
 
-    // Get client credentials from environment
+    // Exchange Authorization Code for Access & Refresh Tokens
     const clientId = Deno.env.get("ZOHO_CLIENT_ID");
-    // Hardcode the redirect URI for now - this should match what's configured in Zoho
+    const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET");
     const redirectUri = "https://jpbsjrjrmhpojphysrsd.supabase.co/functions/v1/zoho-callback";
-    
-    if (!clientId) {
-      throw new Error("Missing Zoho client configuration");
+
+    const tokenResponse = await fetch("https://accounts.zoho.in/oauth/v2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok || !tokenData.refresh_token || !tokenData.access_token) {
+      throw new Error("Failed to retrieve tokens from Zoho.");
     }
 
-    // Generate a random state for CSRF protection
-    const state = crypto.randomUUID();
-    
-    // Store state in database for verification during callback
-    const { error: stateError } = await supabase
-      .from('oauth_states')
-      .insert({
-        profile_id: user.id,
-        state: state,
-        platform_type: 'zoho_desk',
-      });
+    const expiresAt = new Date();
+    expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
 
-    if (stateError) {
-      console.error("Error storing OAuth state:", stateError);
-      throw new Error("Failed to store OAuth state");
+    // Save Tokens to Supabase
+    const { error: upsertError } = await supabase
+      .from("zoho_tokens")
+      .upsert([
+        {
+          profile_id: stateRecord.profile_id, // User ID tied to the state
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: expiresAt.toISOString(),
+        },
+      ]);
+
+    if (upsertError) {
+      console.error("Error saving tokens to Supabase:", upsertError);
+      throw new Error("Failed to save tokens.");
     }
 
-    // Construct Zoho OAuth URL
-    const scope = "Desk.tickets.READ";
-    const authUrl = `https://accounts.zoho.in/oauth/v2/auth?` +
-      `response_type=code&` +
-      `client_id=${clientId}&` +
-      `scope=${scope}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `access_type=offline&` +
-      `state=${state}&` +
-      `prompt=consent`;
-
-    console.log("Generated auth URL:", authUrl);
+    // Optional: Delete State Record for Security
+    await supabase.from("oauth_states").delete().eq("state", state);
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
-        url: authUrl
+        message: "Tokens captured and saved successfully!",
       }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        }
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error) {
-    console.error("Error initiating OAuth:", error);
+    console.error("Error handling callback:", error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        }
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: corsHeaders }
     );
   }
 });
