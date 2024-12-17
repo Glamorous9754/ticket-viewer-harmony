@@ -30,15 +30,19 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     console.log("Starting Zoho OAuth process...");
 
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         throw new Error("You must be logged in to connect Zoho");
       }
 
+      // Get the access token
       const { data: authUrl, error: authError } = await supabase.functions.invoke(
         "initiate-zoho-oauth",
         {
           body: {},
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
       );
 

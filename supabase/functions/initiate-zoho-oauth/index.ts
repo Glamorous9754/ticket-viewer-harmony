@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase_supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +12,26 @@ serve(async (req) => {
   }
 
   try {
+    // Get the authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
+
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get user from JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      console.error("User verification failed:", userError);
+      throw new Error("User must be logged in");
+    }
+
     // Get client credentials from environment
     const clientId = Deno.env.get("ZOHO_CLIENT_ID");
     const redirectUri = `${Deno.env.get("PUBLIC_URL")}/oauth/zoho`;
@@ -24,20 +44,10 @@ serve(async (req) => {
     const state = crypto.randomUUID();
     
     // Store state in database for verification during callback
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: session } = await supabase.auth.getSession();
-    if (!session?.session?.user) {
-      throw new Error("User must be logged in");
-    }
-
-    // Save the state to oauth_states table
     const { error: stateError } = await supabase
       .from('oauth_states')
       .insert({
-        profile_id: session.session.user.id,
+        profile_id: user.id,
         state: state,
         platform_type: 'zoho_desk',
       });
