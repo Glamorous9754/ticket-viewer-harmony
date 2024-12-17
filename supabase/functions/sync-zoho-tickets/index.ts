@@ -1,18 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.8/+esm";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function getZohoAccessToken(clientId: string, clientSecret: string) {
+async function refreshZohoToken(refreshToken: string, clientId: string, clientSecret: string) {
   const tokenUrl = "https://accounts.zoho.com/oauth/v2/token";
   const params = new URLSearchParams({
-    grant_type: "client_credentials",
+    refresh_token: refreshToken,
     client_id: clientId,
     client_secret: clientSecret,
-    scope: "Desk.tickets.READ",
+    grant_type: "refresh_token",
   });
 
   const response = await fetch(tokenUrl, {
@@ -22,33 +22,33 @@ async function getZohoAccessToken(clientId: string, clientSecret: string) {
   });
 
   if (!response.ok) {
-    const responseText = await response.text();
-    throw new Error(`Failed to fetch access token: ${response.status} ${responseText}`);
+    throw new Error(`Failed to refresh token: ${await response.text()}`);
   }
 
   const data = await response.json();
-  if (!data.access_token) {
-    throw new Error("No access token received from Zoho");
-  }
-
   return data.access_token;
 }
 
-async function validateOrgId(accessToken: string, orgId: string) {
-  const testUrl = "https://desk.zoho.com/api/v1/tickets";
-  const response = await fetch(testUrl, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      orgId,
-    },
-  });
+async function fetchZohoTickets(accessToken: string, orgId: string) {
+  console.log("Fetching Zoho tickets...");
+  const response = await fetch(
+    `https://desk.zoho.com/api/v1/tickets?limit=1`,
+    {
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "orgId": orgId,
+      },
+    }
+  );
 
   if (!response.ok) {
-    const responseText = await response.text();
-    throw new Error(`Failed to validate org ID: ${response.status} ${responseText}`);
+    const errorText = await response.text();
+    console.error("Error fetching tickets:", errorText);
+    throw new Error(`Failed to fetch tickets: ${errorText}`);
   }
 
-  return true;
+  const data = await response.json();
+  return data.data;
 }
 
 serve(async (req) => {
@@ -57,38 +57,71 @@ serve(async (req) => {
   }
 
   try {
-    const { orgId } = await req.json();
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const clientId = Deno.env.get("ZOHO_CLIENT_ID")!;
-    const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET")!;
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Fetch Zoho Access Token
-    const accessToken = await getZohoAccessToken(clientId, clientSecret);
-
-    // Validate orgId with Zoho
-    await validateOrgId(accessToken, orgId);
-
-    // Update database with validated flag
-    const { error: updateError } = await supabase
-      .from("zoho_credentials")
-      .update({ validated: true })
-      .eq("org_id", orgId);
-
-    if (updateError) {
-      throw new Error("Failed to update database with validation status");
+    // Get the user's session from the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Fetch Zoho credentials for the user
+    const { data: credentials, error: credentialsError } = await supabase
+      .from("zoho_credentials")
+      .select("*")
+      .eq("profile_id", user.id)
+      .single();
+
+    if (credentialsError || !credentials) {
+      throw new Error("Zoho credentials not found");
+    }
+
+    const clientId = Deno.env.get("ZOHO_CLIENT_ID");
+    const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET");
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Missing Zoho client configuration");
+    }
+
+    // Refresh the access token
+    const newAccessToken = await refreshZohoToken(
+      credentials.refresh_token!,
+      clientId,
+      clientSecret
+    );
+
+    // Update the access token in the database
+    await supabase
+      .from("zoho_credentials")
+      .update({
+        access_token: newAccessToken,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", credentials.id);
+
+    // Fetch tickets using the new access token
+    const tickets = await fetchZohoTickets(newAccessToken, credentials.org_id);
+
+    return new Response(
+      JSON.stringify({ success: true, tickets }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
   } catch (error) {
-    console.error("Error validating Zoho credentials:", error);
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Error in sync-zoho-tickets:", error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
   }
 });
