@@ -24,7 +24,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Validate CSRF State
+    // Validate CSRF State from the Database
     const { data: stateRecord, error: stateError } = await supabase
       .from("oauth_states")
       .select("*")
@@ -35,7 +35,7 @@ serve(async (req) => {
       throw new Error("Invalid state parameter");
     }
 
-    // Exchange Authorization Code for Tokens
+    // Exchange Authorization Code for Access & Refresh Tokens
     const clientId = Deno.env.get("ZOHO_CLIENT_ID");
     const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET");
     const redirectUri = "https://jpbsjrjrmhpojphysrsd.supabase.co/functions/v1/zoho-callback";
@@ -66,7 +66,7 @@ serve(async (req) => {
       .from("zoho_tokens")
       .upsert([
         {
-          profile_id: stateRecord.profile_id,
+          profile_id: stateRecord.profile_id, // User ID tied to the state
           access_token: tokenData.access_token,
           refresh_token: tokenData.refresh_token,
           expires_at: expiresAt.toISOString(),
@@ -74,14 +74,18 @@ serve(async (req) => {
       ]);
 
     if (upsertError) {
-      throw new Error("Failed to save tokens to the database.");
+      console.error("Error saving tokens to Supabase:", upsertError);
+      throw new Error("Failed to save tokens.");
     }
 
-    // Optional: Delete State Record
+    // Optional: Delete State Record for Security
     await supabase.from("oauth_states").delete().eq("state", state);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Tokens saved successfully!" }),
+      JSON.stringify({
+        success: true,
+        message: "Tokens captured and saved successfully!",
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
