@@ -34,7 +34,8 @@ serve(async (req) => {
 
     // Get client credentials from environment
     const clientId = Deno.env.get("ZOHO_CLIENT_ID");
-    const redirectUri = `${Deno.env.get("PUBLIC_URL")}/oauth/zoho`;
+    // Hardcode the redirect URI for now - this should match what's configured in Zoho
+    const redirectUri = "https://preview--ticket-bridge-auth.lovable.app/functions/v1/zoho-callback";
     
     if (!clientId) {
       throw new Error("Missing Zoho client configuration");
