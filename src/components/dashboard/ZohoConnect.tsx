@@ -1,28 +1,13 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-
-type ZohoCredentialsForm = {
-  orgId: string;
-};
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const form = useForm<ZohoCredentialsForm>();
 
   useEffect(() => {
     checkAuth();
@@ -40,7 +25,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
-  const handleConnectZoho = async (data: ZohoCredentialsForm) => {
+  const handleConnectZoho = async () => {
     setIsLoading(true);
     console.log("Starting Zoho OAuth process...");
 
@@ -53,9 +38,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       const { data: authUrl, error: authError } = await supabase.functions.invoke(
         "initiate-zoho-oauth",
         {
-          body: { 
-            orgId: data.orgId,
-          },
+          body: {},
         }
       );
 
@@ -88,34 +71,16 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zoho</h2>
       <p className="text-sm text-gray-600">
-        Enter your Zoho organization ID to connect your account.
+        Connect your Zoho Desk account to analyze your support tickets.
       </p>
       
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleConnectZoho)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="orgId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Organization ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your Zoho organization ID" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <Button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? "Connecting..." : "Connect with Zoho"}
-          </Button>
-        </form>
-      </Form>
+      <Button 
+        onClick={handleConnectZoho}
+        disabled={isLoading}
+        className="w-full"
+      >
+        {isLoading ? "Connecting..." : "Connect with Zoho"}
+      </Button>
     </div>
   );
 };
