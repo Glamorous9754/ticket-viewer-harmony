@@ -7,88 +7,97 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  const url = new URL(req.url);
-  const code = url.searchParams.get("code"); // Authorization code from Zoho
-  const state = url.searchParams.get("state"); // CSRF state parameter
-
-  if (!code || !state) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Missing authorization code or state parameter" }),
-      { status: 400, headers: corsHeaders }
-    );
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Supabase client
+    // Get the authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
+
+    // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Validate CSRF State
-    const { data: stateRecord, error: stateError } = await supabase
-      .from("oauth_states")
-      .select("*")
-      .eq("state", state)
-      .single();
+    // Get user from JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
-    if (stateError || !stateRecord) {
-      throw new Error("Invalid state parameter");
+    if (userError || !user) {
+      console.error("User verification failed:", userError);
+      throw new Error("User must be logged in");
     }
 
-    // Exchange Authorization Code for Tokens
+    // Get client credentials from environment
     const clientId = Deno.env.get("ZOHO_CLIENT_ID");
-    const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET");
+    // Hardcode the redirect URI for now - this should match what's configured in Zoho
     const redirectUri = "https://jpbsjrjrmhpojphysrsd.supabase.co/functions/v1/zoho-callback";
+    
+    if (!clientId) {
+      throw new Error("Missing Zoho client configuration");
+    }
 
-    const tokenResponse = await fetch("https://accounts.zoho.in/oauth/v2/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
+    // Generate a random state for CSRF protection
+    const state = crypto.randomUUID();
+    
+    // Store state in database for verification during callback
+    const { error: stateError } = await supabase
+      .from('oauth_states')
+      .insert({
+        profile_id: user.id,
+        state: state,
+        platform_type: 'zoho_desk',
+      });
+
+    if (stateError) {
+      console.error("Error storing OAuth state:", stateError);
+      throw new Error("Failed to store OAuth state");
+    }
+
+    // Construct Zoho OAuth URL
+    const scope = "Desk.tickets.READ";
+    const authUrl = `https://accounts.zoho.in/oauth/v2/auth?` +
+      `response_type=code&` +
+      `client_id=${clientId}&` +
+      `scope=${scope}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `access_type=offline&` +
+      `state=${state}&` +
+      `prompt=consent`;
+
+    console.log("Generated auth URL:", authUrl);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        url: authUrl
       }),
-    });
-
-    const tokenData = await tokenResponse.json();
-
-    if (!tokenResponse.ok || !tokenData.refresh_token || !tokenData.access_token) {
-      throw new Error("Failed to retrieve tokens from Zoho.");
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
-
-    // Save Tokens to Supabase
-    const { error: upsertError } = await supabase
-      .from("zoho_tokens")
-      .upsert([
-        {
-          profile_id: stateRecord.profile_id,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: expiresAt.toISOString(),
-        },
-      ]);
-
-    if (upsertError) {
-      throw new Error("Failed to save tokens to the database.");
-    }
-
-    // Optional: Delete State Record
-    await supabase.from("oauth_states").delete().eq("state", state);
-
-    return new Response(
-      JSON.stringify({ success: true, message: "Tokens saved successfully!" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        headers: { 
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      }
     );
+
   } catch (error) {
-    console.error("Error handling callback:", error);
+    console.error("Error initiating OAuth:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: corsHeaders }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 500,
+        headers: { 
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      }
     );
   }
 });
