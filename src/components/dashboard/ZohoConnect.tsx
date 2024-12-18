@@ -15,11 +15,11 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (!session || error) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to connect your Zoho account",
+        title: "Authentication Required",
+        description: "Please log in to connect your Zoho account.",
         variant: "destructive",
       });
       navigate("/login");
@@ -31,40 +31,38 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     console.log("Starting Zoho OAuth process...");
 
     try {
+      // Check user session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error("You must be logged in to connect Zoho");
+        throw new Error("You must be logged in to connect Zoho.");
       }
 
-      // Get the access token
-      const { data: authUrl, error: authError } = await supabase.functions.invoke(
-        "initiate-zoho-oauth",
-        {
-          body: {},
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
+      // Fetch OAuth URL from Supabase Edge Function
+      const response = await fetch("/functions/v1/initiate-zoho-oauth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`, // Pass the token
+        },
+        body: JSON.stringify({}),
+      });
 
-      if (authError) {
-        console.error("Auth function error:", authError);
-        throw new Error(authError.message || "Failed to initiate OAuth flow");
+      if (!response.ok) {
+        const { error } = await response.json();
+        throw new Error(error || "Failed to initiate Zoho OAuth flow.");
       }
 
-      if (!authUrl?.url) {
-        console.error("No auth URL received");
-        throw new Error("Failed to get authentication URL");
-      }
+      const { url } = await response.json();
+      if (!url) throw new Error("No OAuth URL returned from server.");
 
-      // Redirect to Zoho's OAuth page
-      window.location.href = authUrl.url;
+      // Redirect to Zoho OAuth page
+      window.location.href = url;
 
-    } catch (error) {
-      console.error("Error in Zoho connection process:", error);
+    } catch (error: any) {
+      console.error("Error connecting to Zoho:", error.message);
       toast({
-        title: "Error",
-        description: error.message || "Failed to start authentication",
+        title: "Connection Failed",
+        description: error.message || "An error occurred during Zoho connection.",
         variant: "destructive",
       });
     } finally {
@@ -75,34 +73,38 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const handleFetchTickets = async () => {
     setIsFetchingTickets(true);
     try {
+      // Check user session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error("You must be logged in to fetch tickets");
+        throw new Error("You must be logged in to fetch tickets.");
       }
 
-      const { data, error } = await supabase.functions.invoke(
-        "sync-zoho-tickets",
-        {
-          body: {},
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
-      if (error) throw error;
-
-      console.log("Fetched tickets:", data.tickets);
-      toast({
-        title: "Success",
-        description: `Retrieved ${data.tickets.length} tickets from Zoho`,
+      // Invoke Supabase function to fetch Zoho tickets
+      const response = await fetch("/functions/v1/sync-zoho-tickets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`, // Pass token
+        },
       });
 
-    } catch (error) {
-      console.error("Error fetching Zoho tickets:", error);
+      if (!response.ok) {
+        const { error } = await response.json();
+        throw new Error(error || "Failed to fetch Zoho tickets.");
+      }
+
+      const data = await response.json();
+      console.log("Tickets fetched:", data.tickets);
+      toast({
+        title: "Tickets Fetched",
+        description: `Successfully retrieved ${data.tickets.length} tickets.`,
+      });
+
+    } catch (error: any) {
+      console.error("Error fetching tickets:", error.message);
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch tickets",
+        description: error.message || "Failed to fetch tickets.",
         variant: "destructive",
       });
     } finally {
@@ -116,7 +118,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       <p className="text-sm text-gray-600">
         Connect your Zoho Desk account to analyze your support tickets.
       </p>
-      
+
       <div className="space-y-2">
         <Button 
           onClick={handleConnectZoho}
