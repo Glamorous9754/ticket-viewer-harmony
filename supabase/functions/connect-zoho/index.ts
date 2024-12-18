@@ -1,93 +1,80 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   try {
-    const { code, state } = await req.json();
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const clientId = Deno.env.get("ZOHO_CLIENT_ID")!;
-    const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET")!;
+       // Verify state from database
+       const {state, profile_id} = await req.json();
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+       const { data: storedState, error: stateError } = await supabase
+           .from("oauth_states")
+            .select("*")
+           .eq("state", state)
+            .single();
 
-    // Verify state from database
-    const { data: stateData, error: stateError } = await supabase
-      .from("oauth_states")
-      .select("profile_id")
-      .eq("state", state)
-      .single();
+         if (stateError || !storedState) {
+                throw new Error("Invalid state parameter");
+            }
 
-    if (stateError || !stateData) {
-      throw new Error("Invalid state parameter");
-    }
 
     // Exchange code for access token
-    const tokenResponse = await fetch("https://accounts.zoho.com/oauth/v2/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        grant_type: "authorization_code",
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: `${Deno.env.get("PUBLIC_URL")}/oauth/zoho`,
-      }),
-    });
+              const tokenResponse = await fetch('https://accounts.zoho.in/oauth/v2/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                         grant_type: 'authorization_code',
+                          client_id: Deno.env.get("ZOHO_CLIENT_ID")!,
+                          client_secret: Deno.env.get("ZOHO_CLIENT_SECRET")!,
+                        redirect_uri: `${Deno.env.get("PUBLIC_URL")!}/oauth/zoho`,
+                         code: code!,
+                    })
+               });
 
-    if (!tokenResponse.ok) {
-      throw new Error("Failed to exchange code for token");
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+          throw new Error(`Token exchange failed: ${errorText}`);
     }
 
     const tokenData = await tokenResponse.json();
 
-    // Store the connection
-    const { error: insertError } = await supabase
-      .from("platform_connections")
-      .insert({
-        profile_id: stateData.profile_id,
-        platform_name: "zoho",
-        platform_type: "zoho_desk",
-        auth_tokens: {
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_in: tokenData.expires_in,
-        },
-      });
+      
+        const {data: tokenDataDb, error: tokenError} = await supabase.from('zoho_credentials')
+             .select("*")
+             .eq("profile_id", profile_id)
+            .eq("platform_type", "zoho_desk")
+            .single();
 
-    if (insertError) {
-      throw insertError;
-    }
+        if(tokenError || !tokenDataDb){
+              throw new Error("Error getting tokens")
+        }
 
-    // Clean up the state
-    await supabase
-      .from("oauth_states")
-      .delete()
-      .eq("state", state);
+       // Store the connection
+         const { error: insertError } = await supabase
+                .from("platform_connections")
+                .insert([
+                       {
+                           profile_id: profile_id,
+                         platform_name: "zoho",
+                       auth_tokens: tokenDataDb,
+                     },
+                   ]);
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      {
+           if (insertError) {
+                throw new Error(`Failed to store connection`);
+               }
+
+     // Clean up the used state
+          await supabase.from("oauth_states").delete().eq("state", state);
+
+           return new Response(JSON.stringify({success: true}), {
+                 headers: { ...corsHeaders, "Content-Type": "application/json" },
+           });
+
+
+} catch (error) {
+  console.error("Error in Zoho connection", error);
+    return new Response(JSON.stringify({success: false, error: error.message}), {
+      status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error) {
-    console.error("Error in Zoho connection:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
+    });
+}
 });
