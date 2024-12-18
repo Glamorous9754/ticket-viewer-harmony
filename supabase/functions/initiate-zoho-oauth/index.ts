@@ -29,11 +29,14 @@ serve(async (req) => {
   if (code && state) {
     // **Handle OAuth Callback**
     try {
+      const stateData = JSON.parse(state);
+      const referrer = stateData.referrer || 'https://default.page/'; // Default redirect page
+
       // Verify state to prevent CSRF
       const { data: storedState, error: fetchError } = await supabase
         .from('oauth_states')
         .select('*')
-        .eq('state', state)
+        .eq('state', stateData.uuid)
         .single();
 
       if (fetchError || !storedState) {
@@ -63,6 +66,10 @@ serve(async (req) => {
 
       const { access_token, refresh_token, expires_in } = tokenData;
 
+      if (!refresh_token) {
+        throw new Error("Zoho did not provide a refresh token.");
+      }
+
       // Store tokens in Supabase
       const { error: insertError } = await supabase
         .from('oauth_tokens')
@@ -82,13 +89,13 @@ serve(async (req) => {
       await supabase
         .from('oauth_states')
         .delete()
-        .eq('state', state);
+        .eq('state', stateData.uuid);
 
       // Redirect user to frontend after successful OAuth
       return new Response(null, {
         status: 302,
         headers: {
-          "Location": "https://preview--ticket-viewer-harmony.lovable.app/features", // Update to your frontend success page
+          "Location": referrer, // Redirect to the original page
           ...corsHeaders,
         },
       });
@@ -126,13 +133,14 @@ serve(async (req) => {
 
     // Generate a unique state parameter for CSRF protection
     const newState = crypto.randomUUID();
+    const referrer = req.headers.get('referer') || 'https://default.page/';
 
     // Store state in Supabase
     const { error: stateError } = await supabase
       .from('oauth_states')
       .insert({
         profile_id: user.id,
-        state: newState,
+        state: JSON.stringify({ uuid: newState, referrer }),
         platform_type: 'zoho_desk',
       });
 
@@ -148,7 +156,7 @@ serve(async (req) => {
       `scope=${encodeURIComponent(scope)}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `access_type=offline&` +
-      `state=${encodeURIComponent(newState)}&` +
+      `state=${encodeURIComponent(JSON.stringify({ uuid: newState, referrer }))}&` +
       `prompt=consent`;
 
     return new Response(
