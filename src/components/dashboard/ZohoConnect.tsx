@@ -1,17 +1,20 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingTickets, setIsFetchingTickets] = useState(false);
 
   useEffect(() => {
     checkAuth();
+    handleOAuthCallback();
   }, []);
 
   const checkAuth = async () => {
@@ -26,6 +29,55 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
+  const handleOAuthCallback = async () => {
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
+    
+    if (code && state) {
+      setIsLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Authentication required");
+
+        const response = await fetch(
+          'https://jpbsjrjrmhpojphysrsd.supabase.co/functions/v1/connect-zoho',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ code, state }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to complete Zoho connection");
+        }
+
+        const result = await response.json();
+        
+        toast({
+          title: "Success!",
+          description: "Successfully connected to Zoho Desk",
+        });
+
+        onSuccess();
+      } catch (error) {
+        console.error("Error in OAuth callback:", error);
+        toast({
+          title: "Connection Failed",
+          description: error.message || "Failed to connect to Zoho Desk",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+        // Clear URL parameters
+        navigate('/features', { replace: true });
+      }
+    }
+  };
+
   const handleConnectZoho = async () => {
     setIsLoading(true);
     console.log("Starting Zoho OAuth process...");
@@ -36,38 +88,36 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to connect Zoho");
       }
 
-      // Get the access token
-      const { data: authUrl, error: authError } = await supabase.functions.invoke(
-        "initiate-zoho-oauth",
+      const response = await fetch(
+        'https://jpbsjrjrmhpojphysrsd.supabase.co/functions/v1/initiate-zoho-oauth',
         {
-          body: {},
+          method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
 
-      if (authError) {
-        console.error("Auth function error:", authError);
-        throw new Error(authError.message || "Failed to initiate OAuth flow");
+      if (!response.ok) {
+        throw new Error("Failed to initiate OAuth flow");
       }
 
-      if (!authUrl?.url) {
-        console.error("No auth URL received");
-        throw new Error("Failed to get authentication URL");
+      const { url } = await response.json();
+      if (!url) {
+        throw new Error("No authorization URL received");
       }
 
       // Redirect to Zoho's OAuth page
-      window.location.href = authUrl.url;
+      window.location.href = url;
 
     } catch (error) {
       console.error("Error in Zoho connection process:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to start authentication",
+        title: "Connection Failed",
+        description: error.message || "Failed to start Zoho connection",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -80,22 +130,27 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to fetch tickets");
       }
 
-      const { data, error } = await supabase.functions.invoke(
-        "sync-zoho-tickets",
+      const response = await fetch(
+        'https://jpbsjrjrmhpojphysrsd.supabase.co/functions/v1/sync-zoho-tickets',
         {
-          body: {},
+          method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error("Failed to fetch tickets");
+      }
 
-      console.log("Fetched tickets:", data.tickets);
+      const data = await response.json();
+      console.log("Fetched tickets:", data);
+      
       toast({
         title: "Success",
-        description: `Retrieved ${data.tickets.length} tickets from Zoho`,
+        description: `Retrieved ${data.tickets?.length || 0} tickets from Zoho`,
       });
 
     } catch (error) {
@@ -123,7 +178,14 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
           disabled={isLoading}
           className="w-full"
         >
-          {isLoading ? "Connecting..." : "Connect with Zoho"}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            "Connect with Zoho"
+          )}
         </Button>
 
         <Button
@@ -132,7 +194,14 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
           variant="outline"
           className="w-full"
         >
-          {isFetchingTickets ? "Fetching..." : "Fetch Tickets"}
+          {isFetchingTickets ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Fetching...
+            </>
+          ) : (
+            "Fetch Tickets"
+          )}
         </Button>
       </div>
     </div>
