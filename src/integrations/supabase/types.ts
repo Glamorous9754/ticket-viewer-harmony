@@ -181,7 +181,7 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
-          org_id: string
+          org_id: string | null
           profile_id: string
           refresh_token: string | null
           status: Database["public"]["Enums"]["zoho_connection_status"] | null
@@ -193,7 +193,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
-          org_id: string
+          org_id?: string | null
           profile_id: string
           refresh_token?: string | null
           status?: Database["public"]["Enums"]["zoho_connection_status"] | null
@@ -205,7 +205,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
-          org_id?: string
+          org_id?: string | null
           profile_id?: string
           refresh_token?: string | null
           status?: Database["public"]["Enums"]["zoho_connection_status"] | null
@@ -232,7 +232,12 @@ export type Database = {
     Enums: {
       platform_type: "freshdesk" | "zoho_desk" | "zendesk" | "gmail"
       ticket_status: "Open" | "Closed" | "In_Progress"
-      zoho_connection_status: "active" | "expired" | "invalid"
+      zoho_connection_status:
+        | "active"
+        | "expired"
+        | "invalid"
+        | "pending"
+        | "connected"
     }
     CompositeTypes: {
       [_ in never]: never
