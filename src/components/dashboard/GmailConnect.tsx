@@ -39,7 +39,7 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       // Send the token to your Supabase backend for verification
       const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/gmail-callback`,
+        `${SUPABASE_URL}/functions/v1/google-oauth-callback`,
         {
           method: "POST",
           headers: {
