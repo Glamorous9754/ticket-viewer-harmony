@@ -35,11 +35,12 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       const googleUser = await authInstance.signIn();
       const token = googleUser.getAuthResponse().id_token;
 
-      console.log("Google ID Token:", token);
+      //console.log("Google ID Token:", token);
 
       // Send the token to your Supabase backend for verification
+      //console.log(`https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/google-oauth-callback`)
       const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/google-oauth-callback`,
+        `https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/google-oauth-callback`,
         {
           method: "POST",
           headers: {
