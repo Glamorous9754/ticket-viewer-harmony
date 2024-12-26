@@ -1,1 +1,45 @@
 project_id = "iedlbysyadijjcpwgbvd"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[[functions]]
+name = "initiate-freshdesk-oauth"
+verify_jwt = true
+
+[[functions]]
+name = "freshdesk-callback"
+verify_jwt = false
+
+[[functions]]
+name = "initiate-zoho-oauth"
+verify_jwt = true
+
+[[functions]]
+name = "zoho-oauth-callback"
+verify_jwt = false
+
+[[functions]]
+name = "initiate-gmail-oauth"
+verify_jwt = true
+
+[[functions]]
+name = "gmail-callback"
+verify_jwt = false
+
+[[functions]]
+name = "initiate-zendesk-oauth"
+verify_jwt = true
+
+[[functions]]
+name = "zendesk-callback"
+verify_jwt = false

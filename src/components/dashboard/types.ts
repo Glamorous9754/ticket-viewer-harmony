@@ -5,6 +5,22 @@ export interface FreshDeskCredentials {
   status: 'active' | 'inactive' | 'expired';
 }
 
+export interface GmailCredentials {
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  status: 'active' | 'inactive' | 'expired';
+  email: string;
+}
+
+export interface ZendeskCredentials {
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  status: 'active' | 'inactive' | 'expired';
+  subdomain: string;
+}
+
 export interface FreshDeskConnection {
   id: string;
   auth_tokens: FreshDeskCredentials;

@@ -9,6 +9,53 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      gmail_credentials: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          email: string | null
+          expires_at: string | null
+          id: string
+          profile_id: string
+          refresh_token: string | null
+          status: Database["public"]["Enums"]["gmail_connection_status"] | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          profile_id: string
+          refresh_token?: string | null
+          status?: Database["public"]["Enums"]["gmail_connection_status"] | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          profile_id?: string
+          refresh_token?: string | null
+          status?: Database["public"]["Enums"]["gmail_connection_status"] | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmail_credentials_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       oauth_states: {
         Row: {
           created_at: string
@@ -175,6 +222,59 @@ export type Database = {
           },
         ]
       }
+      zendesk_credentials: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          profile_id: string
+          refresh_token: string | null
+          status:
+            | Database["public"]["Enums"]["zendesk_connection_status"]
+            | null
+          subdomain: string | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          profile_id: string
+          refresh_token?: string | null
+          status?:
+            | Database["public"]["Enums"]["zendesk_connection_status"]
+            | null
+          subdomain?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          profile_id?: string
+          refresh_token?: string | null
+          status?:
+            | Database["public"]["Enums"]["zendesk_connection_status"]
+            | null
+          subdomain?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zendesk_credentials_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zoho_credentials: {
         Row: {
           access_token: string | null
@@ -230,8 +330,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      gmail_connection_status: "active" | "inactive" | "expired"
       platform_type: "freshdesk" | "zoho_desk" | "zendesk" | "gmail"
       ticket_status: "Open" | "Closed" | "In_Progress"
+      zendesk_connection_status: "active" | "inactive" | "expired"
       zoho_connection_status:
         | "active"
         | "expired"
