@@ -1,58 +1,70 @@
 import { useState, useEffect } from "react";
+import { gapi } from "gapi-script";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { useSearchParams } from "react-router-dom";
 
 export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [searchParams] = useSearchParams();
-  const connectionStatus = searchParams.get('connection');
 
   useEffect(() => {
-    if (connectionStatus === 'success') {
-      toast({
-        title: "Success",
-        description: "Successfully connected to Gmail!",
-      });
-      onSuccess();
-    } else if (connectionStatus === 'error') {
-      toast({
-        title: "Error",
-        description: "Failed to connect to Gmail. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [connectionStatus, toast, onSuccess]);
+    const initClient = () => {
+      gapi.client
+        .init({
+          clientId: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+          scope: "https://www.googleapis.com/auth/gmail.readonly",
+        })
+        .then(() => console.log("GAPI client initialized"))
+        .catch((error) =>
+          console.error("Error initializing GAPI client:", error)
+        );
+    };
 
-  const handleConnect = async () => {
+    gapi.load("client:auth2", initClient);
+  }, []);
+
+  const handleSignIn = async () => {
     setIsLoading(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) {
-        throw new Error("You must be logged in to connect Gmail");
-      }
+      const authInstance = gapi.auth2.getAuthInstance();
+      const googleUser = await authInstance.signIn();
+      const token = googleUser.getAuthResponse().id_token;
 
-      const { data, error } = await supabase.functions.invoke(
-        "initiate-gmail-oauth",
+      console.log("Google ID Token:", token);
+
+      // Send the token to your Supabase backend for verification
+      const response = await fetch(
+        "https://your-supabase-project-url/functions/v1/google-oauth-callback",
         {
-          body: {},
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
         }
       );
 
-      if (error) throw error;
-      if (!data?.url) throw new Error("No authorization URL received");
+      const data = await response.json();
 
-      window.location.href = data.url;
-    } catch (error) {
-      console.error("Error initiating Gmail OAuth:", error);
+      if (response.ok) {
+        console.log("Supabase Response:", data);
+        toast({
+          title: "Success",
+          description: "Successfully connected to Gmail!",
+        });
+        onSuccess();
+      } else {
+        throw new Error(data.message || "Failed to verify token with backend");
+      }
+    } catch (error: any) {
+      console.error("Error during Google OAuth flow:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to start authentication",
+        description: error.message || "Failed to connect Gmail. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -64,7 +76,7 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         Connect your Gmail account to analyze your customer emails.
       </p>
       <Button 
-        onClick={handleConnect}
+        onClick={handleSignIn}
         disabled={isLoading}
         className="w-full"
       >
@@ -73,3 +85,5 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     </Card>
   );
 };
+
+export default GmailConnect;
