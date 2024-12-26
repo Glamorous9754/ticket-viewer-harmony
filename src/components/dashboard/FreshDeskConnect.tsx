@@ -2,172 +2,75 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { FreshDeskConnection, FreshDeskCredentials, isFreshDeskCredentials, PlatformConnectionRow } from "./types";
-import { FreshDeskConnectionCard } from "./FreshDeskConnectionCard";
-import { FreshDeskConnectionForm } from "./FreshDeskConnectionForm";
+import { Card } from "@/components/ui/card";
+import { useSearchParams } from "react-router-dom";
 
 export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [connections, setConnections] = useState<FreshDeskConnection[]>([]);
-  const [editingConnection, setEditingConnection] = useState<FreshDeskConnection | null>(null);
+  const [searchParams] = useSearchParams();
+  const connectionStatus = searchParams.get('connection');
 
   useEffect(() => {
-    fetchConnections();
-  }, []);
-
-  const fetchConnections = async () => {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session?.session?.user) return;
-
-    const { data } = await supabase
-      .from('platform_connections')
-      .select('*')
-      .eq('platform_name', 'freshdesk');
-    
-    if (data) {
-      // Convert and validate the data
-      const validConnections = data
-        .filter((conn): conn is PlatformConnectionRow => true)
-        .filter(conn => isFreshDeskCredentials(conn.auth_tokens))
-        .map(conn => ({
-          ...conn,
-          auth_tokens: conn.auth_tokens as FreshDeskCredentials
-        }));
-      setConnections(validConnections);
+    if (connectionStatus === 'success') {
+      toast({
+        title: "Success",
+        description: "Successfully connected to Freshdesk!",
+      });
+      onSuccess();
+    } else if (connectionStatus === 'error') {
+      toast({
+        title: "Error",
+        description: "Failed to connect to Freshdesk. Please try again.",
+        variant: "destructive",
+      });
     }
-  };
+  }, [connectionStatus, toast, onSuccess]);
 
-  const handleConnect = async (credentials: FreshDeskCredentials) => {
+  const handleConnect = async () => {
     setIsLoading(true);
-    console.log("Starting FreshDesk connection validation...");
-
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) {
-        throw new Error("You must be logged in to connect FreshDesk");
+        throw new Error("You must be logged in to connect Freshdesk");
       }
 
-      const { data: validationResponse, error: validationError } = await supabase.functions.invoke(
-        "validate-freshdesk-credentials",
+      const { data, error } = await supabase.functions.invoke(
+        "initiate-freshdesk-oauth",
         {
-          body: credentials,
-        }
-      );
-
-      if (validationError) {
-        console.error("Validation function error:", validationError);
-        throw new Error(validationError.message || "Failed to validate credentials");
-      }
-
-      if (!validationResponse?.success) {
-        console.error("Validation failed:", validationResponse?.error);
-        throw new Error(validationResponse?.error || "Invalid credentials");
-      }
-
-      const { error: insertError } = await supabase
-        .from('platform_connections')
-        .upsert({
-          id: editingConnection?.id,
-          profile_id: session.session.user.id,
-          platform_name: 'freshdesk',
-          auth_tokens: credentials as any // Type assertion needed due to Supabase's JSON handling
-        });
-
-      if (insertError) {
-        console.error("Error storing credentials:", insertError);
-        throw new Error("Failed to store credentials");
-      }
-
-      toast({
-        title: "Success",
-        description: "Successfully connected to FreshDesk!",
-      });
-
-      setShowForm(false);
-      setEditingConnection(null);
-      fetchConnections();
-      onSuccess();
-    } catch (error) {
-      console.error("Error in FreshDesk connection process:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to validate credentials",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSync = async (connectionId: string) => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.functions.invoke(
-        "sync-freshdesk-tickets",
-        {
-          body: { connectionId },
+          body: {},
         }
       );
 
       if (error) throw error;
+      if (!data?.url) throw new Error("No authorization URL received");
 
-      toast({
-        title: "Success",
-        description: "Successfully synced tickets!",
-      });
-      onSuccess();
+      // Redirect to Freshdesk OAuth page
+      window.location.href = data.url;
     } catch (error) {
-      console.error("Error syncing tickets:", error);
+      console.error("Error initiating Freshdesk OAuth:", error);
       toast({
         title: "Error",
-        description: "Failed to sync tickets",
+        description: error.message || "Failed to start authentication",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEdit = (connection: FreshDeskConnection) => {
-    setEditingConnection(connection);
-    setShowForm(true);
-  };
-
   return (
-    <div className="space-y-4">
-      {connections.length > 0 && !showForm ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {connections.map((connection) => (
-            <FreshDeskConnectionCard
-              key={connection.id}
-              connection={connection}
-              onEdit={handleEdit}
-              onSync={handleSync}
-              isLoading={isLoading}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {(!connections.length || showForm) && (
-        <FreshDeskConnectionForm
-          onSubmit={handleConnect}
-          initialData={editingConnection?.auth_tokens}
-          isLoading={isLoading}
-          onCancel={() => {
-            setShowForm(false);
-            setEditingConnection(null);
-          }}
-        />
-      )}
-
-      {!showForm && connections.length > 0 && (
-        <Button onClick={() => setShowForm(true)}>
-          Add Another Connection
-        </Button>
-      )}
-    </div>
+    <Card className="p-6 space-y-4">
+      <h2 className="text-xl font-semibold">Connect Freshdesk</h2>
+      <p className="text-sm text-gray-600">
+        Connect your Freshdesk account to analyze your support tickets.
+      </p>
+      <Button 
+        onClick={handleConnect}
+        disabled={isLoading}
+        className="w-full"
+      >
+        {isLoading ? "Connecting..." : "Connect with Freshdesk"}
+      </Button>
+    </Card>
   );
 };

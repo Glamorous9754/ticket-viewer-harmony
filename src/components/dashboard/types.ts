@@ -1,6 +1,8 @@
 export interface FreshDeskCredentials {
-  domain: string;
-  apiKey: string;
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  status: 'active' | 'inactive' | 'expired';
 }
 
 export interface FreshDeskConnection {
@@ -15,19 +17,6 @@ export interface FreshDeskConnection {
   profile_id: string;
 }
 
-// Type guard to check if a JSON object is FreshDeskCredentials
-export function isFreshDeskCredentials(obj: any): obj is FreshDeskCredentials {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'domain' in obj &&
-    'apiKey' in obj &&
-    typeof obj.domain === 'string' &&
-    typeof obj.apiKey === 'string'
-  );
-}
-
-// Helper type for platform connections from database
 export type PlatformConnectionRow = {
   id: string;
   auth_tokens: any;
