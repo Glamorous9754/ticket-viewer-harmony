@@ -5,8 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 
 // Retrieve environment variables
-const SUPABASE_URL = Deno.env.get("PUBLIC_URL")!;
-const SUPABASE_KEY = Deno.env.get("SUPABASE_KEY")!;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();

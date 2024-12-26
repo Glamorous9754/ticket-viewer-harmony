@@ -228,7 +228,7 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
-          profile_id: string
+          profile_id: string | null
           refresh_token: string | null
           status:
             | Database["public"]["Enums"]["zendesk_connection_status"]
@@ -242,7 +242,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
-          profile_id: string
+          profile_id?: string | null
           refresh_token?: string | null
           status?:
             | Database["public"]["Enums"]["zendesk_connection_status"]
@@ -256,7 +256,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
-          profile_id?: string
+          profile_id?: string | null
           refresh_token?: string | null
           status?:
             | Database["public"]["Enums"]["zendesk_connection_status"]
@@ -333,7 +333,12 @@ export type Database = {
       gmail_connection_status: "active" | "inactive" | "expired"
       platform_type: "freshdesk" | "zoho_desk" | "zendesk" | "gmail"
       ticket_status: "Open" | "Closed" | "In_Progress"
-      zendesk_connection_status: "active" | "inactive" | "expired"
+      zendesk_connection_status:
+        | "active"
+        | "inactive"
+        | "expired"
+        | "pending"
+        | "connected"
       zoho_connection_status:
         | "active"
         | "expired"
