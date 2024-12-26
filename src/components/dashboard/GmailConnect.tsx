@@ -12,7 +12,7 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     const initClient = () => {
       gapi.client
         .init({
-          clientId: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+          clientId: "714027482644-u8g50252cs9sb7j8eedomqbbv8v2ulg3.apps.googleusercontent.com",
           scope: "https://www.googleapis.com/auth/gmail.readonly",
         })
         .then(() => console.log("GAPI client initialized"))
