@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 
+// Retrieve environment variables
+const SUPABASE_URL = Deno.env.get("PUBLIC_URL")!;
+const SUPABASE_KEY = Deno.env.get("SUPABASE_KEY")!;
+
 export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -35,11 +39,12 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       // Send the token to your Supabase backend for verification
       const response = await fetch(
-        "https://your-supabase-project-url/functions/v1/google-oauth-callback",
+        `${SUPABASE_URL}/functions/v1/google-oauth-callback`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_KEY}`,
           },
           body: JSON.stringify({ token }),
         }
