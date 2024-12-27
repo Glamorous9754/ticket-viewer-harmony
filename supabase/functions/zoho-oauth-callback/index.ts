@@ -1,153 +1,108 @@
-serve(async (req) => {
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
-  const url = new URL(req.url);
-  const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
-  
-    if (code && state) {
-          try {
-              // Verify state to prevent CSRF
-             const { data: storedState, error: fetchError } = await supabase.from('oauth_states')
-             .select('*')
-             .eq('state', state)
-             .single();
-           
-             if (fetchError || !storedState) {
-                   throw new Error("Invalid or missing state parameter");
-             }
-  
-  
-          // Exchange authorization code for tokens
-               const tokenResponse = await fetch('https://accounts.zoho.in/oauth/v2/token', {
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/x-www-form-urlencoded'
-                     },
-                     body: new URLSearchParams({
-                          grant_type: 'authorization_code',
-                          client_id: Deno.env.get("ZOHO_CLIENT_ID")!,
-                          client_secret: Deno.env.get("ZOHO_CLIENT_SECRET")!,
-                         redirect_uri: redirectUri,
-                          code: code!,
-                     })
-                });
-  
-  
-               const tokenData = await tokenResponse.json();
-               console.log("Token Data", tokenData);
-  
-                 if (!tokenResponse.ok) {
-                      console.error(tokenData);
-                       throw new Error(`Token exchange failed: ${tokenData.error_description}`);
-                    }
-  
-                 const { access_token, refresh_token, expires_in } = tokenData;
-  
-  
-                   // Store tokens in Supabase
-                 const { error: insertError } = await supabase.from('zoho_credentials').insert([
-                         {
-                              profile_id: storedState.profile_id,
-                              access_token: access_token,
-                              refresh_token: refresh_token,
-                              expires_at: new Date(Date.now() + expires_in * 1000).toISOString(),
-                              platform_type: 'zoho_desk',
-                               status:"active"
-                          },
-                      ]);
-  
-  
-                     if (insertError) {
-                        throw new Error(`Failed to store tokens: ${insertError.message}`);
-                     }
-          
-          
-                     // Optionally, delete the used state to prevent reuse
-                     await supabase.from('oauth_states').delete().eq('state', state);
-                 
-          // Redirect user to frontend
-           return new Response(null, {
-                       status: 302,
-                        headers: {
-                              'location': 'https://preview-ticket-viewer-harmony.lovable.app/features',
-                            ...corsHeaders
-                      }
-               });
-  
-  
-            } catch (error) {
-               console.error("Oauth Callback Error", error);
-                return new Response(JSON.stringify({success: false, error: error.message}),{
-                   status: 500,
-                    headers: { ...corsHeaders, "Content-Type": "application/json" },
-                 });
-             }
-    }
-         
-      //Handle Oauth Initiation
-       try {
-           // Require Authorization header
-               const authHeader = req.headers.get('authorization');
-       
-                 if (!authHeader) {
-                     return new Response(JSON.stringify({ code: 401, message: "Missing authorization header" }), {
-                       status: 401,
-                       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                     });
-                 }
-  
-  
-       //Verify JWT Token with Supabase
-             const token = authHeader.replace("Bearer ", "");
-            const { data:user, error: userError } = await supabase.auth.getUser(token);
-  
-               if (userError || !user) {
-                  return new Response(JSON.stringify({ code: 401, message: "Invalid token" }), {
-                       status: 401,
-                        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                      });
-                    }
-  
-  
-           // Generate a unique state parameter for CSRF protection
-               const newState = crypto.randomUUID();
-  
-  
-           // Store state in Supabase
-              const { error: stateError } = await supabase.from("oauth_states").insert({
-                   profile_id: user.user.id,
-                  state: newState,
-                  platform_type: 'zoho_desk'
-               });
-  
-  
-             if (stateError) {
-                   throw new Error("Failed to store state");
-             }
-  
-  
-           // Construct Zoho OAuth URL
-                 const authUrl = new URL('https://accounts.zoho.in/oauth/v2/auth');
-                  authUrl.searchParams.set('response_type', 'code');
-                 authUrl.searchParams.set('client_id', Deno.env.get("ZOHO_CLIENT_ID")!);
-                 authUrl.searchParams.set('scope', 'Desk.tickets.READ');
-                authUrl.searchParams.set('redirect_uri', redirectUri);
-                  authUrl.searchParams.set('access_type', 'offline');
-                authUrl.searchParams.set('state', newState);
-               authUrl.searchParams.set('prompt', 'consent');
-  
-  
-           return new Response(JSON.stringify({ success: true, url: authUrl.toString() }), {
-                  headers: { ...corsHeaders, "Content-Type": "application/json" },
-               });
-  
-  
-       } catch(error) {
-             console.error("OAuth Initiation Error", error)
-              return new Response(JSON.stringify({ success: false, error: error.message}),{
-                  status: 500,
-                    headers: { ...corsHeaders, "Content-Type": "application/json" },
-              });
-  
-       }
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
+
+serve(async (req) => {
+  console.log("🔵 Zoho OAuth callback function invoked:", {
+    method: req.method,
+    url: req.url,
   });
+
+  // Handle CORS
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // 🟢 Let GET requests through because Zoho typically does GET
+  if (req.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    // 1) Parse query params for `code` and `state`
+    const url = new URL(req.url);
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+
+    if (!code || !state) {
+      throw new Error("Missing code or state in query string");
+    }
+
+    console.log("📝 Received query params:", { code, state });
+
+    // 2) Exchange code for tokens with Zoho
+    const tokenResponse = await fetch("https://accounts.zoho.in/oauth/v2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: Deno.env.get("ZOHO_CLIENT_ID")!,
+        client_secret: Deno.env.get("ZOHO_CLIENT_SECRET")!,
+        redirect_uri: "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/zoho-oauth-callback",
+        code,
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+    console.log("📦 Token response from Zoho:", tokenData);
+
+    if (!tokenResponse.ok) {
+      throw new Error(
+        `Token exchange failed: ${tokenData.error_description || tokenData.error}`
+      );
+    }
+
+    const { access_token, refresh_token, expires_in } = tokenData;
+    if (!refresh_token) {
+      throw new Error("Zoho did not provide a refresh token");
+    }
+
+    // 3) Update `zoho_credentials` using the `state` as the record ID
+    console.log(`💾 Updating zoho_credentials record with id=${state}...`);
+    const expiry = new Date(Date.now() + expires_in * 1000).toISOString();
+
+    const { error: updateError } = await supabase
+      .from("zoho_credentials")
+      .update({
+        access_token,
+        refresh_token,
+        expires_at: expiry,
+        status: "connected", // or any valid enum value
+      })
+      .eq("id", state);
+
+    if (updateError) {
+      throw new Error("Failed to store tokens in the database: " + updateError.message);
+    }
+
+    console.log("✅ Credentials updated successfully");
+
+    // 4) Redirect user to your front page (or a success page)
+    const frontPageUrl = "https://preview--ticket-viewer-harmony.lovable.app/features"; // <-- Put your real URL here
+    // Return a 302 Found redirect
+    return Response.redirect(frontPageUrl, 302);
+
+  } catch (error) {
+    console.error("❌ Error in Zoho OAuth Callback:", error);
+
+    // Optionally, you could redirect to an "error" page
+    // or just return an error JSON response:
+    return new Response(
+      JSON.stringify({ success: false, error: (error as Error).message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
