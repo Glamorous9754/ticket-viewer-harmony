@@ -1,12 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { PlatformCard } from "./PlatformCard";
 
 type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
 
@@ -19,7 +18,7 @@ type ConnectionStatus = {
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<Platform>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     freshdesk: null,
     gmail: null,
@@ -37,7 +36,6 @@ export const PlatformSelector = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Check platform_connections table for existing connections
       const { data: connections, error } = await supabase
         .from('platform_connections')
         .select('*')
@@ -57,7 +55,6 @@ export const PlatformSelector = () => {
       });
 
       setConnectionStatus(status);
-      console.log("Connection status:", status);
     } catch (error) {
       console.error("Error checking connections:", error);
     }
@@ -71,7 +68,7 @@ export const PlatformSelector = () => {
   const handleSync = async (platform: Platform) => {
     if (!platform) return;
     
-    setIsLoading(true);
+    setIsLoading(platform);
     try {
       const { error } = await supabase.functions.invoke(`sync-${platform}-tickets`);
       
@@ -89,7 +86,7 @@ export const PlatformSelector = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsLoading(null);
     }
   };
 
@@ -113,97 +110,41 @@ export const PlatformSelector = () => {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-6">
-          <h3 className="text-xl font-medium mb-4">Zoho Desk</h3>
-          <p className="text-gray-600 mb-4">
-            Connect your Zoho Desk account to analyze customer tickets
-          </p>
-          {connectionStatus.zoho ? (
-            <Button 
-              onClick={() => handleSync("zoho")}
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Syncing..." : "Sync Zoho Tickets"}
-            </Button>
-          ) : (
-            <Button 
-              onClick={() => setSelectedPlatform("zoho")}
-              className="w-full"
-            >
-              Connect Zoho Desk
-            </Button>
-          )}
-        </Card>
+        <PlatformCard
+          title="Zoho Desk"
+          description="Connect your Zoho Desk account to analyze customer tickets"
+          isConnected={!!connectionStatus.zoho}
+          isLoading={isLoading === "zoho"}
+          onConnect={() => setSelectedPlatform("zoho")}
+          onSync={() => handleSync("zoho")}
+        />
 
-        <Card className="p-6">
-          <h3 className="text-xl font-medium mb-4">FreshDesk</h3>
-          <p className="text-gray-600 mb-4">
-            Connect your FreshDesk account to analyze customer tickets
-          </p>
-          {connectionStatus.freshdesk ? (
-            <Button 
-              onClick={() => handleSync("freshdesk")}
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Syncing..." : "Sync Freshdesk Tickets"}
-            </Button>
-          ) : (
-            <Button 
-              onClick={() => setSelectedPlatform("freshdesk")}
-              className="w-full"
-            >
-              Connect FreshDesk
-            </Button>
-          )}
-        </Card>
+        <PlatformCard
+          title="FreshDesk"
+          description="Connect your FreshDesk account to analyze customer tickets"
+          isConnected={!!connectionStatus.freshdesk}
+          isLoading={isLoading === "freshdesk"}
+          onConnect={() => setSelectedPlatform("freshdesk")}
+          onSync={() => handleSync("freshdesk")}
+        />
 
-        <Card className="p-6">
-          <h3 className="text-xl font-medium mb-4">Gmail</h3>
-          <p className="text-gray-600 mb-4">
-            Connect your Gmail account to analyze customer emails
-          </p>
-          {connectionStatus.gmail ? (
-            <Button 
-              onClick={() => handleSync("gmail")}
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Syncing..." : "Sync Gmail Tickets"}
-            </Button>
-          ) : (
-            <Button 
-              onClick={() => setSelectedPlatform("gmail")}
-              className="w-full"
-            >
-              Connect Gmail
-            </Button>
-          )}
-        </Card>
+        <PlatformCard
+          title="Gmail"
+          description="Connect your Gmail account to analyze customer emails"
+          isConnected={!!connectionStatus.gmail}
+          isLoading={isLoading === "gmail"}
+          onConnect={() => setSelectedPlatform("gmail")}
+          onSync={() => handleSync("gmail")}
+        />
 
-        <Card className="p-6">
-          <h3 className="text-xl font-medium mb-4">Zendesk</h3>
-          <p className="text-gray-600 mb-4">
-            Connect your Zendesk account to analyze support tickets
-          </p>
-          {connectionStatus.zendesk ? (
-            <Button 
-              onClick={() => handleSync("zendesk")}
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Syncing..." : "Sync Zendesk Tickets"}
-            </Button>
-          ) : (
-            <Button 
-              onClick={() => setSelectedPlatform("zendesk")}
-              className="w-full"
-            >
-              Connect Zendesk
-            </Button>
-          )}
-        </Card>
+        <PlatformCard
+          title="Zendesk"
+          description="Connect your Zendesk account to analyze support tickets"
+          isConnected={!!connectionStatus.zendesk}
+          isLoading={isLoading === "zendesk"}
+          onConnect={() => setSelectedPlatform("zendesk")}
+          onSync={() => handleSync("zendesk")}
+        />
       </div>
     </div>
   );
