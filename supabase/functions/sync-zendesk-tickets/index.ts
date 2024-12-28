@@ -6,14 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function fetchZohoTickets(orgId: string, accessToken: string) {
-  console.log("Fetching Zoho tickets...");
+async function fetchZendeskTickets(subdomain: string, accessToken: string) {
+  console.log("Fetching Zendesk tickets...");
   const response = await fetch(
-    `https://desk.zoho.com/api/v1/tickets?limit=100`,
+    `https://${subdomain}.zendesk.com/api/v2/tickets.json`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        orgId: orgId,
+        "Content-Type": "application/json",
       },
     }
   );
@@ -25,7 +25,7 @@ async function fetchZohoTickets(orgId: string, accessToken: string) {
   }
 
   const data = await response.json();
-  return data.data || [];
+  return data.tickets || [];
 }
 
 serve(async (req) => {
@@ -52,21 +52,21 @@ serve(async (req) => {
       throw new Error('User not authenticated');
     }
 
-    // Fetch Zoho credentials
+    // Fetch Zendesk credentials
     const { data: credentials, error: credentialsError } = await supabase
-      .from("zoho_credentials")
+      .from("zendesk_credentials")
       .select("*")
       .eq("profile_id", user.id)
       .eq("status", "active")
       .single();
 
     if (credentialsError || !credentials) {
-      throw new Error("Zoho credentials not found");
+      throw new Error("Zendesk credentials not found");
     }
 
-    // Fetch tickets from Zoho
-    const tickets = await fetchZohoTickets(
-      credentials.org_id,
+    // Fetch tickets from Zendesk
+    const tickets = await fetchZendeskTickets(
+      credentials.subdomain,
       credentials.access_token
     );
 
@@ -77,11 +77,11 @@ serve(async (req) => {
       profile_id: user.id,
       platform_connection_id: credentials.id,
       external_ticket_id: ticket.id.toString(),
-      created_date: ticket.createdTime,
-      resolved_date: ticket.closedTime || null,
+      created_date: ticket.created_at,
+      resolved_date: ticket.solved_at || null,
       status: ticket.status,
-      thread: ticket.subject + "\n" + (ticket.description || ""),
-      customer_id: ticket.contactId?.toString(),
+      thread: ticket.description,
+      customer_id: ticket.requester_id?.toString(),
       summary: ticket.subject,
       last_fetched_at: new Date().toISOString(),
     }));
@@ -97,9 +97,9 @@ serve(async (req) => {
       throw upsertError;
     }
 
-    // Update last_fetched_at for the Zoho credentials
+    // Update last_fetched_at for the Zendesk credentials
     await supabase
-      .from("zoho_credentials")
+      .from("zendesk_credentials")
       .update({ last_fetched_at: new Date().toISOString() })
       .eq("id", credentials.id);
 
@@ -109,7 +109,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error in sync-zoho-tickets:", error);
+    console.error("Error in sync-zendesk-tickets:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

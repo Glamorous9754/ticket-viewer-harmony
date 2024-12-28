@@ -43,3 +43,19 @@ verify_jwt = true
 [[functions]]
 name = "zendesk-callback"
 verify_jwt = false
+
+[[functions]]
+name = "sync-freshdesk-tickets"
+verify_jwt = true
+
+[[functions]]
+name = "sync-gmail-tickets"
+verify_jwt = true
+
+[[functions]]
+name = "sync-zoho-tickets"
+verify_jwt = true
+
+[[functions]]
+name = "sync-zendesk-tickets"
+verify_jwt = true
