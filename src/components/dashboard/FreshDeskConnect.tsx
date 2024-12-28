@@ -67,8 +67,20 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to fetch tickets");
       }
 
+      // Get the connection ID for Freshdesk
+      const { data: connections, error: connectionError } = await supabase
+        .from('platform_connections')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .eq('platform_type', 'freshdesk')
+        .single();
+
+      if (connectionError || !connections) {
+        throw new Error("Freshdesk connection not found");
+      }
+
       const { error } = await supabase.functions.invoke("sync-freshdesk-tickets", {
-        body: {},
+        body: { connectionId: connections.id },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },

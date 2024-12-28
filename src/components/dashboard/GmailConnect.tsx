@@ -68,8 +68,20 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to fetch emails");
       }
 
+      // Get the Gmail credentials
+      const { data: credentials, error: credentialsError } = await supabase
+        .from('gmail_credentials')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (credentialsError || !credentials) {
+        throw new Error("Gmail credentials not found");
+      }
+
       const { error } = await supabase.functions.invoke("sync-gmail-tickets", {
-        body: {},
+        body: { credentialsId: credentials.id },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },

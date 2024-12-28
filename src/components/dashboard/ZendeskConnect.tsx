@@ -67,8 +67,20 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to fetch tickets");
       }
 
+      // Get the Zendesk credentials
+      const { data: credentials, error: credentialsError } = await supabase
+        .from('zendesk_credentials')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (credentialsError || !credentials) {
+        throw new Error("Zendesk credentials not found");
+      }
+
       const { error } = await supabase.functions.invoke("sync-zendesk-tickets", {
-        body: {},
+        body: { credentialsId: credentials.id },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
