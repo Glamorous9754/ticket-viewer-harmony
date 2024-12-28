@@ -1,67 +1,70 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
+import { useSearchParams } from "react-router-dom";
 
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [searchParams] = useSearchParams();
+  const connectionStatus = searchParams.get('connection');
 
   useEffect(() => {
-    checkAuth();
+    checkConnection();
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+  useEffect(() => {
+    if (connectionStatus === 'success') {
       toast({
-        title: "Authentication required",
-        description: "Please log in to connect your Zoho account",
+        title: "Success",
+        description: "Successfully connected to Zoho!",
+      });
+      checkConnection();
+      onSuccess();
+    } else if (connectionStatus === 'error') {
+      toast({
+        title: "Error",
+        description: "Failed to connect to Zoho. Please try again.",
         variant: "destructive",
       });
-      navigate("/login");
     }
+  }, [connectionStatus, toast, onSuccess]);
+
+  const checkConnection = async () => {
+    const { data } = await supabase
+      .from("zoho_credentials")
+      .select("*")
+      .eq("status", "active")
+      .single();
+
+    setIsConnected(!!data);
   };
 
-  const handleConnectZoho = async () => {
+  const handleConnect = async () => {
     setIsLoading(true);
-    console.log("Starting Zoho OAuth process...");
-
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
         throw new Error("You must be logged in to connect Zoho");
       }
 
-      // Get the access token
-      const { data: authUrl, error: authError } = await supabase.functions.invoke(
+      const { data, error } = await supabase.functions.invoke(
         "initiate-zoho-oauth",
         {
           body: {},
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
         }
       );
 
-      if (authError) {
-        console.error("Auth function error:", authError);
-        throw new Error(authError.message || "Failed to initiate OAuth flow");
-      }
+      if (error) throw error;
+      if (!data?.url) throw new Error("No authorization URL received");
 
-      if (!authUrl?.url) {
-        console.error("No auth URL received");
-        throw new Error("Failed to get authentication URL");
-      }
-
-      // Redirect to Zoho's OAuth page
-      window.location.href = authUrl.url;
-
+      window.location.href = data.url;
     } catch (error) {
-      console.error("Error in Zoho connection process:", error);
+      console.error("Error initiating Zoho OAuth:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to start authentication",
@@ -72,69 +75,44 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
-  const handleFetchTickets = async () => {
-    setIsFetchingTickets(true);
+  const handleSync = async () => {
+    setIsSyncing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("You must be logged in to fetch tickets");
-      }
-
-      const { data, error } = await supabase.functions.invoke(
-        "sync-zoho-tickets",
-        {
-          body: {},
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
+      const { data, error } = await supabase.functions.invoke("sync-zoho-tickets");
+      
       if (error) throw error;
 
-      console.log("Fetched tickets:", data.tickets);
       toast({
         title: "Success",
-        description: `Retrieved ${data.tickets.length} tickets from Zoho`,
+        description: "Successfully synced Zoho tickets!",
       });
-
     } catch (error) {
-      console.error("Error fetching Zoho tickets:", error);
+      console.error("Error syncing Zoho tickets:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch tickets",
+        description: error.message || "Failed to sync tickets",
         variant: "destructive",
       });
     } finally {
-      setIsFetchingTickets(false);
+      setIsSyncing(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
+    <Card className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zoho</h2>
       <p className="text-sm text-gray-600">
         Connect your Zoho Desk account to analyze your support tickets.
       </p>
-      
-      <div className="space-y-2">
-        <Button 
-          onClick={handleConnectZoho}
-          disabled={isLoading}
-          className="w-full"
-        >
-          {isLoading ? "Connecting..." : "Connect with Zoho"}
-        </Button>
-
-        <Button
-          onClick={handleFetchTickets}
-          disabled={isFetchingTickets}
-          variant="outline"
-          className="w-full"
-        >
-          {isFetchingTickets ? "Fetching..." : "Fetch Tickets"}
-        </Button>
-      </div>
-    </div>
+      <Button 
+        onClick={isConnected ? handleSync : handleConnect}
+        disabled={isLoading || isSyncing}
+        className="w-full"
+      >
+        {isLoading ? "Connecting..." : 
+         isSyncing ? "Syncing..." : 
+         isConnected ? "Sync Zoho Tickets" : "Connect with Zoho"}
+      </Button>
+    </Card>
   );
 };

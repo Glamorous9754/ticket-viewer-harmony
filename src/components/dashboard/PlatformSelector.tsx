@@ -4,14 +4,75 @@ import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
 
+type ConnectionStatus = {
+  freshdesk: boolean;
+  zoho: boolean;
+  gmail: boolean;
+  zendesk: boolean;
+};
+
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
+    freshdesk: false,
+    zoho: false,
+    gmail: false,
+    zendesk: false,
+  });
+
+  useEffect(() => {
+    checkConnections();
+  }, []);
+
+  const checkConnections = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    // Check Freshdesk connection
+    const { data: freshdesk } = await supabase
+      .from("platform_connections")
+      .select("*")
+      .eq("platform_type", "freshdesk")
+      .single();
+
+    // Check Gmail connection
+    const { data: gmail } = await supabase
+      .from("gmail_credentials")
+      .select("*")
+      .eq("status", "active")
+      .single();
+
+    // Check Zoho connection
+    const { data: zoho } = await supabase
+      .from("zoho_credentials")
+      .select("*")
+      .eq("status", "active")
+      .single();
+
+    // Check Zendesk connection
+    const { data: zendesk } = await supabase
+      .from("zendesk_credentials")
+      .select("*")
+      .eq("status", "active")
+      .single();
+
+    console.log("Connection status:", { freshdesk, gmail, zoho, zendesk });
+
+    setConnectionStatus({
+      freshdesk: !!freshdesk,
+      gmail: !!gmail,
+      zoho: !!zoho,
+      zendesk: !!zendesk,
+    });
+  };
 
   const handleSuccess = () => {
+    checkConnections();
     setSelectedPlatform(null);
   };
 
@@ -44,7 +105,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("zoho")}
             className="w-full"
           >
-            Connect Zoho Desk
+            {connectionStatus.zoho ? "Sync Zoho Desk" : "Connect Zoho Desk"}
           </Button>
         </Card>
 
@@ -57,7 +118,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("freshdesk")}
             className="w-full"
           >
-            Connect FreshDesk
+            {connectionStatus.freshdesk ? "Sync FreshDesk" : "Connect FreshDesk"}
           </Button>
         </Card>
 
@@ -70,7 +131,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("gmail")}
             className="w-full"
           >
-            Connect Gmail
+            {connectionStatus.gmail ? "Sync Gmail" : "Connect Gmail"}
           </Button>
         </Card>
 
@@ -83,7 +144,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("zendesk")}
             className="w-full"
           >
-            Connect Zendesk
+            {connectionStatus.zendesk ? "Sync Zendesk" : "Connect Zendesk"}
           </Button>
         </Card>
       </div>

@@ -8,17 +8,24 @@ import { useSearchParams } from "react-router-dom";
 export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [searchParams] = useSearchParams();
-  const connectionStatus = searchParams.get("connection");
+  const connectionStatus = searchParams.get('connection');
 
   useEffect(() => {
-    if (connectionStatus === "success") {
+    checkConnection();
+  }, []);
+
+  useEffect(() => {
+    if (connectionStatus === 'success') {
       toast({
         title: "Success",
         description: "Successfully connected to Gmail!",
       });
+      checkConnection();
       onSuccess();
-    } else if (connectionStatus === "error") {
+    } else if (connectionStatus === 'error') {
       toast({
         title: "Error",
         description: "Failed to connect to Gmail. Please try again.",
@@ -27,10 +34,19 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   }, [connectionStatus, toast, onSuccess]);
 
+  const checkConnection = async () => {
+    const { data } = await supabase
+      .from("gmail_credentials")
+      .select("*")
+      .eq("status", "active")
+      .single();
+
+    setIsConnected(!!data);
+  };
+
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      // Fetch the current session from Supabase
       const { data: session, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError) {
@@ -41,15 +57,13 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to connect Gmail");
       }
 
-      // Call the Supabase edge function to initiate Gmail OAuth
       const { data, error } = await supabase.functions.invoke("initiate-google-oauth");
 
       if (error) throw error;
       if (!data?.url) throw new Error("No authorization URL received");
 
-      // Redirect the user to the Google OAuth URL
       window.location.href = data.url;
-    } catch (error: Error | unknown) {
+    } catch (error) {
       console.error("Error initiating Gmail OAuth:", error);
       toast({
         title: "Error",
@@ -61,17 +75,44 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-gmail-messages");
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Successfully synced Gmail messages!",
+      });
+    } catch (error) {
+      console.error("Error syncing Gmail messages:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sync messages",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Connect Gmail</h2>
       <p className="text-sm text-gray-600">
         Connect your Gmail account to analyze your customer emails.
       </p>
-      <Button onClick={handleConnect} disabled={isLoading} className="w-full">
-        {isLoading ? "Connecting..." : "Connect with Gmail"}
+      <Button 
+        onClick={isConnected ? handleSync : handleConnect}
+        disabled={isLoading || isSyncing}
+        className="w-full"
+      >
+        {isLoading ? "Connecting..." : 
+         isSyncing ? "Syncing..." : 
+         isConnected ? "Sync Gmail Messages" : "Connect with Gmail"}
       </Button>
     </Card>
   );
 };
-
-export default GmailConnect;
