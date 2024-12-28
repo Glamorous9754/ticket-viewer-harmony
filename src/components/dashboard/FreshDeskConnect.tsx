@@ -4,10 +4,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
 
 export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
   const connectionStatus = searchParams.get('connection');
 
@@ -45,7 +47,6 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       if (error) throw error;
       if (!data?.url) throw new Error("No authorization URL received");
 
-      // Redirect to Freshdesk OAuth page
       window.location.href = data.url;
     } catch (error) {
       console.error("Error initiating Freshdesk OAuth:", error);
@@ -58,19 +59,73 @@ export const FreshDeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
+  const handleFetchTickets = async () => {
+    setIsFetchingTickets(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in to fetch tickets");
+      }
+
+      const { error } = await supabase.functions.invoke("sync-freshdesk-tickets", {
+        body: {},
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Successfully synced Freshdesk tickets!",
+      });
+    } catch (error) {
+      console.error("Error fetching Freshdesk tickets:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch tickets",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingTickets(false);
+    }
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Connect Freshdesk</h2>
       <p className="text-sm text-gray-600">
         Connect your Freshdesk account to analyze your support tickets.
       </p>
-      <Button 
-        onClick={handleConnect}
-        disabled={isLoading}
-        className="w-full"
-      >
-        {isLoading ? "Connecting..." : "Connect with Freshdesk"}
-      </Button>
+      <div className="space-y-2">
+        <Button 
+          onClick={handleConnect}
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Connecting..." : "Connect with Freshdesk"}
+        </Button>
+
+        <Button
+          onClick={handleFetchTickets}
+          disabled={isFetchingTickets}
+          variant="outline"
+          className="w-full"
+        >
+          {isFetchingTickets ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Fetching...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Fetch Tickets
+            </>
+          )}
+        </Button>
+      </div>
     </Card>
   );
 };
