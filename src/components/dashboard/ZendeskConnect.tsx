@@ -6,6 +6,11 @@ import { Card } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 
+interface ApiError {
+  message?: string;
+  error?: string;
+}
+
 export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -32,15 +37,15 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) {
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.session?.user) {
         throw new Error("You must be logged in to connect Zendesk");
       }
 
       const { data, error } = await supabase.functions.invoke(
         "initiate-zendesk-oauth",
         {
-          body: {},
+          body: {}, // You can include additional data here if needed
         }
       );
 
@@ -48,11 +53,12 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       if (!data?.url) throw new Error("No authorization URL received");
 
       window.location.href = data.url;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error initiating Zendesk OAuth:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to start authentication",
+        description: error instanceof Error ? error.message : 
+          (error as ApiError).message || "Failed to start authentication",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -62,28 +68,18 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const handleFetchTickets = async () => {
     setIsFetchingTickets(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      // Retrieve the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
         throw new Error("You must be logged in to fetch tickets");
       }
 
-      // Get the Zendesk credentials
-      const { data: credentials, error: credentialsError } = await supabase
-        .from('zendesk_credentials')
-        .select('id')
-        .eq('profile_id', session.user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (credentialsError || !credentials) {
-        throw new Error("Zendesk credentials not found");
-      }
-
-      const { error } = await supabase.functions.invoke("sync-zendesk-tickets", {
-        body: { credentialsId: credentials.id },
+      // Invoke the sync-zendesk-tickets function without a body
+      const { data, error } = await supabase.functions.invoke("sync-zendesk-tickets", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
+        // No body needed
       });
 
       if (error) throw error;
@@ -92,11 +88,12 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         title: "Success",
         description: "Successfully synced Zendesk tickets!",
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error fetching Zendesk tickets:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch tickets",
+        description: error instanceof Error ? error.message : 
+          (error as ApiError).message || "Failed to fetch tickets",
         variant: "destructive",
       });
     } finally {
