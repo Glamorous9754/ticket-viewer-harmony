@@ -35,13 +35,18 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   }, [connectionStatus, toast, onSuccess]);
 
   const checkConnection = async () => {
-    const { data } = await supabase
-      .from("zoho_credentials")
-      .select("*")
-      .eq("status", "active")
-      .single();
+    try {
+      const { data } = await supabase
+        .from("zoho_credentials")
+        .select("*")
+        .eq("status", "active")
+        .maybeSingle();
 
-    setIsConnected(!!data);
+      setIsConnected(!!data);
+    } catch (error) {
+      console.error("Error checking Zoho connection:", error);
+      setIsConnected(false);
+    }
   };
 
   const handleConnect = async () => {
