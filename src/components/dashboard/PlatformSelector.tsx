@@ -4,14 +4,32 @@ import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { PlatformConnectionRow } from "./types";
 
 type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
+  const [connections, setConnections] = useState<PlatformConnectionRow[]>([]);
+
+  useEffect(() => {
+    fetchConnections();
+  }, []);
+
+  const fetchConnections = async () => {
+    const { data, error } = await supabase
+      .from("platform_connections")
+      .select("*");
+
+    if (!error && data) {
+      setConnections(data);
+    }
+  };
 
   const handleSuccess = () => {
+    fetchConnections();
     setSelectedPlatform(null);
   };
 
@@ -31,6 +49,10 @@ export const PlatformSelector = () => {
     return <ZendeskConnect onSuccess={handleSuccess} />;
   }
 
+  const getConnectionStatus = (platformType: string) => {
+    return connections.find(conn => conn.platform_type === platformType);
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
@@ -44,7 +66,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("zoho")}
             className="w-full"
           >
-            Connect Zoho Desk
+            {getConnectionStatus("zoho_desk") ? "Sync Zoho Desk" : "Connect Zoho Desk"}
           </Button>
         </Card>
 
@@ -57,7 +79,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("freshdesk")}
             className="w-full"
           >
-            Connect FreshDesk
+            {getConnectionStatus("freshdesk") ? "Sync FreshDesk" : "Connect FreshDesk"}
           </Button>
         </Card>
 
@@ -70,7 +92,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("gmail")}
             className="w-full"
           >
-            Connect Gmail
+            {getConnectionStatus("gmail") ? "Sync Gmail" : "Connect Gmail"}
           </Button>
         </Card>
 
@@ -83,7 +105,7 @@ export const PlatformSelector = () => {
             onClick={() => setSelectedPlatform("zendesk")}
             className="w-full"
           >
-            Connect Zendesk
+            {getConnectionStatus("zendesk") ? "Sync Zendesk" : "Connect Zendesk"}
           </Button>
         </Card>
       </div>

@@ -8,13 +8,14 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    checkAuth();
+    checkConnection();
   }, []);
 
-  const checkAuth = async () => {
+  const checkConnection = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toast({
@@ -23,7 +24,16 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         variant: "destructive",
       });
       navigate("/login");
+      return;
     }
+
+    const { data: connection } = await supabase
+      .from("platform_connections")
+      .select("*")
+      .eq("platform_type", "zoho_desk")
+      .single();
+
+    setIsConnected(!!connection);
   };
 
   const handleConnectZoho = async () => {
@@ -36,7 +46,6 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to connect Zoho");
       }
 
-      // Get the access token
       const { data: authUrl, error: authError } = await supabase.functions.invoke(
         "initiate-zoho-oauth",
         {
@@ -57,7 +66,6 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("Failed to get authentication URL");
       }
 
-      // Redirect to Zoho's OAuth page
       window.location.href = authUrl.url;
 
     } catch (error) {
@@ -72,12 +80,12 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
-  const handleFetchTickets = async () => {
-    setIsFetchingTickets(true);
+  const handleSync = async () => {
+    setIsSyncing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error("You must be logged in to fetch tickets");
+        throw new Error("You must be logged in to sync tickets");
       }
 
       const { data, error } = await supabase.functions.invoke(
@@ -92,21 +100,22 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       if (error) throw error;
 
-      console.log("Fetched tickets:", data.tickets);
       toast({
         title: "Success",
-        description: `Retrieved ${data.tickets.length} tickets from Zoho`,
+        description: `Successfully synced Zoho tickets`,
       });
 
+      onSuccess();
+
     } catch (error) {
-      console.error("Error fetching Zoho tickets:", error);
+      console.error("Error syncing Zoho tickets:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch tickets",
+        description: error.message || "Failed to sync tickets",
         variant: "destructive",
       });
     } finally {
-      setIsFetchingTickets(false);
+      setIsSyncing(false);
     }
   };
 
@@ -117,24 +126,15 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         Connect your Zoho Desk account to analyze your support tickets.
       </p>
       
-      <div className="space-y-2">
-        <Button 
-          onClick={handleConnectZoho}
-          disabled={isLoading}
-          className="w-full"
-        >
-          {isLoading ? "Connecting..." : "Connect with Zoho"}
-        </Button>
-
-        <Button
-          onClick={handleFetchTickets}
-          disabled={isFetchingTickets}
-          variant="outline"
-          className="w-full"
-        >
-          {isFetchingTickets ? "Fetching..." : "Fetch Tickets"}
-        </Button>
-      </div>
+      <Button 
+        onClick={isConnected ? handleSync : handleConnectZoho}
+        disabled={isLoading || isSyncing}
+        className="w-full"
+      >
+        {isLoading ? "Connecting..." : 
+         isSyncing ? "Syncing..." : 
+         isConnected ? "Sync Tickets" : "Connect with Zoho"}
+      </Button>
     </div>
   );
 };
