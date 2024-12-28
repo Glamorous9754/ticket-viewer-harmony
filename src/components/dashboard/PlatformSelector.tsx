@@ -24,6 +24,7 @@ export const PlatformSelector = () => {
       .select("*");
 
     if (!error && data) {
+      console.log("Fetched connections:", data); // Debug log
       setConnections(data);
     }
   };
@@ -50,7 +51,9 @@ export const PlatformSelector = () => {
   }
 
   const getConnectionStatus = (platformType: string) => {
-    return connections.find(conn => conn.platform_type === platformType);
+    const connection = connections.find(conn => conn.platform_type === platformType);
+    console.log(`Checking connection for ${platformType}:`, connection); // Debug log
+    return connection;
   };
 
   return (
