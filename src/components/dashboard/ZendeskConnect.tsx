@@ -8,14 +8,8 @@ import { useSearchParams } from "react-router-dom";
 export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [searchParams] = useSearchParams();
   const connectionStatus = searchParams.get('connection');
-
-  useEffect(() => {
-    checkConnection();
-  }, []);
 
   useEffect(() => {
     if (connectionStatus === 'success') {
@@ -23,7 +17,6 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         title: "Success",
         description: "Successfully connected to Zendesk!",
       });
-      checkConnection();
       onSuccess();
     } else if (connectionStatus === 'error') {
       toast({
@@ -33,21 +26,6 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       });
     }
   }, [connectionStatus, toast, onSuccess]);
-
-  const checkConnection = async () => {
-    try {
-      const { data } = await supabase
-        .from("zendesk_credentials")
-        .select("*")
-        .eq("status", "active")
-        .maybeSingle();
-
-      setIsConnected(!!data);
-    } catch (error) {
-      console.error("Error checking Zendesk connection:", error);
-      setIsConnected(false);
-    }
-  };
 
   const handleConnect = async () => {
     setIsLoading(true);
@@ -75,31 +53,7 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         description: error.message || "Failed to start authentication",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-zendesk-tickets");
-      
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Successfully synced Zendesk tickets!",
-      });
-    } catch (error) {
-      console.error("Error syncing Zendesk tickets:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sync tickets",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -110,13 +64,11 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         Connect your Zendesk account to analyze your support tickets.
       </p>
       <Button 
-        onClick={isConnected ? handleSync : handleConnect}
-        disabled={isLoading || isSyncing}
+        onClick={handleConnect}
+        disabled={isLoading}
         className="w-full"
       >
-        {isLoading ? "Connecting..." : 
-         isSyncing ? "Syncing..." : 
-         isConnected ? "Sync Zendesk Tickets" : "Connect with Zendesk"}
+        {isLoading ? "Connecting..." : "Connect with Zendesk"}
       </Button>
     </Card>
   );

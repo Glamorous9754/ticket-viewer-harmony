@@ -330,12 +330,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      gmail_connection_status:
-        | "active"
-        | "inactive"
-        | "expired"
-        | "pending"
-        | "connected"
+      gmail_connection_status: "active" | "inactive" | "expired"
       platform_type: "freshdesk" | "zoho_desk" | "zendesk" | "gmail"
       ticket_status: "Open" | "Closed" | "In_Progress"
       zendesk_connection_status:
