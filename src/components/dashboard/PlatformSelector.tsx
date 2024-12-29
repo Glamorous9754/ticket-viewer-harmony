@@ -1,34 +1,26 @@
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
-import { PlatformCard } from "./PlatformCard";
-import { PlatformActions } from "./PlatformActions";
-import { usePlatformConnection } from "./hooks/usePlatformConnection";
-import { Platform } from "./types/platform";
+import { useState } from "react";
+
+type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
 
 export const PlatformSelector = () => {
-  const {
-    selectedPlatform,
-    setSelectedPlatform,
-    isLoading,
-    isSyncing,
-    connectionStatus,
-    handleSync,
-    handleDisconnect,
-    checkConnections,
-  } = usePlatformConnection();
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   const handleSuccess = () => {
+    setIsConnected(false);
     setSelectedPlatform(null);
-    checkConnections();
   };
 
-  // Get the currently active platform
-  const activePlatform = Object.entries(connectionStatus).find(
-    ([_, status]) => status?.is_active
-  )?.[0] as Platform;
+  const handleConnect = (platform: Platform) => {
+    setSelectedPlatform(platform);
+    setIsConnected(true);
+  };
 
   if (selectedPlatform === "freshdesk") {
     return <FreshDeskConnect onSuccess={handleSuccess} />;
@@ -50,77 +42,61 @@ export const PlatformSelector = () => {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <PlatformCard
-          title="Zoho Desk"
-          description="Connect your Zoho Desk account to analyze customer tickets"
-          isConnected={!!connectionStatus.zoho?.is_active}
-          actions={
-            <PlatformActions
-              platform="zoho"
-              isConnected={!!connectionStatus.zoho?.is_active}
-              activePlatform={activePlatform}
-              isSyncing={isSyncing}
-              isLoading={isLoading}
-              onConnect={setSelectedPlatform}
-              onSync={handleSync}
-              onDisconnect={handleDisconnect}
-            />
-          }
-        />
+        <Card className="p-6">
+          <h3 className="text-xl font-medium mb-4">Zoho Desk</h3>
+          <p className="text-gray-600 mb-4">
+            Connect your Zoho Desk account to analyze customer tickets
+          </p>
+          <Button
+            onClick={() => handleConnect("zoho")}
+            className="w-full"
+            disabled={isConnected}
+          >
+            Connect Zoho Desk
+          </Button>
+        </Card>
 
-        <PlatformCard
-          title="FreshDesk"
-          description="Connect your FreshDesk account to analyze customer tickets"
-          isConnected={false}
-          actions={
-            <PlatformActions
-              platform="freshdesk"
-              isConnected={false}
-              activePlatform={activePlatform}
-              isSyncing={isSyncing}
-              isLoading={isLoading}
-              onConnect={setSelectedPlatform}
-              onSync={handleSync}
-              onDisconnect={handleDisconnect}
-            />
-          }
-        />
+        <Card className="p-6">
+          <h3 className="text-xl font-medium mb-4">FreshDesk</h3>
+          <p className="text-gray-600 mb-4">
+            Connect your FreshDesk account to analyze customer tickets
+          </p>
+          <Button
+            onClick={() => handleConnect("freshdesk")}
+            className="w-full"
+            disabled={isConnected}
+          >
+            Connect FreshDesk
+          </Button>
+        </Card>
 
-        <PlatformCard
-          title="Gmail"
-          description="Connect your Gmail account to analyze customer emails"
-          isConnected={!!connectionStatus.gmail?.is_active}
-          actions={
-            <PlatformActions
-              platform="gmail"
-              isConnected={!!connectionStatus.gmail?.is_active}
-              activePlatform={activePlatform}
-              isSyncing={isSyncing}
-              isLoading={isLoading}
-              onConnect={setSelectedPlatform}
-              onSync={handleSync}
-              onDisconnect={handleDisconnect}
-            />
-          }
-        />
+        <Card className="p-6">
+          <h3 className="text-xl font-medium mb-4">Gmail</h3>
+          <p className="text-gray-600 mb-4">
+            Connect your Gmail account to analyze customer emails
+          </p>
+          <Button
+            onClick={() => handleConnect("gmail")}
+            className="w-full"
+            disabled={isConnected}
+          >
+            Connect Gmail
+          </Button>
+        </Card>
 
-        <PlatformCard
-          title="Zendesk"
-          description="Connect your Zendesk account to analyze support tickets"
-          isConnected={!!connectionStatus.zendesk?.is_active}
-          actions={
-            <PlatformActions
-              platform="zendesk"
-              isConnected={!!connectionStatus.zendesk?.is_active}
-              activePlatform={activePlatform}
-              isSyncing={isSyncing}
-              isLoading={isLoading}
-              onConnect={setSelectedPlatform}
-              onSync={handleSync}
-              onDisconnect={handleDisconnect}
-            />
-          }
-        />
+        <Card className="p-6">
+          <h3 className="text-xl font-medium mb-4">Zendesk</h3>
+          <p className="text-gray-600 mb-4">
+            Connect your Zendesk account to analyze support tickets
+          </p>
+          <Button
+            onClick={() => handleConnect("zendesk")}
+            className="w-full"
+            disabled={isConnected}
+          >
+            Connect Zendesk
+          </Button>
+        </Card>
       </div>
     </div>
   );
