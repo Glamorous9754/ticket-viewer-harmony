@@ -28,7 +28,7 @@ export const PlatformSelector = () => {
   // Get the currently active platform
   const activePlatform = Object.entries(connectionStatus).find(
     ([_, status]) => status?.is_active
-  )?.[0] as Platform;
+  )?.[0] as Platform | undefined;
 
   if (selectedPlatform === "freshdesk") {
     return <FreshDeskConnect onSuccess={handleSuccess} />;
@@ -61,7 +61,7 @@ export const PlatformSelector = () => {
               activePlatform={activePlatform}
               isSyncing={isSyncing}
               isLoading={isLoading}
-              onConnect={setSelectedPlatform}
+              onConnect={() => setSelectedPlatform("zoho")}
               onSync={handleSync}
               onDisconnect={handleDisconnect}
             />
@@ -79,7 +79,7 @@ export const PlatformSelector = () => {
               activePlatform={activePlatform}
               isSyncing={isSyncing}
               isLoading={isLoading}
-              onConnect={setSelectedPlatform}
+              onConnect={() => setSelectedPlatform("freshdesk")}
               onSync={handleSync}
               onDisconnect={handleDisconnect}
             />
@@ -97,7 +97,7 @@ export const PlatformSelector = () => {
               activePlatform={activePlatform}
               isSyncing={isSyncing}
               isLoading={isLoading}
-              onConnect={setSelectedPlatform}
+              onConnect={() => setSelectedPlatform("gmail")}
               onSync={handleSync}
               onDisconnect={handleDisconnect}
             />
@@ -115,7 +115,7 @@ export const PlatformSelector = () => {
               activePlatform={activePlatform}
               isSyncing={isSyncing}
               isLoading={isLoading}
-              onConnect={setSelectedPlatform}
+              onConnect={() => setSelectedPlatform("zendesk")}
               onSync={handleSync}
               onDisconnect={handleDisconnect}
             />
