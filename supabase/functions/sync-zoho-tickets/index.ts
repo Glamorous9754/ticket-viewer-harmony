@@ -10,14 +10,16 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ZOHO_CLIENT_ID = Deno.env.get("ZOHO_CLIENT_ID");
 const ZOHO_CLIENT_SECRET = Deno.env.get("ZOHO_CLIENT_SECRET");
-const ZOHO_ORG_ID = Deno.env.get("ZOHO_ORG_ID");
+const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY");
 
+
+// Verify that all required environment variables are set
 if (
   !SUPABASE_URL ||
   !SUPABASE_SERVICE_ROLE_KEY ||
   !ZOHO_CLIENT_ID ||
   !ZOHO_CLIENT_SECRET ||
-  !ZOHO_ORG_ID
+  !OPEN_ROUTER_KEY
 ) {
   console.error("🔴 Missing required environment variables.");
   Deno.exit(1);
@@ -93,6 +95,12 @@ interface SupabaseTicket {
   updated_at: string;
 }
 
+// Interface for Zoho Credentials with org_id
+interface ZohoCredentials {
+  refresh_token: string;
+  org_id: string;
+}
+
 // Function to refresh the Zoho access token using a provided refresh token
 const refreshZohoAccessToken = async (refreshToken: string): Promise<string> => {
   const tokenUrl = "https://accounts.zoho.in/oauth/v2/token";
@@ -110,7 +118,7 @@ const refreshZohoAccessToken = async (refreshToken: string): Promise<string> => 
       },
       body: params.toString(),
     });
-    console.log("Response Status:", response.status);
+    console.log("🔵 Response Status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -140,7 +148,8 @@ const refreshZohoAccessToken = async (refreshToken: string): Promise<string> => 
 
 // Function to fetch all open Zoho tickets using limit and from for pagination
 const fetchZohoOpenTickets = async (
-  accessToken: string
+  accessToken: string,
+  orgId: string
 ): Promise<ZohoTicket[]> => {
   const tickets: ZohoTicket[] = [];
   let offset = 0;
@@ -161,7 +170,7 @@ const fetchZohoOpenTickets = async (
       // Increment API call counter before making the request
       apiCallCount += 1;
       console.log(
-        `📞 API Call #${apiCallCount}: Fetching tickets from offset ${offset}`
+        `📞 API Call #${apiCallCount}: Fetching tickets from offset ${offset} for Org ID ${orgId}`
       );
 
       // Make the API request
@@ -169,7 +178,7 @@ const fetchZohoOpenTickets = async (
         method: "GET",
         headers: {
           Authorization: `Zoho-oauthtoken ${accessToken}`,
-          orgId: ZOHO_ORG_ID!,
+          orgId: orgId,
           "Content-Type": "application/json",
         },
       });
@@ -222,7 +231,8 @@ const fetchZohoOpenTickets = async (
 const fetchThreadDetails = async (
   ticketId: string,
   threadId: string,
-  accessToken: string
+  accessToken: string,
+  orgId: string
 ): Promise<ZohoThreadDetails | null> => {
   const threadDetailsUrl = `https://desk.zoho.in/api/v1/tickets/${ticketId}/threads/${threadId}`;
   try {
@@ -230,7 +240,7 @@ const fetchThreadDetails = async (
       method: "GET",
       headers: {
         Authorization: `Zoho-oauthtoken ${accessToken}`,
-        orgId: ZOHO_ORG_ID!,
+        orgId: orgId,
         "Content-Type": "application/json",
       },
     });
@@ -257,7 +267,8 @@ const fetchThreadDetails = async (
 // Function to fetch threads/comments for a specific ticket and compile narrative
 const fetchTicketThreads = async (
   ticketId: string,
-  accessToken: string
+  accessToken: string,
+  orgId: string
 ): Promise<string> => {
   const threadsUrl = `https://desk.zoho.in/api/v1/tickets/${ticketId}/threads`;
   const comments: string[] = [];
@@ -268,7 +279,7 @@ const fetchTicketThreads = async (
       method: "GET",
       headers: {
         Authorization: `Zoho-oauthtoken ${accessToken}`,
-        orgId: ZOHO_ORG_ID!,
+        orgId: orgId,
         "Content-Type": "application/json",
       },
     });
@@ -276,7 +287,7 @@ const fetchTicketThreads = async (
     // Increment API call counter
     apiCallCount += 1;
     console.log(
-      `📞 API Call #${apiCallCount}: Fetching threads for Ticket ID ${ticketId}`
+      `📞 API Call #${apiCallCount}: Fetching threads for Ticket ID ${ticketId} for Org ID ${orgId}`
     );
 
     if (!response.ok) {
@@ -301,7 +312,8 @@ const fetchTicketThreads = async (
       const threadDetails = await fetchThreadDetails(
         ticketId,
         thread.id,
-        accessToken
+        accessToken,
+        orgId // Pass orgId here
       );
       if (!threadDetails) {
         return null;
@@ -359,11 +371,61 @@ const fetchTicketThreads = async (
   }
 };
 
+// Updated Function to Generate Summary Using OpenRouter.ai
+const getThreadSummary = async (threadNarrative: string): Promise<string> => {
+  if (!threadNarrative || threadNarrative === "No threads available.") {
+    return "No content to summarize.";
+  }
+
+  const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+  try {
+    const prompt = `Please provide a concise summary of this support ticket conversation. Focus on the main issue, any solutions provided, and the current status. Here's the conversation:\n\n${threadNarrative}`;
+
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-chat", // Optional: Specify the model if needed
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        // You can add additional parameters here if required by OpenRouter.ai
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("🔴 OpenRouter.ai API error:", errorData);
+      return "Error generating summary.";
+    }
+
+    const data = await response.json();
+
+    // Adjust the parsing logic based on the actual response structure from OpenRouter.ai
+    const summary = data.choices && data.choices[0] && data.choices[0].message.content
+      ? data.choices[0].message.content
+      : "Summary not available.";
+
+    return summary.trim();
+
+  } catch (error: any) {
+    console.error("🔴 Error getting summary from OpenRouter.ai:", error.message || error);
+    return "Error generating summary.";
+  }
+};
+
 // Function to fetch the active Zoho credentials for a user
-const getZohoCredentials = async (profileId: string): Promise<string> => {
+const getZohoCredentials = async (profileId: string): Promise<ZohoCredentials> => {
   const { data, error } = await supabase
     .from("zoho_credentials")
-    .select("refresh_token")
+    .select("refresh_token, org_id")
     .eq("profile_id", profileId)
     .eq("status", "connected") // Assuming there's a 'status' field to indicate active credentials
     .single(); // Assuming one active credential per user
@@ -373,16 +435,18 @@ const getZohoCredentials = async (profileId: string): Promise<string> => {
     throw new Error("Failed to retrieve Zoho credentials.");
   }
 
-  if (!data || !data.refresh_token) {
+  if (!data || !data.refresh_token || !data.org_id) {
     console.error("🔴 No active Zoho credentials found for the user.");
     throw new Error(
       "No active Zoho credentials found. Please connect your Zoho account."
     );
   }
 
-  return data.refresh_token;
+  return {
+    refresh_token: data.refresh_token,
+    org_id: data.org_id,
+  };
 };
-
 
 // Function to fetch all open tickets and insert them into Supabase
 const fetchAndSaveTickets = async (req: Request): Promise<Response> => {
@@ -459,14 +523,16 @@ const fetchAndSaveTickets = async (req: Request): Promise<Response> => {
   const profileId = user.id;
 
   try {
-    // Step 1: Retrieve Zoho refresh token from the database
-    const refreshToken = await getZohoCredentials(profileId);
+    // Step 1: Retrieve Zoho credentials (including org_id) from the database
+    const zohoCredentials = await getZohoCredentials(profileId);
+    const refreshToken = zohoCredentials.refresh_token;
+    const orgId = zohoCredentials.org_id;
 
     // Step 2: Refresh Zoho access token using the retrieved refresh token
     const accessToken = await refreshZohoAccessToken(refreshToken);
 
     // Step 3: Fetch open tickets from Zoho Desk with pagination and API call tracking
-    const tickets = await fetchZohoOpenTickets(accessToken);
+    const tickets = await fetchZohoOpenTickets(accessToken, orgId);
     console.log(`✅ Fetched ${tickets.length} open tickets from Zoho Desk.`);
 
     if (tickets.length === 0) {
@@ -485,8 +551,12 @@ const fetchAndSaveTickets = async (req: Request): Promise<Response> => {
       tickets.map(async (ticket) => {
         const threadNarrative = await fetchTicketThreads(
           ticket.id.toString(),
-          accessToken
+          accessToken,
+          orgId // Pass orgId here
         );
+
+        const summary = await getThreadSummary(threadNarrative);
+        console.log(`✅ Generated summary for ticket ${ticket.id}`);
 
         return {
           profile_id: profileId,
@@ -499,7 +569,7 @@ const fetchAndSaveTickets = async (req: Request): Promise<Response> => {
           comments: ticket.subject || "No Subject",
           agent_id: ticket.assignee?.name || "Unassigned",
           customer_id: ticket.contactId || "Unknown",
-          summary: "fetching summary...",
+          summary: summary,
           last_fetched_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

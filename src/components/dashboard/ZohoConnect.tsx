@@ -18,23 +18,23 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
-  const connectionStatus = searchParams.get('connection');
+  const authStatus = searchParams.get('auth_status'); // Updated to 'auth_status'
 
   useEffect(() => {
-    if (connectionStatus === 'success') {
+    if (authStatus === 'success') {
       toast({
         title: "Success",
         description: "Successfully connected to Zoho!",
       });
       onSuccess();
-    } else if (connectionStatus === 'error') {
+    } else if (authStatus === 'error') {
       toast({
         title: "Error",
         description: "Failed to connect to Zoho. Please try again.",
         variant: "destructive",
       });
     }
-  }, [connectionStatus, toast, onSuccess]);
+  }, [authStatus, toast, onSuccess]);
 
   const handleConnect = async () => {
     setIsLoading(true);
@@ -45,7 +45,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       }
 
       const { data, error } = await supabase.functions.invoke(
-        "initiate-zoho-oauth",
+        "initiate-zoho-oauth", // Ensure this matches your backend function name
         {
           body: {}, // No additional data needed
           headers: {
@@ -54,20 +54,45 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         }
       );
 
-      if (error) throw error;
-      if (!data?.url) throw new Error("No authorization URL received");
+      console.log("🔍 Response from Supabase function:", data); // Debugging log
 
-      // Redirect to Zoho's OAuth page
-      window.location.href = data.url;
+      if (error) throw error;
+
+      if (data?.url) {
+        // Redirect to Zoho's OAuth page
+        console.log("🔗 Redirecting to Zoho OAuth URL:", data.url); // Debugging log
+        window.location.href = data.url;
+        return;
+      } else if (data?.redirect_url && data?.query_params) {
+        // Construct the redirect URL using redirect_url and query_params
+        const redirectUrl = new URL(data.redirect_url);
+        Object.entries(data.query_params).forEach(([key, value]) => {
+          redirectUrl.searchParams.set(key, value);
+        });
+
+        const fullRedirectUrl = redirectUrl.toString();
+        console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl); // Debugging log
+        window.location.href = fullRedirectUrl;
+        return;
+      } else {
+        // Handle unexpected response structure
+        toast({
+          title: "Warning",
+          description: "Unexpected response from the server. Please try again.",
+          variant: "warning",
+        });
+        console.warn("⚠️ Unexpected response structure:", data);
+      }
 
     } catch (error: unknown) {
       console.error("Error initiating Zoho OAuth:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 
+        description: error instanceof Error ? error.message :
           (error as ApiError).message || "Failed to start authentication",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -102,7 +127,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       console.error("Error fetching Zoho tickets:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 
+        description: error instanceof Error ? error.message :
           (error as ApiError).message || "Failed to fetch tickets",
         variant: "destructive",
       });
