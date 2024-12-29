@@ -74,7 +74,7 @@ const Chat = () => {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="min-h-[56px] max-h-[200px] resize-none text-base bg-background border-border/30 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-xl pl-4 pr-12 py-4"
+                  className="min-h-[56px] max-h-[200px] resize-none text-base bg-accent/50 border-border/30 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-xl pl-4 pr-12 py-4 placeholder:text-muted-foreground/60"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
