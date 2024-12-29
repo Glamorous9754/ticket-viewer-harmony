@@ -8,8 +8,6 @@ import { PlatformActions } from "./PlatformActions";
 import { usePlatformConnection } from "./hooks/usePlatformConnection";
 import { Platform } from "./types/platform";
 
-type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
-
 export const PlatformSelector = () => {
   const {
     selectedPlatform,

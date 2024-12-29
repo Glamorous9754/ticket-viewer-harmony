@@ -56,6 +56,47 @@ export type Database = {
           },
         ]
       }
+      gmail_tickets: {
+        Row: {
+          created_at: string
+          id: string
+          last_date: string
+          profile_id: string
+          summary: string | null
+          thread: string | null
+          thread_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_date: string
+          profile_id: string
+          summary?: string | null
+          thread?: string | null
+          thread_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_date?: string
+          profile_id?: string
+          summary?: string | null
+          thread?: string | null
+          thread_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmail_tickets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       oauth_states: {
         Row: {
           created_at: string
