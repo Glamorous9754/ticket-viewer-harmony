@@ -91,7 +91,7 @@ serve(async (req) => {
     console.log("✅ Credentials updated successfully for state ID:", state);
 
     // Redirect to the front page with auth status and platform
-    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/features");
+    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/profile/integrations");
     frontPageUrl.searchParams.set("auth_status", "success");
     frontPageUrl.searchParams.set("platform", "zendesk");
     frontPageUrl.searchParams.set("timestamp", Date.now().toString());
@@ -99,7 +99,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("❌ Error in Zendesk OAuth Callback:", error);
     // Redirect with error status and platform
-    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/features");
+    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/profile/integrations");
     frontPageUrl.searchParams.set("auth_status", "error");
     frontPageUrl.searchParams.set("platform", "zendesk");
     frontPageUrl.searchParams.set("error_message", encodeURIComponent((error as Error).message));
