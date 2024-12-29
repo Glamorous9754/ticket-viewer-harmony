@@ -24,6 +24,11 @@ const Sidebar = () => {
       icon: BarChart,
       path: "/business",
     },
+    {
+      title: "Chat",
+      icon: MessageSquare,
+      path: "/chat",
+    },
   ];
 
   const handleLogout = async () => {
@@ -69,14 +74,6 @@ const Sidebar = () => {
       </nav>
 
       <div className="p-4 space-y-2 border-t border-gray-200">
-        <Link
-          to="/chat"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary text-primary-foreground hover:bg-secondary/80 transition-colors"
-        >
-          <MessageSquare className="w-5 h-5" />
-          <span>Chat</span>
-        </Link>
-
         <Link
           to="/profile/settings"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-muted transition-colors"

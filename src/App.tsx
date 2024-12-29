@@ -29,12 +29,12 @@ const App = () => {
               <Route path="/" element={<CustomerIntelligence />} />
               <Route path="/features" element={<FeatureRequests />} />
               <Route path="/business" element={<BusinessIntelligence />} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/profile" element={<Profile />}>
                 <Route path="settings" element={<GeneralSettings />} />
                 <Route path="integrations" element={<Integrations />} />
               </Route>
             </Route>
-            <Route path="/chat" element={<Chat />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

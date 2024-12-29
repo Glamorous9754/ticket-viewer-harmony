@@ -1,43 +1,82 @@
 import { useState } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
 
 const Chat = () => {
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
     
-    // Here you would typically handle the message
-    console.log("Message sent:", message);
+    // Add user message
+    const newMessage: Message = {
+      role: "user",
+      content: message.trim()
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
     setMessage("");
+    
+    // TODO: Implement AI response logic
+    // For now, add a mock response
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "This is a placeholder response. The AI integration will be implemented soon."
+      }]);
+    }, 1000);
   };
 
   return (
-    <div className="fixed inset-0 pl-64 flex flex-col bg-white">
-      <div className="p-4 border-b border-gray-200">
-        <h1 className="text-xl font-semibold text-gray-900">Support Chat</h1>
-      </div>
-      
-      <div className="flex-1 p-4">
-        <div className="max-w-2xl mx-auto text-center text-gray-500">
-          <p>This is a simple chat interface.</p>
-          <p>Start typing below to begin a conversation.</p>
+    <div className="flex flex-col h-[calc(100vh-12rem)] bg-white rounded-lg shadow-sm">
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4 max-w-3xl mx-auto">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex ${
+                msg.role === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground ml-4"
+                    : "bg-muted text-muted-foreground mr-4"
+                }`}
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </ScrollArea>
       
       <form
         onSubmit={handleSubmit}
-        className="p-4 border-t border-gray-200 bg-white"
+        className="border-t border-gray-200 p-4 bg-white"
       >
-        <div className="max-w-2xl mx-auto flex gap-2">
-          <Input
+        <div className="max-w-3xl mx-auto flex gap-2">
+          <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1"
+            className="min-h-[20px] max-h-[200px] resize-none"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
           />
           <Button type="submit" disabled={!message.trim()}>
             <Send className="w-4 h-4" />
