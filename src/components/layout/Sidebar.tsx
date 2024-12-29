@@ -71,7 +71,11 @@ const Sidebar = () => {
       <div className="p-4 space-y-2 border-t border-gray-200">
         <Link
           to="/chat"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-muted transition-colors"
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            location.pathname === "/chat"
+              ? "bg-primary text-white"
+              : "text-gray-600 hover:bg-muted"
+          }`}
         >
           <MessageSquare className="w-5 h-5" />
           <span>Chat</span>
@@ -79,7 +83,11 @@ const Sidebar = () => {
         
         <Link
           to="/profile/settings"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-muted transition-colors"
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            location.pathname.startsWith("/profile")
+              ? "bg-primary text-white"
+              : "text-gray-600 hover:bg-muted"
+          }`}
         >
           <Settings className="w-5 h-5" />
           <span>Profile</span>
