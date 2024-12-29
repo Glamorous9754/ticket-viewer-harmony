@@ -80,7 +80,7 @@ serve(async (req) => {
         access_token,
         refresh_token,
         expires_at: expiry,
-        status: "connected", // or any valid enum value
+        status: "connected",
       })
       .eq("id", state);
 
@@ -90,19 +90,21 @@ serve(async (req) => {
 
     console.log("✅ Credentials updated successfully");
 
-    // 4) Redirect user to your front page (or a success page)
-    const frontPageUrl = "https://preview--ticket-viewer-harmony.lovable.app/features"; // <-- Put your real URL here
-    // Return a 302 Found redirect
-    return Response.redirect(frontPageUrl, 302);
+    // 4) Redirect with success status and platform
+    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/features");
+    frontPageUrl.searchParams.set("auth_status", "success");
+    frontPageUrl.searchParams.set("platform", "zoho");
+    frontPageUrl.searchParams.set("timestamp", Date.now().toString());
+    return Response.redirect(frontPageUrl.toString(), 302);
 
   } catch (error) {
     console.error("❌ Error in Zoho OAuth Callback:", error);
-
-    // Optionally, you could redirect to an "error" page
-    // or just return an error JSON response:
-    return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    
+    // Redirect with error status and platform
+    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/features");
+    frontPageUrl.searchParams.set("auth_status", "error");
+    frontPageUrl.searchParams.set("platform", "zoho");
+    frontPageUrl.searchParams.set("error_message", encodeURIComponent((error as Error).message));
+    return Response.redirect(frontPageUrl.toString(), 302);
   }
 });

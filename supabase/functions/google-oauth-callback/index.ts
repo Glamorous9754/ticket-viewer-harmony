@@ -102,14 +102,20 @@ serve(async (req) => {
 
     console.log("✅ Credentials updated successfully for record ID:", recordId);
 
-    // Redirect to the front page
-    const frontPageUrl = "https://preview--ticket-viewer-harmony.lovable.app/features";
-    return Response.redirect(frontPageUrl, 302);
+    // Redirect with success status and platform
+    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/features");
+    frontPageUrl.searchParams.set("auth_status", "success");
+    frontPageUrl.searchParams.set("platform", "gmail");
+    frontPageUrl.searchParams.set("timestamp", Date.now().toString());
+    return Response.redirect(frontPageUrl.toString(), 302);
   } catch (error) {
     console.error("❌ Error in Google OAuth Callback:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
-      { status: 500, headers: corsHeaders }
-    );
+    
+    // Redirect with error status and platform
+    const frontPageUrl = new URL("https://preview--ticket-viewer-harmony.lovable.app/features");
+    frontPageUrl.searchParams.set("auth_status", "error");
+    frontPageUrl.searchParams.set("platform", "gmail");
+    frontPageUrl.searchParams.set("error_message", encodeURIComponent((error as Error).message));
+    return Response.redirect(frontPageUrl.toString(), 302);
   }
 });
