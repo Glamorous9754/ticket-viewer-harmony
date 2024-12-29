@@ -1,15 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
-import { useState, useEffect } from "react";
-import { RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-
-type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
+import { PlatformCard } from "./PlatformCard";
+import { PlatformActions } from "./PlatformActions";
+import { Platform } from "./types/platform";
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
@@ -107,21 +105,10 @@ export const PlatformSelector = () => {
     }
   };
 
-  if (selectedPlatform === "freshdesk") {
-    return <FreshDeskConnect onSuccess={handleSuccess} />;
-  }
-
-  if (selectedPlatform === "zoho") {
-    return <ZohoConnect onSuccess={handleSuccess} />;
-  }
-
-  if (selectedPlatform === "gmail") {
-    return <GmailConnect onSuccess={handleSuccess} />;
-  }
-
-  if (selectedPlatform === "zendesk") {
-    return <ZendeskConnect onSuccess={handleSuccess} />;
-  }
+  if (selectedPlatform === "freshdesk") return <FreshDeskConnect onSuccess={handleSuccess} />;
+  if (selectedPlatform === "zoho") return <ZohoConnect onSuccess={handleSuccess} />;
+  if (selectedPlatform === "gmail") return <GmailConnect onSuccess={handleSuccess} />;
+  if (selectedPlatform === "zendesk") return <ZendeskConnect onSuccess={handleSuccess} />;
 
   const platforms = [
     {
@@ -152,51 +139,24 @@ export const PlatformSelector = () => {
       <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {platforms.map((platform) => (
-          <Card key={platform.id} className="p-6">
-            <h3 className="text-xl font-medium mb-4">{platform.name}</h3>
-            <p className="text-gray-600 mb-4">{platform.description}</p>
-            <div className="space-y-2">
-              <Button
-                onClick={() => 
-                  authenticatedPlatform === platform.id 
-                    ? handleDisconnect(platform.id)
-                    : handleConnect(platform.id)
-                }
-                className="w-full"
-                disabled={isAuthenticating && selectedPlatform !== platform.id || 
-                         (authenticatedPlatform && authenticatedPlatform !== platform.id) ||
-                         platform.comingSoon}
-                variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
-              >
-                {platform.comingSoon 
-                  ? "Coming Soon"
-                  : authenticatedPlatform === platform.id 
-                    ? "Disconnect" 
-                    : `Connect ${platform.name}`}
-              </Button>
-              
-              {authenticatedPlatform === platform.id && (
-                <Button
-                  onClick={() => handleSync(platform.id)}
-                  variant="outline"
-                  disabled={isSyncing}
-                  className="w-full"
-                >
-                  {isSyncing && syncingPlatform === platform.id ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Sync Tickets
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </Card>
+          <PlatformCard
+            key={platform.id}
+            title={platform.name}
+            description={platform.description}
+            isConnected={authenticatedPlatform === platform.id}
+            actions={
+              <PlatformActions
+                platform={platform.id}
+                isConnected={authenticatedPlatform === platform.id}
+                activePlatform={authenticatedPlatform}
+                isSyncing={isSyncing && syncingPlatform === platform.id}
+                isLoading={selectedPlatform}
+                onConnect={handleConnect}
+                onSync={handleSync}
+                onDisconnect={handleDisconnect}
+              />
+            }
+          />
         ))}
       </div>
     </div>
