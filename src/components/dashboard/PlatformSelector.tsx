@@ -5,12 +5,18 @@ import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
 import { useState, useEffect } from "react";
+import { RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncingPlatform, setSyncingPlatform] = useState<Platform>(null);
+  const { toast } = useToast();
   const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
     const stored = localStorage.getItem('authenticatedPlatform');
     return stored as Platform;
@@ -34,7 +40,6 @@ export const PlatformSelector = () => {
       localStorage.removeItem('authenticatedPlatform');
     }
     
-    // Clean up URL after reading params
     window.history.replaceState({}, '', window.location.pathname);
   }, []);
 
@@ -60,8 +65,45 @@ export const PlatformSelector = () => {
     try {
       setAuthenticatedPlatform(null);
       localStorage.removeItem('authenticatedPlatform');
+      toast({
+        title: "Platform Disconnected",
+        description: `Successfully disconnected from ${platform}`,
+      });
     } catch (error) {
       console.error('Failed to disconnect:', error);
+      toast({
+        title: "Error",
+        description: "Failed to disconnect from platform",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSync = async (platform: Platform) => {
+    if (!platform || isSyncing) return;
+
+    setIsSyncing(true);
+    setSyncingPlatform(platform);
+
+    try {
+      const { error } = await supabase.functions.invoke(`sync-${platform}-tickets`);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Sync Complete",
+        description: `Successfully synced tickets from ${platform}`,
+      });
+    } catch (error) {
+      console.error(`Failed to sync ${platform} tickets:`, error);
+      toast({
+        title: "Sync Failed",
+        description: `Failed to sync tickets from ${platform}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+      setSyncingPlatform(null);
     }
   };
 
@@ -112,21 +154,44 @@ export const PlatformSelector = () => {
           <Card key={platform.id} className="p-6">
             <h3 className="text-xl font-medium mb-4">{platform.name}</h3>
             <p className="text-gray-600 mb-4">{platform.description}</p>
-            <Button
-              onClick={() => 
-                authenticatedPlatform === platform.id 
-                  ? handleDisconnect(platform.id)
-                  : handleConnect(platform.id)
-              }
-              className="w-full"
-              disabled={isAuthenticating && selectedPlatform !== platform.id || 
-                       (authenticatedPlatform && authenticatedPlatform !== platform.id)}
-              variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
-            >
-              {authenticatedPlatform === platform.id 
-                ? "Disconnect" 
-                : `Connect ${platform.name}`}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={() => 
+                  authenticatedPlatform === platform.id 
+                    ? handleDisconnect(platform.id)
+                    : handleConnect(platform.id)
+                }
+                className="w-full"
+                disabled={isAuthenticating && selectedPlatform !== platform.id || 
+                         (authenticatedPlatform && authenticatedPlatform !== platform.id)}
+                variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
+              >
+                {authenticatedPlatform === platform.id 
+                  ? "Disconnect" 
+                  : `Connect ${platform.name}`}
+              </Button>
+              
+              {authenticatedPlatform === platform.id && (
+                <Button
+                  onClick={() => handleSync(platform.id)}
+                  variant="outline"
+                  disabled={isSyncing}
+                  className="w-full"
+                >
+                  {isSyncing && syncingPlatform === platform.id ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Sync Tickets
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </Card>
         ))}
       </div>
