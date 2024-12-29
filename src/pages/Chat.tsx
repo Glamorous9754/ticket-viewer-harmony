@@ -37,10 +37,14 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] px-6">
-      <div className="flex-1 w-full max-w-4xl mx-auto bg-background rounded-lg border border-border/40">
-        <ScrollArea className="flex-1 p-6 h-[calc(100vh-14rem)]">
-          <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-6rem)]">
+      <div className="flex-1 w-full max-w-3xl mx-auto bg-background/95 rounded-xl border border-border/20 backdrop-blur-sm">
+        <div className="p-4 border-b border-border/20">
+          <h2 className="text-lg font-semibold text-primary-foreground">Chat Assistant</h2>
+        </div>
+        
+        <ScrollArea className="flex-1 px-4 py-6 h-[calc(100vh-16rem)]">
+          <div className="space-y-6">
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -49,10 +53,10 @@ const Chat = () => {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-4 text-base ${
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-base ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground border border-border/40"
+                      ? "bg-primary text-primary-foreground ml-12"
+                      : "bg-muted/50 text-muted-foreground border border-border/20 mr-12"
                   }`}
                 >
                   {msg.content}
@@ -62,33 +66,34 @@ const Chat = () => {
           </div>
         </ScrollArea>
         
-        <form
-          onSubmit={handleSubmit}
-          className="border-t border-border/40 bg-background rounded-b-lg p-4"
-        >
-          <div className="flex gap-3 items-end max-w-3xl mx-auto">
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="min-h-[56px] max-h-[200px] resize-none text-base bg-background border-border/40 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-lg"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
-            <Button 
-              type="submit" 
-              size="lg"
-              disabled={!message.trim()}
-              className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-          </div>
-        </form>
+        <div className="p-4 bg-background/95 border-t border-border/20 rounded-b-xl backdrop-blur-sm">
+          <form onSubmit={handleSubmit} className="relative">
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="min-h-[56px] max-h-[200px] resize-none text-base bg-background border-border/30 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-xl pl-4 pr-12 py-4"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
+                />
+              </div>
+              <Button 
+                type="submit" 
+                size="lg"
+                disabled={!message.trim()}
+                className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6 rounded-xl"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
