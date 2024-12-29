@@ -40,7 +40,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col animate-fade-in">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-primary-foreground">Support AI</h1>
       </div>
@@ -55,7 +55,7 @@ const Sidebar = () => {
                   to={link.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? "bg-primary text-white"
+                      ? "bg-primary text-white shadow-sm"
                       : "text-gray-600 hover:bg-muted"
                   }`}
                 >
@@ -73,11 +73,11 @@ const Sidebar = () => {
           to="/chat"
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
             location.pathname === "/chat"
-              ? "bg-primary text-white"
+              ? "bg-primary text-white shadow-sm"
               : "text-gray-600 hover:bg-muted"
           }`}
         >
-          <MessageSquare className="w-5 h-5" />
+          <MessageSquare className={`w-5 h-5 ${location.pathname === "/chat" ? "animate-pulse" : ""}`} />
           <span>Chat</span>
         </Link>
         
@@ -85,7 +85,7 @@ const Sidebar = () => {
           to="/profile/settings"
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
             location.pathname.startsWith("/profile")
-              ? "bg-primary text-white"
+              ? "bg-primary text-white shadow-sm"
               : "text-gray-600 hover:bg-muted"
           }`}
         >

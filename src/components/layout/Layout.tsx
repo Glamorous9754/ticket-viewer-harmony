@@ -30,7 +30,7 @@ const Layout = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen bg-gradient-to-br from-accent via-white to-muted">
       <Sidebar />
       <main className="pl-64 min-h-screen">
         <div className="container py-8 animate-fade-in">
