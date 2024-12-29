@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
@@ -76,19 +76,6 @@ export const PlatformSelector = () => {
     }
   }, [searchParams, toast]);
 
-  useEffect(() => {
-    if (authenticatedPlatform) {
-      localStorage.setItem('authenticatedPlatform', authenticatedPlatform);
-    } else {
-      localStorage.removeItem('authenticatedPlatform');
-    }
-  }, [authenticatedPlatform]);
-
-  const handleSuccess = () => {
-    setIsAuthenticating(false);
-    setSelectedPlatform(null);
-  };
-
   const handleConnect = (platform: Platform) => {
     setSelectedPlatform(platform);
     setIsAuthenticating(true);
@@ -113,19 +100,19 @@ export const PlatformSelector = () => {
   };
 
   if (selectedPlatform === "freshdesk") {
-    return <FreshDeskConnect onSuccess={handleSuccess} />;
+    return <FreshDeskConnect onSuccess={() => setSelectedPlatform(null)} />;
   }
 
   if (selectedPlatform === "zoho") {
-    return <ZohoConnect onSuccess={handleSuccess} />;
+    return <ZohoConnect onSuccess={() => setSelectedPlatform(null)} />;
   }
 
   if (selectedPlatform === "gmail") {
-    return <GmailConnect onSuccess={handleSuccess} />;
+    return <GmailConnect onSuccess={() => setSelectedPlatform(null)} />;
   }
 
   if (selectedPlatform === "zendesk") {
-    return <ZendeskConnect onSuccess={handleSuccess} />;
+    return <ZendeskConnect onSuccess={() => setSelectedPlatform(null)} />;
   }
 
   return (
