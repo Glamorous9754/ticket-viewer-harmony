@@ -6,17 +6,8 @@ import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
 import { PlatformCard } from "./PlatformCard";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Link2Off } from "lucide-react";
-
-type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
-
-type ConnectionStatus = {
-  freshdesk: any | null;
-  gmail: any | null;
-  zoho: any | null;
-  zendesk: any | null;
-};
+import { PlatformActions } from "./PlatformActions";
+import { Platform, ConnectionStatus } from "./types/platform";
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
@@ -142,58 +133,6 @@ export const PlatformSelector = () => {
     return <ZendeskConnect onSuccess={handleSuccess} />;
   }
 
-  const renderPlatformActions = (platform: Platform, isConnected: boolean) => {
-    if (!isConnected) {
-      return (
-        <Button
-          onClick={() => setSelectedPlatform(platform)}
-          disabled={!!activePlatform || platform === 'freshdesk'}
-          className="w-full"
-        >
-          {platform === 'freshdesk' ? 'Coming Soon' : `Connect ${platform}`}
-        </Button>
-      );
-    }
-
-    return (
-      <div className="space-y-2">
-        <Button
-          onClick={() => handleSync(platform)}
-          variant="outline"
-          disabled={isSyncing}
-          className="w-full"
-        >
-          {isSyncing ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Syncing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Sync Tickets
-            </>
-          )}
-        </Button>
-        <Button
-          onClick={() => handleDisconnect(platform)}
-          variant="destructive"
-          disabled={isLoading === platform}
-          className="w-full"
-        >
-          {isLoading === platform ? (
-            "Disconnecting..."
-          ) : (
-            <>
-              <Link2Off className="mr-2 h-4 w-4" />
-              Disconnect
-            </>
-          )}
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
@@ -202,28 +141,72 @@ export const PlatformSelector = () => {
           title="Zoho Desk"
           description="Connect your Zoho Desk account to analyze customer tickets"
           isConnected={!!connectionStatus.zoho?.is_active}
-          actions={renderPlatformActions("zoho", !!connectionStatus.zoho?.is_active)}
+          actions={
+            <PlatformActions
+              platform="zoho"
+              isConnected={!!connectionStatus.zoho?.is_active}
+              activePlatform={activePlatform}
+              isSyncing={isSyncing}
+              isLoading={isLoading}
+              onConnect={setSelectedPlatform}
+              onSync={handleSync}
+              onDisconnect={handleDisconnect}
+            />
+          }
         />
 
         <PlatformCard
           title="FreshDesk"
           description="Connect your FreshDesk account to analyze customer tickets"
           isConnected={false}
-          actions={renderPlatformActions("freshdesk", false)}
+          actions={
+            <PlatformActions
+              platform="freshdesk"
+              isConnected={false}
+              activePlatform={activePlatform}
+              isSyncing={isSyncing}
+              isLoading={isLoading}
+              onConnect={setSelectedPlatform}
+              onSync={handleSync}
+              onDisconnect={handleDisconnect}
+            />
+          }
         />
 
         <PlatformCard
           title="Gmail"
           description="Connect your Gmail account to analyze customer emails"
           isConnected={!!connectionStatus.gmail?.is_active}
-          actions={renderPlatformActions("gmail", !!connectionStatus.gmail?.is_active)}
+          actions={
+            <PlatformActions
+              platform="gmail"
+              isConnected={!!connectionStatus.gmail?.is_active}
+              activePlatform={activePlatform}
+              isSyncing={isSyncing}
+              isLoading={isLoading}
+              onConnect={setSelectedPlatform}
+              onSync={handleSync}
+              onDisconnect={handleDisconnect}
+            />
+          }
         />
 
         <PlatformCard
           title="Zendesk"
           description="Connect your Zendesk account to analyze support tickets"
           isConnected={!!connectionStatus.zendesk?.is_active}
-          actions={renderPlatformActions("zendesk", !!connectionStatus.zendesk?.is_active)}
+          actions={
+            <PlatformActions
+              platform="zendesk"
+              isConnected={!!connectionStatus.zendesk?.is_active}
+              activePlatform={activePlatform}
+              isSyncing={isSyncing}
+              isLoading={isLoading}
+              onConnect={setSelectedPlatform}
+              onSync={handleSync}
+              onDisconnect={handleDisconnect}
+            />
+          }
         />
       </div>
     </div>
