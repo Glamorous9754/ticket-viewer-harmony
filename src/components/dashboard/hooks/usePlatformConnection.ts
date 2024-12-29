@@ -24,7 +24,7 @@ export const usePlatformConnection = () => {
 
       const status: ConnectionStatus = {};
       connections?.forEach(connection => {
-        status[connection.platform_type] = {
+        status[connection.platform_type as string] = {
           is_active: connection.is_active,
           last_fetched_at: connection.last_fetched_at
         };
@@ -67,7 +67,7 @@ export const usePlatformConnection = () => {
     setIsLoading(platform);
     try {
       const { error } = await supabase.rpc('unlink_platform_connection', {
-        platform,
+        platform_type: platform,
       });
       
       if (error) throw error;
