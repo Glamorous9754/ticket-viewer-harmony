@@ -155,7 +155,7 @@ export type Database = {
       }
       tickets: {
         Row: {
-          agent_name: string | null
+          agent_id: string | null
           comments: Json | null
           created_at: string
           created_date: string
@@ -163,7 +163,7 @@ export type Database = {
           external_ticket_id: string
           id: string
           last_fetched_at: string
-          platform_connection_id: string
+          platform_connection_id: string | null
           profile_id: string
           resolved_date: string | null
           status: Database["public"]["Enums"]["ticket_status"]
@@ -172,7 +172,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          agent_name?: string | null
+          agent_id?: string | null
           comments?: Json | null
           created_at?: string
           created_date: string
@@ -180,7 +180,7 @@ export type Database = {
           external_ticket_id: string
           id?: string
           last_fetched_at?: string
-          platform_connection_id: string
+          platform_connection_id?: string | null
           profile_id: string
           resolved_date?: string | null
           status: Database["public"]["Enums"]["ticket_status"]
@@ -189,7 +189,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          agent_name?: string | null
+          agent_id?: string | null
           comments?: Json | null
           created_at?: string
           created_date?: string
@@ -197,7 +197,7 @@ export type Database = {
           external_ticket_id?: string
           id?: string
           last_fetched_at?: string
-          platform_connection_id?: string
+          platform_connection_id?: string | null
           profile_id?: string
           resolved_date?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -337,7 +337,15 @@ export type Database = {
         | "pending"
         | "connected"
       platform_type: "freshdesk" | "zoho_desk" | "zendesk" | "gmail"
-      ticket_status: "Open" | "Closed" | "In_Progress"
+      ticket_status:
+        | "Open"
+        | "Closed"
+        | "In_Progress"
+        | "open"
+        | "pending"
+        | "hold"
+        | "solved"
+        | "closed"
       zendesk_connection_status:
         | "active"
         | "inactive"

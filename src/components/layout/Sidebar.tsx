@@ -1,4 +1,4 @@
-import { Home, MessageSquare, Lightbulb, BarChart, LogOut } from "lucide-react";
+import { Home, MessageSquare, Lightbulb, BarChart, LogOut, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -75,6 +75,14 @@ const Sidebar = () => {
         >
           <MessageSquare className="w-5 h-5" />
           <span>Chat</span>
+        </Link>
+
+        <Link
+          to="/profile/settings"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-muted transition-colors"
+        >
+          <Settings className="w-5 h-5" />
+          <span>Profile</span>
         </Link>
         
         <button

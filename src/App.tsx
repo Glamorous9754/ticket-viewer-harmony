@@ -10,6 +10,9 @@ import FeatureRequests from "./pages/FeatureRequests";
 import BusinessIntelligence from "./pages/BusinessIntelligence";
 import Chat from "./pages/Chat";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import GeneralSettings from "./pages/profile/GeneralSettings";
+import Integrations from "./pages/profile/Integrations";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +29,10 @@ const App = () => {
               <Route path="/" element={<CustomerIntelligence />} />
               <Route path="/features" element={<FeatureRequests />} />
               <Route path="/business" element={<BusinessIntelligence />} />
+              <Route path="/profile" element={<Profile />}>
+                <Route path="settings" element={<GeneralSettings />} />
+                <Route path="integrations" element={<Integrations />} />
+              </Route>
             </Route>
             <Route path="/chat" element={<Chat />} />
           </Routes>
