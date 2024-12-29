@@ -74,7 +74,14 @@ const Chat = () => {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="min-h-[56px] max-h-[200px] resize-none text-base bg-muted border-border/40 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-xl pl-4 pr-12 py-4 placeholder:text-muted-foreground/70"
+                  className="min-h-[56px] max-h-[200px] resize-none text-base 
+                    bg-white/80 border-[1.5px] border-border/50
+                    hover:border-primary/30 hover:bg-white
+                    focus-visible:ring-1 focus-visible:ring-primary 
+                    focus-visible:border-primary/50 focus-visible:bg-white
+                    transition-all duration-200 ease-in-out
+                    rounded-xl pl-4 pr-12 py-4 
+                    placeholder:text-muted-foreground/70"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
