@@ -75,7 +75,7 @@ const Chat = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type your message..."
                   className="min-h-[56px] max-h-[200px] resize-none text-base 
-                    bg-white/80 border-[1.5px] border-border/50
+                    bg-white/80 border-[3px] border-[#888888]
                     hover:border-primary/30 hover:bg-white
                     focus-visible:ring-1 focus-visible:ring-primary 
                     focus-visible:border-primary/50 focus-visible:bg-white
