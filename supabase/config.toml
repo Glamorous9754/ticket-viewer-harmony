@@ -17,16 +17,8 @@ name = "initiate-freshdesk-oauth"
 verify_jwt = true
 
 [[functions]]
-name = "freshdesk-callback"
-verify_jwt = false
-
-[[functions]]
 name = "initiate-zoho-oauth"
 verify_jwt = true
-
-[[functions]]
-name = "zoho-oauth-callback"
-verify_jwt = false
 
 [[functions]]
 name = "initiate-gmail-oauth"
@@ -39,10 +31,6 @@ verify_jwt = false
 [[functions]]
 name = "initiate-zendesk-oauth"
 verify_jwt = true
-
-[[functions]]
-name = "zendesk-callback"
-verify_jwt = false
 
 [[functions]]
 name = "sync-freshdesk-tickets"
