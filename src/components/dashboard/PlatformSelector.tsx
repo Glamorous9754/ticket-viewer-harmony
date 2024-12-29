@@ -7,45 +7,60 @@ import { ZendeskConnect } from "./ZendeskConnect";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Platform } from "./types/platform";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
-// Define Platform Type
-export type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
+const STORAGE_KEY = "authenticatedPlatform";
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
-    return localStorage.getItem("authenticatedPlatform") as Platform;
+    return localStorage.getItem(STORAGE_KEY) as Platform;
   });
   const [isLoading, setIsLoading] = useState<Platform | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
+  // Handle localStorage persistence
   useEffect(() => {
     if (authenticatedPlatform) {
-      localStorage.setItem("authenticatedPlatform", authenticatedPlatform);
+      localStorage.setItem(STORAGE_KEY, authenticatedPlatform);
     } else {
-      localStorage.removeItem("authenticatedPlatform");
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, [authenticatedPlatform]);
 
+  // Handle URL parameters and authentication status
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const authStatus = params.get("auth_status");
-    const platform = params.get("platform") as Platform;
+    const authStatus = searchParams.get("auth_status");
+    const platform = searchParams.get("platform") as Platform;
 
-    if (authStatus === "success" && platform) {
-      setAuthenticatedPlatform(platform);
-      setSelectedPlatform(null);
-      toast({ title: "Connected", description: `Successfully connected to ${platform}` });
-    } else if (authStatus === "error") {
-      const errorMessage = params.get("error_message");
-      console.error("Authentication failed:", errorMessage);
-      toast({ title: "Error", description: errorMessage || "Failed to authenticate", variant: "destructive" });
+    if (authStatus && platform) {
+      if (authStatus === "success") {
+        setAuthenticatedPlatform(platform);
+        setSelectedPlatform(null);
+        toast({
+          title: "Connected",
+          description: `Successfully connected to ${platform}`,
+        });
+      } else if (authStatus === "error") {
+        const errorMessage = searchParams.get("error_message");
+        console.error("Authentication failed:", errorMessage);
+        localStorage.removeItem(STORAGE_KEY);
+        setAuthenticatedPlatform(null);
+        toast({
+          title: "Error",
+          description: errorMessage || "Failed to authenticate",
+          variant: "destructive",
+        });
+      }
+
+      // Clean up URL parameters
+      navigate("/profile/integrations", { replace: true });
     }
-
-    // Clean up URL parameters
-    window.history.replaceState({}, "", window.location.pathname);
-  }, [toast]);
+  }, [searchParams, toast, navigate]);
 
   const handleConnect = (platform: Platform) => {
     setSelectedPlatform(platform);
@@ -59,10 +74,18 @@ export const PlatformSelector = () => {
       if (error) throw error;
 
       setAuthenticatedPlatform(null);
-      toast({ title: "Disconnected", description: `Successfully disconnected from ${platform}` });
+      localStorage.removeItem(STORAGE_KEY);
+      toast({ 
+        title: "Disconnected", 
+        description: `Successfully disconnected from ${platform}` 
+      });
     } catch (error) {
       console.error(`Error disconnecting from ${platform}:`, error);
-      toast({ title: "Error", description: `Failed to disconnect from ${platform}`, variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: `Failed to disconnect from ${platform}`, 
+        variant: "destructive" 
+      });
     } finally {
       setIsLoading(null);
     }
@@ -74,26 +97,59 @@ export const PlatformSelector = () => {
       const { error } = await supabase.functions.invoke(`sync_${platform}_tickets`);
       if (error) throw error;
 
-      toast({ title: "Success", description: `Successfully fetched tickets for ${platform}` });
+      toast({ 
+        title: "Success", 
+        description: `Successfully fetched tickets for ${platform}` 
+      });
     } catch (error) {
       console.error(`Error fetching tickets for ${platform}:`, error);
-      toast({ title: "Error", description: `Failed to fetch tickets for ${platform}`, variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: `Failed to fetch tickets for ${platform}`, 
+        variant: "destructive" 
+      });
     } finally {
       setIsSyncing(false);
     }
   };
 
   const platforms = [
-    { name: "Zoho Desk", id: "zoho" as Platform, description: "Connect your Zoho Desk account to analyze customer tickets" },
-    { name: "FreshDesk", id: "freshdesk" as Platform, description: "Connect your FreshDesk account to analyze customer tickets", comingSoon: true },
-    { name: "Gmail", id: "gmail" as Platform, description: "Connect your Gmail account to analyze customer emails" },
-    { name: "Zendesk", id: "zendesk" as Platform, description: "Connect your Zendesk account to analyze support tickets" },
+    { 
+      name: "Zoho Desk", 
+      id: "zoho" as Platform, 
+      description: "Connect your Zoho Desk account to analyze customer tickets" 
+    },
+    { 
+      name: "FreshDesk", 
+      id: "freshdesk" as Platform, 
+      description: "Connect your FreshDesk account to analyze customer tickets", 
+      comingSoon: true 
+    },
+    { 
+      name: "Gmail", 
+      id: "gmail" as Platform, 
+      description: "Connect your Gmail account to analyze customer emails" 
+    },
+    { 
+      name: "Zendesk", 
+      id: "zendesk" as Platform, 
+      description: "Connect your Zendesk account to analyze support tickets" 
+    },
   ];
 
-  if (selectedPlatform === "freshdesk") return <FreshDeskConnect onSuccess={() => setAuthenticatedPlatform("freshdesk")} />;
-  if (selectedPlatform === "zoho") return <ZohoConnect onSuccess={() => setAuthenticatedPlatform("zoho")} />;
-  if (selectedPlatform === "gmail") return <GmailConnect onSuccess={() => setAuthenticatedPlatform("gmail")} />;
-  if (selectedPlatform === "zendesk") return <ZendeskConnect onSuccess={() => setAuthenticatedPlatform("zendesk")} />;
+  // Render platform-specific connect components
+  if (selectedPlatform === "freshdesk") {
+    return <FreshDeskConnect onSuccess={() => setAuthenticatedPlatform("freshdesk")} />;
+  }
+  if (selectedPlatform === "zoho") {
+    return <ZohoConnect onSuccess={() => setAuthenticatedPlatform("zoho")} />;
+  }
+  if (selectedPlatform === "gmail") {
+    return <GmailConnect onSuccess={() => setAuthenticatedPlatform("gmail")} />;
+  }
+  if (selectedPlatform === "zendesk") {
+    return <ZendeskConnect onSuccess={() => setAuthenticatedPlatform("zendesk")} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -116,10 +172,17 @@ export const PlatformSelector = () => {
                       : handleConnect(platform.id)
                   }
                   className="w-full"
-                  disabled={isLoading === platform.id}
-                  variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
+                  disabled={
+                    isLoading === platform.id ||
+                    (authenticatedPlatform && authenticatedPlatform !== platform.id)
+                  }
+                  variant={authenticatedPlatform === platform.id ? "destructive" : "default"}
                 >
-                  {authenticatedPlatform === platform.id ? "Disconnect" : `Connect ${platform.name}`}
+                  {isLoading === platform.id
+                    ? "Processing..."
+                    : authenticatedPlatform === platform.id
+                    ? "Disconnect"
+                    : `Connect ${platform.name}`}
                 </Button>
                 {authenticatedPlatform === platform.id && (
                   <Button
@@ -127,7 +190,7 @@ export const PlatformSelector = () => {
                     className="w-full mt-4"
                     disabled={isSyncing}
                   >
-                    Fetch Tickets
+                    {isSyncing ? "Syncing..." : "Fetch Tickets"}
                   </Button>
                 )}
               </>
