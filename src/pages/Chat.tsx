@@ -37,10 +37,10 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-[calc(100vh-12rem)]">
-      <div className="w-full max-w-4xl bg-gradient-to-b from-accent to-white rounded-xl shadow-lg p-6">
-        <ScrollArea className="flex-1 mb-6 min-h-[400px]">
-          <div className="space-y-4 max-w-3xl mx-auto">
+    <div className="flex items-center justify-center h-[calc(100vh-6rem)] px-6">
+      <div className="w-full max-w-4xl bg-background rounded-lg border border-border">
+        <ScrollArea className="flex-1 p-6 min-h-[500px] max-h-[calc(100vh-12rem)]">
+          <div className="space-y-6 max-w-3xl mx-auto">
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -49,10 +49,10 @@ const Chat = () => {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 shadow-sm ${
+                  className={`max-w-[80%] rounded-lg p-4 text-base ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground ml-4"
-                      : "bg-muted text-muted-foreground mr-4"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
                   {msg.content}
@@ -64,14 +64,14 @@ const Chat = () => {
         
         <form
           onSubmit={handleSubmit}
-          className="relative max-w-3xl mx-auto"
+          className="border-t border-border p-4"
         >
-          <div className="flex gap-2 items-end bg-white rounded-lg shadow-sm p-2">
+          <div className="flex gap-3 items-end max-w-3xl mx-auto">
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message..."
-              className="min-h-[20px] max-h-[200px] resize-none text-base border-none focus-visible:ring-1 focus-visible:ring-primary/20 bg-transparent"
+              className="min-h-[56px] max-h-[200px] resize-none text-base border-border focus-visible:ring-1 focus-visible:ring-primary/20"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -81,10 +81,11 @@ const Chat = () => {
             />
             <Button 
               type="submit" 
+              size="lg"
               disabled={!message.trim()}
-              className="bg-primary/90 hover:bg-primary transition-colors shadow-sm"
+              className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             </Button>
           </div>
         </form>
