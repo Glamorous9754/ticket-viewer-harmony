@@ -85,7 +85,7 @@ export const PlatformSelector = () => {
 
   const platforms = [
     { name: "Zoho Desk", id: "zoho" as Platform, description: "Connect your Zoho Desk account to analyze customer tickets" },
-    { name: "FreshDesk", id: "freshdesk" as Platform, description: "Connect your FreshDesk account to analyze customer tickets" },
+    { name: "FreshDesk", id: "freshdesk" as Platform, description: "Connect your FreshDesk account to analyze customer tickets", comingSoon: true },
     { name: "Gmail", id: "gmail" as Platform, description: "Connect your Gmail account to analyze customer emails" },
     { name: "Zendesk", id: "zendesk" as Platform, description: "Connect your Zendesk account to analyze support tickets" },
   ];
@@ -103,26 +103,34 @@ export const PlatformSelector = () => {
           <Card key={platform.id} className="p-6">
             <h3 className="text-xl font-medium mb-4">{platform.name}</h3>
             <p className="text-gray-600 mb-4">{platform.description}</p>
-            <Button
-              onClick={() =>
-                authenticatedPlatform === platform.id
-                  ? handleDisconnect(platform.id)
-                  : handleConnect(platform.id)
-              }
-              className="w-full"
-              disabled={isLoading === platform.id}
-              variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
-            >
-              {authenticatedPlatform === platform.id ? "Disconnect" : `Connect ${platform.name}`}
-            </Button>
-            {authenticatedPlatform === platform.id && (
-              <Button
-                onClick={() => handleFetchTickets(platform.id)}
-                className="w-full mt-4"
-                disabled={isSyncing}
-              >
-                Fetch Tickets
+            {platform.comingSoon ? (
+              <Button className="w-full" disabled variant="secondary">
+                Coming Soon
               </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={() =>
+                    authenticatedPlatform === platform.id
+                      ? handleDisconnect(platform.id)
+                      : handleConnect(platform.id)
+                  }
+                  className="w-full"
+                  disabled={isLoading === platform.id}
+                  variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
+                >
+                  {authenticatedPlatform === platform.id ? "Disconnect" : `Connect ${platform.name}`}
+                </Button>
+                {authenticatedPlatform === platform.id && (
+                  <Button
+                    onClick={() => handleFetchTickets(platform.id)}
+                    className="w-full mt-4"
+                    disabled={isSyncing}
+                  >
+                    Fetch Tickets
+                  </Button>
+                )}
+              </>
             )}
           </Card>
         ))}
