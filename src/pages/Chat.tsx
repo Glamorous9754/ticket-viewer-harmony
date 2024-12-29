@@ -37,9 +37,9 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-[calc(100vh-6rem)] px-6">
-      <div className="w-full max-w-4xl bg-background rounded-lg border border-border">
-        <ScrollArea className="flex-1 p-6 min-h-[500px] max-h-[calc(100vh-12rem)]">
+    <div className="flex flex-col h-[calc(100vh-6rem)] px-6">
+      <div className="flex-1 w-full max-w-4xl mx-auto bg-background rounded-lg border border-border/40">
+        <ScrollArea className="flex-1 p-6 h-[calc(100vh-14rem)]">
           <div className="space-y-6 max-w-3xl mx-auto">
             {messages.map((msg, index) => (
               <div
@@ -52,7 +52,7 @@ const Chat = () => {
                   className={`max-w-[80%] rounded-lg p-4 text-base ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground border border-border"
+                      : "bg-muted text-muted-foreground border border-border/40"
                   }`}
                 >
                   {msg.content}
@@ -64,14 +64,14 @@ const Chat = () => {
         
         <form
           onSubmit={handleSubmit}
-          className="border-t border-border p-4"
+          className="border-t border-border/40 bg-background rounded-b-lg p-4"
         >
           <div className="flex gap-3 items-end max-w-3xl mx-auto">
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message..."
-              className="min-h-[56px] max-h-[200px] resize-none text-base border-border focus-visible:ring-1 focus-visible:ring-primary/20"
+              className="min-h-[56px] max-h-[200px] resize-none text-base bg-background border-border/40 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-lg"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
