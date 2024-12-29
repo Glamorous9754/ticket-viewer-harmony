@@ -133,6 +133,7 @@ export const PlatformSelector = () => {
       name: "FreshDesk",
       id: "freshdesk" as Platform,
       description: "Connect your FreshDesk account to analyze customer tickets",
+      comingSoon: true,
     },
     {
       name: "Gmail",
@@ -163,12 +164,15 @@ export const PlatformSelector = () => {
                 }
                 className="w-full"
                 disabled={isAuthenticating && selectedPlatform !== platform.id || 
-                         (authenticatedPlatform && authenticatedPlatform !== platform.id)}
+                         (authenticatedPlatform && authenticatedPlatform !== platform.id) ||
+                         platform.comingSoon}
                 variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
               >
-                {authenticatedPlatform === platform.id 
-                  ? "Disconnect" 
-                  : `Connect ${platform.name}`}
+                {platform.comingSoon 
+                  ? "Coming Soon"
+                  : authenticatedPlatform === platform.id 
+                    ? "Disconnect" 
+                    : `Connect ${platform.name}`}
               </Button>
               
               {authenticatedPlatform === platform.id && (
