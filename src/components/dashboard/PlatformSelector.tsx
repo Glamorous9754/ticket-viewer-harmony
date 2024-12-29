@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";

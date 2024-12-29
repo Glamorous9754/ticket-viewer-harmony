@@ -7,12 +7,7 @@ export const usePlatformConnection = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [isLoading, setIsLoading] = useState<Platform | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
-    freshdesk: null,
-    gmail: null,
-    zoho: null,
-    zendesk: null,
-  });
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const { toast } = useToast();
 
   const checkConnections = async () => {
@@ -27,15 +22,12 @@ export const usePlatformConnection = () => {
 
       if (error) throw error;
 
-      const status: ConnectionStatus = {
-        freshdesk: null,
-        gmail: null,
-        zoho: null,
-        zendesk: null,
-      };
-
+      const status: ConnectionStatus = {};
       connections?.forEach(connection => {
-        status[connection.platform_type as keyof ConnectionStatus] = connection;
+        status[connection.platform_type] = {
+          is_active: connection.is_active,
+          last_fetched_at: connection.last_fetched_at
+        };
       });
 
       setConnectionStatus(status);
