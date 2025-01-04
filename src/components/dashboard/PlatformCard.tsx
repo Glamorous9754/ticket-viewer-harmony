@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Platform } from "./types/platform";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface PlatformCardProps {
   name: string;
@@ -25,33 +27,63 @@ export const PlatformCard = ({
   onConnect,
   onDisconnect,
 }: PlatformCardProps) => {
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const handleSync = async () => {
+    setIsSyncing(true);
     try {
-      let endpoint = '';
+      // 1. Retrieve the current session
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
       
-      // Use the correct endpoints for each platform
+      if (sessionError || !session) {
+        throw new Error("You must be logged in to fetch tickets");
+      }
+
+      // 2. Call the appropriate endpoint based on platform
+      let endpoint = '';
       switch (id) {
         case 'zoho_desk':
-          endpoint = 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
           break;
         case 'gmail':
-          endpoint = 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-gmail-tickets';
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets';
           break;
         case 'zendesk':
-          endpoint = 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets';
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets';
           break;
         default:
           throw new Error(`Sync not supported for ${name}`);
       }
 
-      const response = await fetch(endpoint);
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
       if (!response.ok) {
-        throw new Error(`Failed to sync ${name} tickets`);
+        const errorText = await response.text();
+        throw new Error(errorText || `Failed to sync ${name} tickets`);
       }
-      toast.success(`Started syncing ${name} tickets`);
-    } catch (error) {
+
+      const data = await response.json();
+      console.log(`${name} sync response:`, data);
+
+      if (data?.message) {
+        toast.success(data.message || `Successfully synced ${name} tickets!`);
+      } else {
+        toast.warning("Unexpected response from the server. Please try again.");
+        console.warn("⚠️ Unexpected response structure:", data);
+      }
+    } catch (error: any) {
       console.error(`Error syncing ${name} tickets:`, error);
-      toast.error(`Failed to sync ${name} tickets`);
+      toast.error(error.message || `Failed to sync ${name} tickets`);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -82,9 +114,10 @@ export const PlatformCard = ({
             onClick={handleSync}
             className="w-full"
             variant="default"
+            disabled={isSyncing}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Sync Tickets
+            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Sync Tickets'}
           </Button>
         )}
       </div>
