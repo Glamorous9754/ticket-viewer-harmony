@@ -30,16 +30,25 @@ export const PlatformSelector = () => {
       setSelectedPlatform(null);
       setAuthenticatedPlatform(platform);
       localStorage.setItem('authenticatedPlatform', platform);
+      toast({
+        title: "Connection Successful",
+        description: `Successfully connected to ${platform}`,
+      });
     } else if (authStatus === 'error') {
       setIsAuthenticating(false);
       setSelectedPlatform(null);
       const errorMessage = params.get('error_message');
       console.error('Authentication failed:', errorMessage);
       localStorage.removeItem('authenticatedPlatform');
+      toast({
+        title: "Connection Failed",
+        description: errorMessage || "Failed to connect to platform",
+        variant: "destructive",
+      });
     }
     
     window.history.replaceState({}, '', window.location.pathname);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (authenticatedPlatform) {
@@ -78,19 +87,94 @@ export const PlatformSelector = () => {
     setSelectedPlatform(null);
   };
 
-  const handleConnect = (platform: Platform) => {
-    setSelectedPlatform(platform);
-    setIsAuthenticating(true);
+  const handleConnect = async (platform: Platform) => {
+    if (platform === 'zoho') {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+          throw new Error("You must be logged in to connect to Zoho");
+        }
+
+        const response = await fetch("https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/initiate-zoho-oauth", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to initiate Zoho connection");
+        }
+
+        const data = await response.json();
+        
+        if (data.status === "connected") {
+          // If already connected, update local state
+          setAuthenticatedPlatform("zoho");
+          toast({
+            title: "Already Connected",
+            description: "Your Zoho account is already connected",
+          });
+          return;
+        }
+
+        // If not connected, redirect to Zoho OAuth URL
+        if (data.url) {
+          setSelectedPlatform(platform);
+          setIsAuthenticating(true);
+          window.location.href = data.url;
+        } else {
+          throw new Error("No authorization URL received");
+        }
+      } catch (error) {
+        console.error("Failed to connect to Zoho:", error);
+        toast({
+          title: "Connection Failed",
+          description: error instanceof Error ? error.message : "Failed to connect to Zoho",
+          variant: "destructive",
+        });
+        setIsAuthenticating(false);
+      }
+    } else {
+      setSelectedPlatform(platform);
+      setIsAuthenticating(true);
+    }
   };
 
   const handleDisconnect = async (platform: Platform) => {
     try {
-      setAuthenticatedPlatform(null);
-      localStorage.removeItem('authenticatedPlatform');
-      toast({
-        title: "Platform Disconnected",
-        description: `Successfully disconnected from ${platform}`,
-      });
+      if (platform === 'zoho') {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+          throw new Error("You must be logged in to disconnect from Zoho");
+        }
+
+        // Clear local state first
+        setAuthenticatedPlatform(null);
+        localStorage.removeItem('authenticatedPlatform');
+
+        // Update database
+        const { error } = await supabase
+          .from('zoho_credentials')
+          .update({ status: 'disconnected' })
+          .eq('profile_id', session.user.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Platform Disconnected",
+          description: `Successfully disconnected from ${platform}`,
+        });
+      } else {
+        setAuthenticatedPlatform(null);
+        localStorage.removeItem('authenticatedPlatform');
+        toast({
+          title: "Platform Disconnected",
+          description: `Successfully disconnected from ${platform}`,
+        });
+      }
     } catch (error) {
       console.error('Failed to disconnect:', error);
       toast({
@@ -108,9 +192,41 @@ export const PlatformSelector = () => {
     setSyncingPlatform(platform);
 
     try {
-      const { error } = await supabase.functions.invoke(`sync-${platform}-tickets`);
-      
-      if (error) throw error;
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("You must be logged in to sync tickets");
+      }
+
+      let syncEndpoint = "";
+      switch (platform) {
+        case "zoho":
+          syncEndpoint = "http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets";
+          break;
+        case "gmail":
+          syncEndpoint = "http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets";
+          break;
+        case "zendesk":
+          syncEndpoint = "http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets";
+          break;
+        default:
+          throw new Error("Invalid platform");
+      }
+
+      const response = await fetch(syncEndpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to sync tickets");
+      }
+
+      const data = await response.json();
+      console.log(`${platform} sync response:`, data);
 
       toast({
         title: "Sync Complete",
@@ -120,7 +236,7 @@ export const PlatformSelector = () => {
       console.error(`Failed to sync ${platform} tickets:`, error);
       toast({
         title: "Sync Failed",
-        description: `Failed to sync tickets from ${platform}`,
+        description: error instanceof Error ? error.message : `Failed to sync tickets from ${platform}`,
         variant: "destructive",
       });
     } finally {
