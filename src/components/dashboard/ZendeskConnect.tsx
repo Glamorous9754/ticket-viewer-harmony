@@ -68,30 +68,25 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const handleFetchTickets = async () => {
     setIsFetchingTickets(true);
     try {
+      // Retrieve the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         throw new Error("You must be logged in to fetch tickets");
       }
 
-      const response = await fetch("http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets", {
-        method: "POST",
+      // Invoke the sync-zendesk-tickets function without a body
+      const { data, error } = await supabase.functions.invoke("sync-zendesk-tickets", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
         },
+        // No body needed
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Failed to fetch tickets");
-      }
-
-      const data = await response.json();
-      console.log("Fetch response:", data);
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: data.message || "Successfully synced Zendesk tickets!",
+        description: "Successfully synced Zendesk tickets!",
       });
     } catch (error: unknown) {
       console.error("Error fetching Zendesk tickets:", error);

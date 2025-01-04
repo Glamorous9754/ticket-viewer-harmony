@@ -1,3 +1,5 @@
+// components/GmailConnect.tsx
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -68,25 +70,18 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to fetch emails");
       }
 
-      const response = await fetch("http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets", {
-        method: "POST",
+      // Invoke the edge function without sending a body
+      const { error } = await supabase.functions.invoke("sync-gmail-tickets", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Failed to fetch emails");
-      }
-
-      const data = await response.json();
-      console.log("Fetch response:", data);
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: data.message || "Successfully synced Gmail emails!",
+        description: "Successfully synced Gmail emails!",
       });
     } catch (error) {
       console.error("Error fetching Gmail emails:", error);
@@ -107,11 +102,7 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         Connect your Gmail account to analyze your customer emails.
       </p>
       <div className="space-y-2">
-        <Button 
-          onClick={handleConnect}
-          disabled={isLoading}
-          className="w-full"
-        >
+        <Button onClick={handleConnect} disabled={isLoading} className="w-full">
           {isLoading ? "Connecting..." : "Connect with Gmail"}
         </Button>
 
@@ -137,3 +128,5 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     </Card>
   );
 };
+
+export default GmailConnect;

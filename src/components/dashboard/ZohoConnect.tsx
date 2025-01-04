@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@/lib/hooks/auth";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ZohoConnectProps {
   onSuccess?: () => void;
@@ -15,7 +13,6 @@ export const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -84,46 +81,6 @@ export const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
     }
   };
 
-  const handleFetchTickets = async () => {
-    setIsFetchingTickets(true);
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error("You must be logged in to fetch tickets");
-      }
-
-      const response = await fetch("http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Failed to fetch tickets");
-      }
-
-      const data = await response.json();
-      console.log("Fetch response:", data);
-
-      toast({
-        title: "Success",
-        description: data.message || "Successfully synced Zoho tickets!",
-      });
-    } catch (error) {
-      console.error("Error fetching Zoho tickets:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch tickets",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetchingTickets(false);
-    }
-  };
-
   if (isLoading) {
     return <div className="animate-pulse">Loading...</div>;
   }
@@ -136,35 +93,15 @@ export const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
           Connect your Zoho Desk account to import and analyze support tickets
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         {isConnected ? (
-          <div className="space-y-2">
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-              className="w-full"
-            >
-              Disconnect from Zoho
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleFetchTickets}
-              disabled={isFetchingTickets}
-              className="w-full"
-            >
-              {isFetchingTickets ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Syncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sync Tickets
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="destructive"
+            onClick={handleDisconnect}
+            className="w-full"
+          >
+            Disconnect from Zoho
+          </Button>
         ) : (
           <Button
             variant="default"
