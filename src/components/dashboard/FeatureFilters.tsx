@@ -8,16 +8,16 @@ import {
 
 interface FeatureFiltersProps {
   sortBy: string;
-  filterByTag: string;
+  filterBy: string;
   onSortChange: (value: string) => void;
-  onTagFilterChange: (value: string) => void;
+  onFilterChange: (value: string) => void;
 }
 
 export const FeatureFilters = ({
   sortBy,
-  filterByTag,
+  filterBy,
   onSortChange,
-  onTagFilterChange,
+  onFilterChange,
 }: FeatureFiltersProps) => {
   return (
     <div className="flex gap-4">
@@ -31,16 +31,15 @@ export const FeatureFilters = ({
         </SelectContent>
       </Select>
       
-      <Select value={filterByTag} onValueChange={onTagFilterChange}>
+      <Select value={filterBy} onValueChange={onFilterChange}>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Filter by tag" />
+          <SelectValue placeholder="Filter by segment" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Tags</SelectItem>
-          <SelectItem value="API">API</SelectItem>
-          <SelectItem value="Integration">Integration</SelectItem>
-          <SelectItem value="UI/UX">UI/UX</SelectItem>
-          <SelectItem value="Performance">Performance</SelectItem>
+          <SelectItem value="all">All Segments</SelectItem>
+          <SelectItem value="Enterprise">Enterprise</SelectItem>
+          <SelectItem value="Pro Users">Pro Users</SelectItem>
+          <SelectItem value="Small Business">Small Business</SelectItem>
         </SelectContent>
       </Select>
     </div>
