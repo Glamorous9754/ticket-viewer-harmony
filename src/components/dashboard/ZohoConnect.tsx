@@ -1,12 +1,9 @@
-// components/ZohoConnect.tsx
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
-import { RefreshCw } from "lucide-react";
 
 interface ApiError {
   message?: string;
@@ -16,9 +13,8 @@ interface ApiError {
 export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
-  const authStatus = searchParams.get('auth_status'); // Updated to 'auth_status'
+  const authStatus = searchParams.get('auth_status');
 
   useEffect(() => {
     if (authStatus === 'success') {
@@ -94,41 +90,6 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
-  const handleFetchTickets = async () => {
-    setIsFetchingTickets(true);
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error("You must be logged in to fetch tickets");
-      }
-
-      const { data, error } = await supabase.functions.invoke("sync-zoho-tickets", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      console.log("Fetch response:", data?.message);
-      toast({
-        title: "Success",
-        description: "Successfully synced Zoho tickets!",
-      });
-
-    } catch (error: unknown) {
-      console.error("Error fetching Zoho tickets:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message :
-          (error as ApiError).message || "Failed to fetch tickets",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetchingTickets(false);
-    }
-  };
-
   return (
     <Card className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zoho</h2>
@@ -142,25 +103,6 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
           className="w-full"
         >
           {isLoading ? "Connecting..." : "Connect with Zoho"}
-        </Button>
-
-        <Button
-          onClick={handleFetchTickets}
-          disabled={isFetchingTickets}
-          variant="outline"
-          className="w-full"
-        >
-          {isFetchingTickets ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Fetching...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Fetch Tickets
-            </>
-          )}
         </Button>
       </div>
     </Card>
