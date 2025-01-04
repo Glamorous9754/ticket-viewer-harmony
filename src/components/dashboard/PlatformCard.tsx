@@ -27,7 +27,11 @@ export const PlatformCard = ({
 }: PlatformCardProps) => {
   const handleSync = async () => {
     try {
-      const response = await fetch(`http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-${id}-tickets`);
+      const endpoint = id === 'zoho_desk' 
+        ? 'http://zoho-server-env.eba-hsu363pe.us-east-2.elasticbeanstalk.com/sync-zoho-tickets'
+        : `http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-${id}-tickets`;
+        
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`Failed to sync ${name} tickets`);
       }
