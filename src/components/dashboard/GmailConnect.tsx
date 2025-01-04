@@ -1,13 +1,17 @@
+// components/GmailConnect.tsx
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
 
 export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingEmails, setIsFetchingEmails] = useState(false);
   const [searchParams] = useSearchParams();
   const connectionStatus = searchParams.get("connection");
 
@@ -58,6 +62,52 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
+  const handleFetchEmails = async () => {
+    setIsFetchingEmails(true);
+    try {
+      // Retrieve the current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw new Error("Failed to fetch session: " + sessionError.message);
+      }
+
+      if (!sessionData?.session?.access_token) {
+        throw new Error("You must be logged in to fetch emails.");
+      }
+
+      // Make a POST request to the Express backend to sync Gmail emails
+      const response = await fetch('http://ticker-server-env.eba-easmrrpp.us-east-2.elasticbeanstalk.com/sync-gmail-tickets', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to sync Gmail emails.");
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: "Success",
+        description: data.message || "Successfully synced Gmail emails!",
+      });
+    } catch (error: any) {
+      console.error("Error fetching Gmail emails:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch emails.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingEmails(false);
+    }
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Connect Gmail</h2>
@@ -67,6 +117,25 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       <div className="space-y-2">
         <Button onClick={handleConnect} disabled={isLoading} className="w-full">
           {isLoading ? "Connecting..." : "Connect with Gmail"}
+        </Button>
+
+        <Button
+          onClick={handleFetchEmails}
+          disabled={isFetchingEmails}
+          variant="outline"
+          className="w-full"
+        >
+          {isFetchingEmails ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Fetching...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Fetch Emails
+            </>
+          )}
         </Button>
       </div>
     </Card>

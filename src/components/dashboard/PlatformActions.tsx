@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Link2Off, RefreshCw } from "lucide-react";
+import { RefreshCw, Link2Off } from "lucide-react";
 import { Platform } from "./types/platform";
-import { useToast } from "@/hooks/use-toast";
 
 interface PlatformActionsProps {
   platform: Platform;
   isConnected: boolean;
   activePlatform: Platform;
+  isSyncing: boolean;
   isLoading: Platform | null;
   onConnect: (platform: Platform) => void;
+  onSync: (platform: Platform) => void;
   onDisconnect: (platform: Platform) => void;
 }
 
@@ -16,19 +17,12 @@ export const PlatformActions = ({
   platform,
   isConnected,
   activePlatform,
+  isSyncing,
   isLoading,
   onConnect,
+  onSync,
   onDisconnect,
 }: PlatformActionsProps) => {
-  const { toast } = useToast();
-
-  const handleSyncTickets = () => {
-    toast({
-      title: "Syncing Tickets",
-      description: "Starting ticket synchronization...",
-    });
-  };
-
   if (!isConnected) {
     return (
       <Button
@@ -44,12 +38,22 @@ export const PlatformActions = ({
   return (
     <div className="space-y-2">
       <Button
-        variant="default"
+        onClick={() => onSync(platform)}
+        variant="outline"
+        disabled={isSyncing}
         className="w-full"
-        onClick={handleSyncTickets}
       >
-        <RefreshCw className="mr-2 h-4 w-4" />
-        Sync Tickets
+        {isSyncing ? (
+          <>
+            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            Syncing...
+          </>
+        ) : (
+          <>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Sync Tickets
+          </>
+        )}
       </Button>
       <Button
         onClick={() => onDisconnect(platform)}

@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
 
 interface ApiError {
   message?: string;
@@ -13,6 +14,7 @@ interface ApiError {
 export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
   const connectionStatus = searchParams.get('connection');
 
@@ -63,6 +65,55 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
+  // Updated handleFetchTickets function
+  const handleFetchTickets = async () => {
+    setIsFetchingTickets(true);
+    try {
+      // Retrieve the current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw new Error("Failed to fetch session: " + sessionError.message);
+      }
+
+      if (!sessionData?.session?.access_token) {
+        throw new Error("You must be logged in to fetch tickets.");
+      }
+
+      // Make a POST request to the Express backend to sync Zendesk tickets
+      const response = await fetch('http://ticker-server-env.eba-easmrrpp.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        // If you need to send a body, include it here. For example:
+        // body: JSON.stringify({ /* any additional data */ }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to sync Zendesk tickets.");
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: "Success",
+        description: data.message || "Successfully synced Zendesk tickets!",
+      });
+    } catch (error: any) {
+      console.error("Error fetching Zendesk tickets:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch tickets.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingTickets(false);
+    }
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zendesk</h2>
@@ -77,9 +128,26 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         >
           {isLoading ? "Connecting..." : "Connect with Zendesk"}
         </Button>
+
+        <Button
+          onClick={handleFetchTickets}
+          disabled={isFetchingTickets}
+          variant="outline"
+          className="w-full"
+        >
+          {isFetchingTickets ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Fetching...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Fetch Tickets
+            </>
+          )}
+        </Button>
       </div>
     </Card>
   );
 };
-
-export default ZendeskConnect;
