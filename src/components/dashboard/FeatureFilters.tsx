@@ -20,22 +20,22 @@ export const FeatureFilters = ({
   onFilterChange,
 }: FeatureFiltersProps) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
+    <div className="flex flex-col sm:flex-row gap-4 w-full max-w-full sm:max-w-[600px]">
       <Select value={sortBy} onValueChange={onSortChange}>
-        <SelectTrigger className="w-full sm:w-[180px]">
+        <SelectTrigger className="w-full sm:w-[200px] bg-white/50 backdrop-blur-sm border-primary/10">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-white/90 backdrop-blur-sm border-primary/10">
           <SelectItem value="priority">Priority</SelectItem>
           <SelectItem value="recent">Most Recent</SelectItem>
         </SelectContent>
       </Select>
       
       <Select value={filterBy} onValueChange={onFilterChange}>
-        <SelectTrigger className="w-full sm:w-[180px]">
+        <SelectTrigger className="w-full sm:w-[200px] bg-white/50 backdrop-blur-sm border-primary/10">
           <SelectValue placeholder="Filter by product" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-white/90 backdrop-blur-sm border-primary/10">
           <SelectItem value="all">All Products</SelectItem>
           <SelectItem value="ticketing">Ticketing System</SelectItem>
           <SelectItem value="analytics">Analytics</SelectItem>
