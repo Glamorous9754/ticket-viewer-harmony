@@ -9,6 +9,11 @@ import { PlatformCard } from "./PlatformCard";
 import { PlatformActions } from "./PlatformActions";
 import { Platform } from "./types/platform";
 
+interface ApiError {
+  message?: string;
+  error?: string;
+}
+
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -83,13 +88,24 @@ export const PlatformSelector = () => {
     setIsSyncing(true);
     setSyncingPlatform(platform);
 
-    const endpoints = {
-      zoho: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets',
-      gmail: 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets',
-      zendesk: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets'
-    };
+    // Show immediate toast notification about the sync process
+    toast({
+      title: "Sync Started",
+      description: "Please wait for several minutes. Changes will be reflected in the dashboard once the process is complete.",
+    });
 
     try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("You must be logged in to sync tickets");
+      }
+
+      const endpoints = {
+        zoho: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets',
+        gmail: 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets',
+        zendesk: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets'
+      };
+
       const endpoint = endpoints[platform];
       if (!endpoint) {
         throw new Error(`No endpoint configured for platform: ${platform}`);
@@ -98,21 +114,37 @@ export const PlatformSelector = () => {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to sync tickets");
       }
 
       const data = await response.json();
       console.log(`Sync response for ${platform}:`, data);
+
+      if (data?.message) {
+        toast({
+          title: "Success",
+          description: data.message || `Successfully initiated sync for ${platform} tickets!`,
+        });
+      } else {
+        toast({
+          title: "Warning",
+          description: "Unexpected response from the server. The sync process has started but may take several minutes to complete.",
+          variant: "warning",
+        });
+        console.warn("⚠️ Unexpected response structure:", data);
+      }
     } catch (error) {
       console.error(`Failed to sync ${platform} tickets:`, error);
       toast({
-        title: "Sync Error",
-        description: `Failed to sync tickets from ${platform}`,
+        title: "Error",
+        description: error instanceof Error ? error.message : 
+          (error as ApiError).message || `Failed to sync tickets from ${platform}`,
         variant: "destructive",
       });
     } finally {
