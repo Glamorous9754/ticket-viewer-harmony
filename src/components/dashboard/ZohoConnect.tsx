@@ -45,41 +45,38 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       }
 
       const { data, error } = await supabase.functions.invoke(
-        "initiate-zoho-oauth", // Ensure this matches your backend function name
+        "initiate-zoho-oauth",
         {
-          body: {}, // No additional data needed
+          body: {},
           headers: {
             Authorization: `Bearer ${session.session.access_token}`,
           },
         }
       );
 
-      console.log("🔍 Response from Supabase function:", data); // Debugging log
+      console.log("🔍 Response from Supabase function:", data);
 
       if (error) throw error;
 
       if (data?.url) {
-        // Redirect to Zoho's OAuth page
-        console.log("🔗 Redirecting to Zoho OAuth URL:", data.url); // Debugging log
+        console.log("🔗 Redirecting to Zoho OAuth URL:", data.url);
         window.location.href = data.url;
         return;
       } else if (data?.redirect_url && data?.query_params) {
-        // Construct the redirect URL using redirect_url and query_params
         const redirectUrl = new URL(data.redirect_url);
         Object.entries(data.query_params).forEach(([key, value]) => {
-          redirectUrl.searchParams.set(key, value);
+          redirectUrl.searchParams.set(key, value as string);
         });
 
         const fullRedirectUrl = redirectUrl.toString();
-        console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl); // Debugging log
+        console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
         window.location.href = fullRedirectUrl;
         return;
       } else {
-        // Handle unexpected response structure
         toast({
           title: "Warning",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "destructive",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }
@@ -100,24 +97,20 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const handleFetchTickets = async () => {
     setIsFetchingTickets(true);
     try {
-      // Retrieve the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         throw new Error("You must be logged in to fetch tickets");
       }
 
-      // Invoke the sync-zoho-tickets function without sending a body
       const { data, error } = await supabase.functions.invoke("sync-zoho-tickets", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
-        // No body needed
       });
 
       if (error) throw error;
 
-      // Assuming the edge function returns a message upon success
-      console.log("Fetch response:", data.message);
+      console.log("Fetch response:", data?.message);
       toast({
         title: "Success",
         description: "Successfully synced Zoho tickets!",
