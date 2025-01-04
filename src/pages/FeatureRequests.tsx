@@ -12,7 +12,7 @@ const mockFeatures = [
   {
     summary: "Automated ticket categorization using AI",
     priority: 4.8,
-    complexity: "High",
+    complexity: "High" as const,
     tags: ["automation", "analytics"],
     createdAt: "2023-04-15T10:00:00Z",
     agentName: "Sarah Chen",
@@ -21,7 +21,7 @@ const mockFeatures = [
   {
     summary: "Real-time chat translation for support agents",
     priority: 4.5,
-    complexity: "Medium",
+    complexity: "Medium" as const,
     tags: ["integration", "automation"],
     createdAt: "2023-04-15T10:00:00Z",
     agentName: "Michael Brown",
@@ -30,7 +30,7 @@ const mockFeatures = [
   {
     summary: "Bulk ticket management tools",
     priority: 4.2,
-    complexity: "Medium",
+    complexity: "Medium" as const,
     tags: ["ticketing"],
     createdAt: "2023-04-15T10:00:00Z",
     ticketUrl: "#"
@@ -38,7 +38,7 @@ const mockFeatures = [
   {
     summary: "Custom dashboard widgets",
     priority: 3.9,
-    complexity: "Medium",
+    complexity: "Medium" as const,
     tags: ["analytics", "integration"],
     createdAt: "2023-04-15T10:00:00Z",
     ticketUrl: "#"
@@ -46,7 +46,7 @@ const mockFeatures = [
   {
     summary: "Advanced analytics for response times",
     priority: 3.7,
-    complexity: "High",
+    complexity: "High" as const,
     tags: ["analytics"],
     createdAt: "2023-04-15T10:00:00Z",
     ticketUrl: "#"
@@ -54,7 +54,7 @@ const mockFeatures = [
   {
     summary: "Integration with popular CRM platforms",
     priority: 3.5,
-    complexity: "Low",
+    complexity: "Low" as const,
     tags: ["integration"],
     createdAt: "2023-04-15T10:00:00Z",
     ticketUrl: "#"
