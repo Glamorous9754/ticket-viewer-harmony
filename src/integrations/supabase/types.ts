@@ -58,34 +58,49 @@ export type Database = {
       }
       gmail_tickets: {
         Row: {
-          created_at: string
+          body: string | null
+          created_at: string | null
+          date: string | null
+          from_email: string | null
           id: string
-          last_date: string
+          last_fetched_at: string | null
           profile_id: string
+          snippet: string | null
+          subject: string | null
           summary: string | null
-          thread: string | null
           thread_id: string
-          updated_at: string
+          to_email: string | null
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          body?: string | null
+          created_at?: string | null
+          date?: string | null
+          from_email?: string | null
           id?: string
-          last_date: string
+          last_fetched_at?: string | null
           profile_id: string
+          snippet?: string | null
+          subject?: string | null
           summary?: string | null
-          thread?: string | null
           thread_id: string
-          updated_at?: string
+          to_email?: string | null
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          body?: string | null
+          created_at?: string | null
+          date?: string | null
+          from_email?: string | null
           id?: string
-          last_date?: string
+          last_fetched_at?: string | null
           profile_id?: string
+          snippet?: string | null
+          subject?: string | null
           summary?: string | null
-          thread?: string | null
           thread_id?: string
-          updated_at?: string
+          to_email?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -200,6 +215,70 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sync_jobs: {
+        Row: {
+          completed_at: string | null
+          continuation_offset: number | null
+          created_at: string | null
+          error_message: string | null
+          id: number
+          profile_id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          continuation_offset?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: never
+          profile_id: string
+          status: string
+        }
+        Update: {
+          completed_at?: string | null
+          continuation_offset?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: never
+          profile_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_jobs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_progress: {
+        Row: {
+          job_id: number
+          last_offset: number
+          updated_at: string | null
+        }
+        Insert: {
+          job_id: number
+          last_offset: number
+          updated_at?: string | null
+        }
+        Update: {
+          job_id?: number
+          last_offset?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_progress_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "sync_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tickets: {
         Row: {
