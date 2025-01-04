@@ -107,10 +107,28 @@ export const PlatformSelector = () => {
     setIsSyncing(true);
     setSyncingPlatform(platform);
 
+    const endpoints = {
+      zoho: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets',
+      gmail: 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets',
+      zendesk: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets'
+    };
+
     try {
-      const { error } = await supabase.functions.invoke(`sync-${platform}-tickets`);
-      
-      if (error) throw error;
+      const endpoint = endpoints[platform];
+      if (!endpoint) {
+        throw new Error(`No endpoint configured for platform: ${platform}`);
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       toast({
         title: "Sync Complete",
