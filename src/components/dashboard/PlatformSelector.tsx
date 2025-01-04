@@ -7,7 +7,7 @@ import { ZendeskConnect } from "./ZendeskConnect";
 import { PlatformCard } from "./PlatformCard";
 import { PlatformActions } from "./PlatformActions";
 import { Platform } from "./types/platform";
-import ZohoConnect from "./ZohoConnect";
+import { ZohoConnect } from "./ZohoConnect";
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
@@ -162,3 +162,4 @@ export const PlatformSelector = () => {
     </div>
   );
 };
+
