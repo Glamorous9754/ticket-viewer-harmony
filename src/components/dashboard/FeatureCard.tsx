@@ -34,7 +34,7 @@ const FeatureCard = ({
             <div className="flex justify-between items-start gap-4">
               <h3 className="font-semibold text-lg leading-tight">{summary}</h3>
               {ticketUrl && (
-                <Button variant="ghost" size="icon" asChild>
+                <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80 hover:bg-primary/10" asChild>
                   <a href={ticketUrl} target="_blank" rel="noopener noreferrer">
                     <Link className="h-4 w-4" />
                   </a>
@@ -52,7 +52,7 @@ const FeatureCard = ({
               
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
+                  <Badge key={tag} variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     {tag}
                   </Badge>
                 ))}
@@ -67,38 +67,38 @@ const FeatureCard = ({
           </CardContent>
         </Card>
       </HoverCardTrigger>
-      <HoverCardContent className="w-96">
+      <HoverCardContent className="w-96 bg-accent shadow-lg animate-fade-in">
         <div className="space-y-4">
           <div>
-            <h4 className="font-semibold mb-2">{summary}</h4>
+            <h4 className="font-semibold mb-2 text-primary">{summary}</h4>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium">Priority:</span> {priority.toFixed(1)}
+              <span className="font-medium text-primary">Priority:</span> {priority.toFixed(1)}
             </div>
             <div>
-              <span className="font-medium">Complexity:</span> {complexity}
+              <span className="font-medium text-primary">Complexity:</span> {complexity}
             </div>
             {requester && (
               <div className="col-span-2">
-                <span className="font-medium">Requested by:</span> {requester}
+                <span className="font-medium text-primary">Requested by:</span> {requester}
               </div>
             )}
             {createdAt && (
               <div className="col-span-2">
-                <span className="font-medium">Created:</span>{" "}
+                <span className="font-medium text-primary">Created:</span>{" "}
                 {formatDistanceToNow(new Date(createdAt))} ago
               </div>
             )}
           </div>
 
           <div>
-            <span className="font-medium text-sm">Tags:</span>
+            <span className="font-medium text-sm text-primary">Tags:</span>
             <div className="flex flex-wrap gap-2 mt-2">
               {tags.map((tag) => (
-                <Badge key={tag} variant="outline">
+                <Badge key={tag} variant="outline" className="bg-primary/10 text-primary border-primary/20">
                   {tag}
                 </Badge>
               ))}
