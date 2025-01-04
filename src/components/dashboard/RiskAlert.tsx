@@ -23,16 +23,22 @@ const RiskAlert = ({ type, severity, segment, evidence }: RiskAlertProps) => {
 
   return (
     <div
-      className={`rounded-lg border-2 p-4 ${getSeverityColor(severity)}`}
+      className={`rounded-lg border-2 p-3 sm:p-4 transition-all duration-200 hover:shadow-md ${getSeverityColor(
+        severity
+      )}`}
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-        <div className="space-y-2">
+        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+        <div className="space-y-1.5 sm:space-y-2">
           <div>
-            <h3 className="font-medium text-gray-900">{type}</h3>
-            <p className="text-sm text-gray-500">Affecting {segment}</p>
+            <h3 className="font-medium text-gray-900 text-base sm:text-lg leading-tight">
+              {type}
+            </h3>
+            <p className="text-sm text-gray-500 mt-0.5">Affecting {segment}</p>
           </div>
-          <p className="text-sm text-gray-600">{evidence}</p>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+            {evidence}
+          </p>
         </div>
       </div>
     </div>

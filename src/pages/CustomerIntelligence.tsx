@@ -1,4 +1,6 @@
+import { useState } from "react";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const mockTrendingIssues = [
   {
@@ -30,6 +32,11 @@ const mockTrendingIssues = [
 ];
 
 const CustomerIntelligence = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading for demonstration
+  setTimeout(() => setIsLoading(false), 1500);
+
   return (
     <div className="space-y-6">
       <div>
@@ -42,9 +49,27 @@ const CustomerIntelligence = () => {
       </div>
       
       <div className="space-y-4">
-        {mockTrendingIssues.map((issue, index) => (
-          <TrendingIssue key={index} {...issue} />
-        ))}
+        {isLoading ? (
+          <>
+            {[1, 2].map((index) => (
+              <div key={index} className="space-y-4">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-5 w-5" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        ) : (
+          mockTrendingIssues.map((issue, index) => (
+            <TrendingIssue key={index} {...issue} />
+          ))
+        )}
       </div>
     </div>
   );

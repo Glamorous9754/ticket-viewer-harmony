@@ -20,9 +20,9 @@ export const FeatureFilters = ({
   onFilterChange,
 }: FeatureFiltersProps) => {
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-col sm:flex-row gap-4">
       <Select value={sortBy} onValueChange={onSortChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>
@@ -32,7 +32,7 @@ export const FeatureFilters = ({
       </Select>
       
       <Select value={filterBy} onValueChange={onFilterChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="Filter by segment" />
         </SelectTrigger>
         <SelectContent>
