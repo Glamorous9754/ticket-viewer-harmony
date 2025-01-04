@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
-import { Platform } from "./types/platform";
-import { Link2Off, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
@@ -67,10 +68,10 @@ export const PlatformSelector = () => {
     }
   };
 
-  const handleSyncTickets = () => {
+  const handleSyncTickets = (platform: string) => {
     toast({
       title: "Syncing Tickets",
-      description: "Starting ticket synchronization...",
+      description: `Starting ticket synchronization for ${platform}...`,
     });
   };
 
@@ -100,7 +101,6 @@ export const PlatformSelector = () => {
       name: "FreshDesk",
       id: "freshdesk" as Platform,
       description: "Connect your FreshDesk account to analyze customer tickets",
-      comingSoon: true,
     },
     {
       name: "Gmail",
@@ -119,9 +119,9 @@ export const PlatformSelector = () => {
       <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {platforms.map((platform) => (
-          <Card key={platform.id} className="p-6 space-y-4">
-            <h3 className="text-xl font-medium">{platform.name}</h3>
-            <p className="text-gray-600">{platform.description}</p>
+          <Card key={platform.id} className="p-6">
+            <h3 className="text-xl font-medium mb-4">{platform.name}</h3>
+            <p className="text-gray-600 mb-4">{platform.description}</p>
             <div className="space-y-2">
               <Button
                 onClick={() => 
@@ -131,24 +131,18 @@ export const PlatformSelector = () => {
                 }
                 className="w-full"
                 disabled={isAuthenticating && selectedPlatform !== platform.id || 
-                         (authenticatedPlatform && authenticatedPlatform !== platform.id) ||
-                         platform.comingSoon}
-                variant={authenticatedPlatform === platform.id ? "destructive" : "default"}
+                         (authenticatedPlatform && authenticatedPlatform !== platform.id)}
+                variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
               >
-                {authenticatedPlatform === platform.id ? (
-                  <>
-                    <Link2Off className="mr-2 h-4 w-4" />
-                    Disconnect
-                  </>
-                ) : (
-                  platform.comingSoon ? "Coming Soon" : `Connect ${platform.name}`
-                )}
+                {authenticatedPlatform === platform.id 
+                  ? "Disconnect" 
+                  : `Connect ${platform.name}`}
               </Button>
               {authenticatedPlatform === platform.id && (
                 <Button
-                  variant="default"
+                  onClick={() => handleSyncTickets(platform.name)}
                   className="w-full"
-                  onClick={handleSyncTickets}
+                  variant="default"
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Sync Tickets
