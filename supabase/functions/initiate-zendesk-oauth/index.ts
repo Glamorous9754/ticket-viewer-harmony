@@ -1,8 +1,10 @@
+// supabase/functions/initiate-zendesk-oauth/index.ts
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.8/+esm";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "*", // Consider restricting this in production
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
@@ -12,13 +14,13 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Replace with your Zendesk details
-const zendeskBaseUrl = "https://tanmaypro.zendesk.com";
+// Zendesk OAuth details
+const zendeskBaseUrl = "https://tanmaypro.zendesk.com"; // Replace with your Zendesk subdomain
 const zendeskClientId = Deno.env.get("ZENDESK_CLIENT_ID")!;
-const zendeskRedirectUri = "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/zendesk-oauth-callback";
+const zendeskRedirectUri = "https://your-supabase-project.supabase.co/functions/v1/zendesk-oauth-callback"; // Update accordingly
 
 // Frontend Redirect URL
-const frontendRedirectUri = Deno.env.get("FRONTEND_REDIRECT_URI")!; // e.g., "https://yourfrontend.com/oauth-success"
+const frontendRedirectUri = "https://preview--ticket-viewer-harmony.lovable.app/profile/integrations"; // e.g., "https://yourfrontend.com/oauth-success"
 
 serve(async (req) => {
   console.log("🔵 Request received:", { method: req.method, url: req.url });
@@ -91,45 +93,40 @@ serve(async (req) => {
     if (existingCredentials) {
       console.log("🟢 Existing Zendesk credentials found for user:", user.id);
       
-      // Optionally, you can check the status of existing credentials
-      if (existingCredentials.status === "active") {
-        // Redirect to frontend indicating that Zendesk is already connected
-        const redirectUrl = `${frontendRedirectUri}?status=already_connected`;
-        console.log("🔵 Redirecting to frontend:", redirectUrl);
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            Location: redirectUrl,
-          },
-        });
-      } else if (existingCredentials.status === "pending") {
-        // If there's a pending OAuth process, redirect or inform the frontend accordingly
-        const redirectUrl = `${frontendRedirectUri}?status=pending`;
-        console.log("🔵 Redirecting to frontend:", redirectUrl);
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            Location: redirectUrl,
-          },
+      // Check if access_token and refresh_token are present
+      if (
+        existingCredentials.access_token
+      ) {
+        console.log("🟢 All credentials are present. User is already connected.");
+        
+        // Construct the frontend redirect URL with query parameters
+        const redirectUrl = new URL(frontendRedirectUri);
+        redirectUrl.searchParams.set("auth_status", "success");
+        redirectUrl.searchParams.set("platform", "zendesk");
+        redirectUrl.searchParams.set("timestamp", Date.now().toString());
+
+        // Construct the full URL with query parameters
+        const fullRedirectUrl = redirectUrl.toString();
+
+        const responseBody = {
+          status: "connected",
+          message: "Zendesk is already connected.",
+          url: fullRedirectUrl, // Ensure 'url' field is present
+        };
+
+        console.log("🔵 Responding with connected status:", responseBody);
+        return new Response(JSON.stringify(responseBody), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        // Handle other statuses as needed
-        const redirectUrl = `${frontendRedirectUri}?status=${existingCredentials.status}`;
-        console.log("🔵 Redirecting to frontend:", redirectUrl);
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            Location: redirectUrl,
-          },
-        });
+        console.log("🟢 Incomplete credentials found. Proceeding with OAuth flow.");
+        // Proceed to OAuth flow
       }
     }
 
-    // If no existing credentials, proceed to create a new OAuth flow
-    console.log("🟢 No existing Zendesk credentials found. Proceeding to create new OAuth flow.");
+    // If no existing credentials or incomplete, proceed to create a new OAuth flow
+    console.log("🟢 No existing Zendesk credentials found or incomplete. Proceeding to create new OAuth flow.");
 
     // Generate a unique state to prevent CSRF
     const newCredentialId = crypto.randomUUID();
@@ -159,18 +156,21 @@ serve(async (req) => {
       `?response_type=code` +
       `&client_id=${encodeURIComponent(zendeskClientId)}` +
       `&redirect_uri=${encodeURIComponent(zendeskRedirectUri)}` +
-      `&scope=${encodeURIComponent("read")}` +
+      `&scope=${encodeURIComponent("read")}` + // Adjust scopes as needed
       `&state=${encodeURIComponent(newCredentialId)}`;
 
     console.log("🔵 Constructed Zendesk auth URL:", zendeskAuthUrl);
 
-    // Return the authorization URL
-    return new Response(
-      JSON.stringify({ success: true, url: zendeskAuthUrl }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    // Return JSON with the authorization URL
+    const authResponseBody = {
+      status: "auth_required",
+      url: zendeskAuthUrl, // Ensure 'url' field is present
+    };
+
+    console.log("🔵 Responding with auth_required status:", authResponseBody);
+    return new Response(JSON.stringify(authResponseBody), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   } catch (error) {
     console.error("❌ Unexpected Error:", error);

@@ -1,3 +1,5 @@
+// supabase/functions/initiate-google-oauth/index.ts
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.8/+esm";
 
@@ -12,13 +14,11 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Replace with your Google OAuth details
-const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID")!;
-const googleClientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET")!;
-const googleRedirectUri = "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/google-oauth-callback";
+// Google OAuth details
+const googleRedirectUri = "https://your-supabase-project.supabase.co/functions/v1/google-oauth-callback";
 
 // Frontend Redirect URL
-const frontendRedirectUri = "https://preview--ticket-viewer-harmony.lovable.app/features"; // e.g., "https://yourfrontend.com/oauth-success"
+const frontendRedirectUri = "https://preview--ticket-viewer-harmony.lovable.app/profile/integrations"; // Replace with your actual frontend URL
 
 serve(async (req) => {
   console.log("🔵 Request received:", { method: req.method, url: req.url });
@@ -30,7 +30,7 @@ serve(async (req) => {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Ensure the request method is POST
+    // Must be POST
     if (req.method !== "POST") {
       console.log("🔴 Invalid request method:", req.method);
       return new Response(
@@ -44,7 +44,7 @@ serve(async (req) => {
 
     console.log("🟢 Processing POST request");
 
-    // Validate Authorization header
+    // Check authorization header
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       console.log("🔴 Missing Authorization header");
@@ -91,51 +91,47 @@ serve(async (req) => {
     if (existingCredentials) {
       console.log("🟢 Existing Gmail credentials found for user:", user.id);
       
-      // Optionally, you can check the status of existing credentials
-      if (existingCredentials.status === "active") {
-        // Redirect to frontend indicating that Gmail is already connected
-        const redirectUrl = `${frontendRedirectUri}?status=already_connected`;
-        console.log("🔵 Redirecting to frontend:", redirectUrl);
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            Location: redirectUrl,
-          },
-        });
-      } else if (existingCredentials.status === "pending") {
-        // If there's a pending OAuth process, redirect or inform the frontend accordingly
-        const redirectUrl = `${frontendRedirectUri}?status=pending`;
-        console.log("🔵 Redirecting to frontend:", redirectUrl);
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            Location: redirectUrl,
-          },
+      // Check if access_token and refresh_token are present
+      if (
+        existingCredentials.access_token &&
+        existingCredentials.refresh_token
+      ) {
+        console.log("🟢 All credentials are present. User is already connected.");
+        
+        // Construct the frontend redirect URL with query parameters
+        const redirectUrl = new URL(frontendRedirectUri);
+        redirectUrl.searchParams.set("auth_status", "success");
+        redirectUrl.searchParams.set("platform", "gmail");
+        redirectUrl.searchParams.set("timestamp", Date.now().toString());
+
+        // Construct the full URL with query parameters
+        const fullRedirectUrl = redirectUrl.toString();
+
+        const responseBody = {
+          status: "connected",
+          message: "Google is already connected.",
+          url: fullRedirectUrl, // Ensure 'url' field is present
+        };
+
+        console.log("🔵 Responding with connected status:", responseBody);
+        return new Response(JSON.stringify(responseBody), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        // Handle other statuses as needed
-        const redirectUrl = `${frontendRedirectUri}?status=${existingCredentials.status}`;
-        console.log("🔵 Redirecting to frontend:", redirectUrl);
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            Location: redirectUrl,
-          },
-        });
+        console.log("🟢 Incomplete credentials found. Proceeding with OAuth flow.");
+        // Proceed to OAuth flow
       }
     }
 
-    // If no existing credentials, proceed to create a new OAuth flow
-    console.log("🟢 No existing Gmail credentials found. Proceeding to create new OAuth flow.");
+    // If no existing credentials or incomplete, proceed to create a new OAuth flow
+    console.log("🟢 No existing Gmail credentials found or incomplete. Proceeding to create new OAuth flow.");
 
-    // Generate a unique state to prevent CSRF
+    // Generate a new credential ID to use as our 'state'
     const newCredentialId = crypto.randomUUID();
-    console.log("🔵 Generated unique state (credential ID):", newCredentialId);
+    console.log("🔵 Generated new credential ID (state):", newCredentialId);
 
-    // Insert a pending record in Supabase
+    // Insert a pending record in the DB
     const { error: insertError } = await supabase
       .from("gmail_credentials")
       .insert({
@@ -145,34 +141,39 @@ serve(async (req) => {
       });
 
     if (insertError) {
-      console.error("🔴 Failed to insert credential record:", insertError);
+      console.error("🔴 Error creating Gmail credential record:", insertError);
       return new Response(
         JSON.stringify({ error: "Failed to create credential record" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    console.log("🟢 Credential record inserted successfully");
+    console.log("🟢 Credential record created with state:", newCredentialId);
 
-    // Construct the Google OAuth URL
+    // Build the Google Auth URL to return
+    const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID")!; // Ensure you have this in your environment variables
+
     const googleAuthUrl =
       `https://accounts.google.com/o/oauth2/v2/auth` +
       `?response_type=code` +
       `&client_id=${encodeURIComponent(googleClientId)}` +
-      `&redirect_uri=${encodeURIComponent(googleRedirectUri)}` +
       `&scope=${encodeURIComponent("https://www.googleapis.com/auth/gmail.readonly")}` +
-      `&state=${encodeURIComponent(newCredentialId)}` +
+      `&redirect_uri=${encodeURIComponent(googleRedirectUri)}` +
       `&access_type=offline` +
+      `&state=${encodeURIComponent(newCredentialId)}` +
       `&prompt=consent`;
 
-    console.log("🔵 Constructed Google auth URL:", googleAuthUrl);
+    console.log("Constructed Google auth URL:", googleAuthUrl);
 
-    // Return the authorization URL
-    return new Response(
-      JSON.stringify({ success: true, url: googleAuthUrl }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    // Return JSON with the authorization URL
+    const authResponseBody = {
+      status: "auth_required",
+      url: googleAuthUrl, // Ensure 'url' field is present
+    };
+
+    console.log("🔵 Responding with auth_required status:", authResponseBody);
+    return new Response(JSON.stringify(authResponseBody), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   } catch (error) {
     console.error("❌ Unexpected Error:", error);
