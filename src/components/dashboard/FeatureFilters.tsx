@@ -8,21 +8,21 @@ import {
 
 interface FeatureFiltersProps {
   sortBy: string;
-  filterBy: string;
+  filterByTag: string;
   onSortChange: (value: string) => void;
-  onFilterChange: (value: string) => void;
+  onTagFilterChange: (value: string) => void;
 }
 
 export const FeatureFilters = ({
   sortBy,
-  filterBy,
+  filterByTag,
   onSortChange,
-  onFilterChange,
+  onTagFilterChange,
 }: FeatureFiltersProps) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
+    <div className="flex gap-4">
       <Select value={sortBy} onValueChange={onSortChange}>
-        <SelectTrigger className="w-full sm:w-[180px]">
+        <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>
@@ -31,16 +31,16 @@ export const FeatureFilters = ({
         </SelectContent>
       </Select>
       
-      <Select value={filterBy} onValueChange={onFilterChange}>
-        <SelectTrigger className="w-full sm:w-[180px]">
-          <SelectValue placeholder="Filter by product" />
+      <Select value={filterByTag} onValueChange={onTagFilterChange}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Filter by tag" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Products</SelectItem>
-          <SelectItem value="ticketing">Ticketing System</SelectItem>
-          <SelectItem value="analytics">Analytics</SelectItem>
-          <SelectItem value="automation">Automation</SelectItem>
-          <SelectItem value="integration">Integrations</SelectItem>
+          <SelectItem value="all">All Tags</SelectItem>
+          <SelectItem value="API">API</SelectItem>
+          <SelectItem value="Integration">Integration</SelectItem>
+          <SelectItem value="UI/UX">UI/UX</SelectItem>
+          <SelectItem value="Performance">Performance</SelectItem>
         </SelectContent>
       </Select>
     </div>

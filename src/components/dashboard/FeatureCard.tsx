@@ -1,37 +1,46 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { formatDistanceToNow } from "date-fns";
-import { ExternalLink } from "lucide-react";
+import { Eye, Link } from "lucide-react";
 
 interface FeatureCardProps {
   summary: string;
   priority: number;
   tags: string[];
   complexity: "Low" | "Medium" | "High";
-  createdAt?: string;
   ticketUrl?: string;
-  description?: string;
-  agentName?: string;
+  createdAt?: string;
+  description: string;
+  requester?: string;
 }
 
 const FeatureCard = ({ 
   summary, 
   priority, 
-  tags,
+  tags, 
   complexity,
-  createdAt,
   ticketUrl,
+  createdAt,
   description,
-  agentName,
+  requester,
 }: FeatureCardProps) => {
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <Card className="cursor-pointer transition-all duration-200 hover:shadow-md">
+        <Card className="transition-all hover:shadow-md cursor-pointer">
           <CardHeader className="pb-2">
-            <h3 className="font-semibold text-lg leading-tight">{summary}</h3>
+            <div className="flex justify-between items-start gap-4">
+              <h3 className="font-semibold text-lg leading-tight">{summary}</h3>
+              {ticketUrl && (
+                <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80 hover:bg-primary/10" asChild>
+                  <a href={ticketUrl} target="_blank" rel="noopener noreferrer">
+                    <Link className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -43,7 +52,7 @@ const FeatureCard = ({
               
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
+                  <Badge key={tag} variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     {tag}
                   </Badge>
                 ))}
@@ -52,63 +61,49 @@ const FeatureCard = ({
               {createdAt && (
                 <div className="text-sm text-muted-foreground">
                   Created {formatDistanceToNow(new Date(createdAt))} ago
-                  {agentName && ` • Assigned to ${agentName}`}
                 </div>
-              )}
-
-              {ticketUrl && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full bg-primary/10 hover:bg-primary/20 text-primary-foreground border-primary/20"
-                  onClick={() => window.open(ticketUrl, '_blank')}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  View Ticket
-                </Button>
               )}
             </div>
           </CardContent>
         </Card>
       </HoverCardTrigger>
-      <HoverCardContent className="w-96 p-6">
+      <HoverCardContent className="w-96 bg-accent shadow-lg animate-fade-in">
         <div className="space-y-4">
           <div>
-            <h4 className="font-semibold text-lg mb-2">{summary}</h4>
-            <p className="text-muted-foreground text-sm">{description || "No detailed description available."}</p>
+            <h4 className="font-semibold mb-2 text-primary">{summary}</h4>
+            <p className="text-sm text-muted-foreground">{description}</p>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-sm font-medium">Priority</p>
-              <p className="text-2xl font-bold text-primary">{priority.toFixed(1)}</p>
+              <span className="font-medium text-primary">Priority:</span> {priority.toFixed(1)}
             </div>
             <div>
-              <p className="text-sm font-medium">Complexity</p>
-              <p className="text-lg font-semibold">{complexity}</p>
+              <span className="font-medium text-primary">Complexity:</span> {complexity}
             </div>
+            {requester && (
+              <div className="col-span-2">
+                <span className="font-medium text-primary">Requested by:</span> {requester}
+              </div>
+            )}
+            {createdAt && (
+              <div className="col-span-2">
+                <span className="font-medium text-primary">Created:</span>{" "}
+                {formatDistanceToNow(new Date(createdAt))} ago
+              </div>
+            )}
           </div>
 
           <div>
-            <p className="text-sm font-medium mb-2">Tags</p>
-            <div className="flex flex-wrap gap-2">
+            <span className="font-medium text-sm text-primary">Tags:</span>
+            <div className="flex flex-wrap gap-2 mt-2">
               {tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
+                <Badge key={tag} variant="outline" className="bg-primary/10 text-primary border-primary/20">
                   {tag}
                 </Badge>
               ))}
             </div>
           </div>
-
-          {ticketUrl && (
-            <Button 
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={() => window.open(ticketUrl, '_blank')}
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Open in Support Platform
-            </Button>
-          )}
         </div>
       </HoverCardContent>
     </HoverCard>

@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
-import { RefreshCw } from "lucide-react";
 
 interface ApiError {
   message?: string;
@@ -14,7 +13,6 @@ interface ApiError {
 export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
   const connectionStatus = searchParams.get('connection');
 
@@ -65,42 +63,6 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
-  const handleFetchTickets = async () => {
-    setIsFetchingTickets(true);
-    try {
-      // Retrieve the current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error("You must be logged in to fetch tickets");
-      }
-
-      // Invoke the sync-zendesk-tickets function without a body
-      const { data, error } = await supabase.functions.invoke("sync-zendesk-tickets", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        // No body needed
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Successfully synced Zendesk tickets!",
-      });
-    } catch (error: unknown) {
-      console.error("Error fetching Zendesk tickets:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : 
-          (error as ApiError).message || "Failed to fetch tickets",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetchingTickets(false);
-    }
-  };
-
   return (
     <Card className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Connect Zendesk</h2>
@@ -115,26 +77,9 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         >
           {isLoading ? "Connecting..." : "Connect with Zendesk"}
         </Button>
-
-        <Button
-          onClick={handleFetchTickets}
-          disabled={isFetchingTickets}
-          variant="outline"
-          className="w-full"
-        >
-          {isFetchingTickets ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Fetching...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Fetch Tickets
-            </>
-          )}
-        </Button>
       </div>
     </Card>
   );
 };
+
+export default ZendeskConnect;
