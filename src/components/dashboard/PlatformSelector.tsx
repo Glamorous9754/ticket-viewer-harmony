@@ -3,6 +3,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Platform } from "./types/platform";
 import { PlatformCard } from "./PlatformCard";
 import { PlatformActions } from "./PlatformActions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const PlatformSelector = () => {
   const [isLoading, setIsLoading] = useState<Platform | null>(null);
@@ -13,15 +14,42 @@ export const PlatformSelector = () => {
   });
 
   const handleConnect = async (platform: Platform) => {
+    setIsLoading(platform);
     try {
-      window.location.href = `/profile/integrations/${platform}/connect`;
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.session?.user) {
+        throw new Error("You must be logged in to connect a platform");
+      }
+
+      console.log(`🔵 Initiating OAuth flow for platform: ${platform}`);
+      
+      const { data, error } = await supabase.functions.invoke(
+        `initiate-${platform}-oauth`,
+        {
+          body: {},
+        }
+      );
+
+      console.log(`🔵 Response from edge function:`, data);
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.url) {
+        throw new Error("No authorization URL received");
+      }
+
+      window.location.href = data.url;
     } catch (error) {
       console.error('Failed to initiate connection:', error);
       toast({
         title: "Error",
-        description: "Failed to start platform connection",
+        description: error instanceof Error ? error.message : "Failed to start platform connection",
         variant: "destructive",
       });
+      setIsLoading(null);
     }
   };
 
