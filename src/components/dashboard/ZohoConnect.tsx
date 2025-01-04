@@ -8,7 +8,7 @@ interface ZohoConnectProps {
   onSuccess?: () => void;
 }
 
-const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
+export const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
   const { user } = useUser();
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
@@ -115,5 +115,3 @@ const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
     </Card>
   );
 };
-
-export default ZohoConnect;
