@@ -31,12 +31,6 @@ export const PlatformActions = ({
 
   const handleSync = async () => {
     setIsSyncing(true);
-    // Show immediate notification
-    toast({
-      title: "Sync Started",
-      description: "The sync process has started. Please wait for several minutes, the changes will be reflected in the dashboard once the process is complete.",
-    });
-
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
@@ -79,7 +73,7 @@ export const PlatformActions = ({
       if (data?.message) {
         toast({
           title: "Success",
-          description: "Sync process initiated successfully. Changes will be reflected in the dashboard shortly.",
+          description: data.message || `Successfully synced ${platform} tickets!`,
         });
       } else {
         toast({
