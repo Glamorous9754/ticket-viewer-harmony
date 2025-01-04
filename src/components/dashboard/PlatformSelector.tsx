@@ -8,8 +8,7 @@ import { ZendeskConnect } from "./ZendeskConnect";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
+import { Platform } from "./types/platform";
 
 interface PlatformConnection {
   platform_type: Platform;
@@ -37,7 +36,7 @@ export const PlatformSelector = () => {
 
       const activePlatforms = connections
         .filter((conn: PlatformConnection) => conn.is_active)
-        .map((conn: PlatformConnection) => conn.platform_type as Platform);
+        .map((conn: PlatformConnection) => conn.platform_type);
 
       setConnectedPlatforms(activePlatforms);
     } catch (error) {
@@ -115,7 +114,7 @@ export const PlatformSelector = () => {
     return <FreshDeskConnect onSuccess={handleSuccess} />;
   }
 
-  if (selectedPlatform === "zoho") {
+  if (selectedPlatform === "zoho_desk") {
     return <ZohoConnect onSuccess={handleSuccess} />;
   }
 
@@ -130,7 +129,7 @@ export const PlatformSelector = () => {
   const platforms = [
     {
       name: "Zoho Desk",
-      id: "zoho" as Platform,
+      id: "zoho_desk" as Platform,
       description: "Connect your Zoho Desk account to analyze customer tickets",
     },
     {

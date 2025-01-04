@@ -1,4 +1,4 @@
-export type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
+export type Platform = "freshdesk" | "zoho_desk" | "gmail" | "zendesk" | null;
 
 export interface ConnectionStatus {
   [key: string]: {
