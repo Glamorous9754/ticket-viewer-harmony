@@ -1,47 +1,53 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Platform } from "./types/platform";
+import { FreshDeskConnect } from "./FreshDeskConnect";
+import { GmailConnect } from "./GmailConnect";
+import { ZendeskConnect } from "./ZendeskConnect";
 import { PlatformCard } from "./PlatformCard";
 import { PlatformActions } from "./PlatformActions";
+import { Platform } from "./types/platform";
+import { ZohoConnect } from "./ZohoConnect";
 
 export const PlatformSelector = () => {
-  const [isLoading, setIsLoading] = useState<Platform | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncingPlatform, setSyncingPlatform] = useState<Platform>(null);
   const { toast } = useToast();
   const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
     const stored = localStorage.getItem('authenticatedPlatform');
     return stored as Platform;
   });
 
-  const handleConnect = async (platform: Platform) => {
-    try {
-      window.location.href = `/profile/integrations/${platform}/connect`;
-    } catch (error) {
-      console.error('Failed to initiate connection:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start platform connection",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDisconnect = async (platform: Platform) => {
-    try {
-      setAuthenticatedPlatform(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authStatus = params.get('auth_status');
+    const platform = params.get('platform') as Platform;
+    
+    if (authStatus === 'success' && platform) {
+      setIsAuthenticating(false);
+      setSelectedPlatform(null);
+      setAuthenticatedPlatform(platform);
+      localStorage.setItem('authenticatedPlatform', platform);
+    } else if (authStatus === 'error') {
+      setIsAuthenticating(false);
+      setSelectedPlatform(null);
+      const errorMessage = params.get('error_message');
+      console.error('Authentication failed:', errorMessage);
       localStorage.removeItem('authenticatedPlatform');
-      toast({
-        title: "Platform Disconnected",
-        description: `Successfully disconnected from ${platform}`,
-      });
-    } catch (error) {
-      console.error('Failed to disconnect:', error);
-      toast({
-        title: "Error",
-        description: "Failed to disconnect from platform",
-        variant: "destructive",
-      });
     }
-  };
+    
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
+  useEffect(() => {
+    if (authenticatedPlatform) {
+      localStorage.setItem('authenticatedPlatform', authenticatedPlatform);
+    } else {
+      localStorage.removeItem('authenticatedPlatform');
+    }
+  }, [authenticatedPlatform]);
 
   const platforms = [
     {
@@ -67,10 +73,71 @@ export const PlatformSelector = () => {
     },
   ];
 
+  const handleSuccess = () => {
+    setIsAuthenticating(false);
+    setSelectedPlatform(null);
+  };
+
+  const handleConnect = (platform: Platform) => {
+    setSelectedPlatform(platform);
+    setIsAuthenticating(true);
+  };
+
+  const handleDisconnect = async (platform: Platform) => {
+    try {
+      setAuthenticatedPlatform(null);
+      localStorage.removeItem('authenticatedPlatform');
+      toast({
+        title: "Platform Disconnected",
+        description: `Successfully disconnected from ${platform}`,
+      });
+    } catch (error) {
+      console.error('Failed to disconnect:', error);
+      toast({
+        title: "Error",
+        description: "Failed to disconnect from platform",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSync = async (platform: Platform) => {
+    if (!platform || isSyncing) return;
+
+    setIsSyncing(true);
+    setSyncingPlatform(platform);
+
+    try {
+      const { error } = await supabase.functions.invoke(`sync-${platform}-tickets`);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Sync Complete",
+        description: `Successfully synced tickets from ${platform}`,
+      });
+    } catch (error) {
+      console.error(`Failed to sync ${platform} tickets:`, error);
+      toast({
+        title: "Sync Failed",
+        description: `Failed to sync tickets from ${platform}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+      setSyncingPlatform(null);
+    }
+  };
+
+  if (selectedPlatform === "freshdesk") return <FreshDeskConnect onSuccess={handleSuccess} />;
+  if (selectedPlatform === "zoho") return <ZohoConnect onSuccess={handleSuccess} />;
+  if (selectedPlatform === "gmail") return <GmailConnect onSuccess={handleSuccess} />;
+  if (selectedPlatform === "zendesk") return <ZendeskConnect onSuccess={handleSuccess} />;
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-6 p-4">
+      <h2 className="text-xl sm:text-2xl font-semibold">Connect Your Support Platform</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {platforms.map((platform) => (
           <PlatformCard
             key={platform.id}
@@ -82,8 +149,10 @@ export const PlatformSelector = () => {
                 platform={platform.id}
                 isConnected={authenticatedPlatform === platform.id}
                 activePlatform={authenticatedPlatform}
-                isLoading={isLoading}
+                isSyncing={isSyncing && syncingPlatform === platform.id}
+                isLoading={selectedPlatform}
                 onConnect={handleConnect}
+                onSync={handleSync}
                 onDisconnect={handleDisconnect}
               />
             }
@@ -93,3 +162,4 @@ export const PlatformSelector = () => {
     </div>
   );
 };
+

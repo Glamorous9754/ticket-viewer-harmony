@@ -1,88 +1,52 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { useSearchParams } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { useUser } from "@/lib/hooks/auth";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface ApiError {
-  message?: string;
-  error?: string;
+interface ZohoConnectProps {
+  onSuccess?: () => void;
 }
 
-export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
+const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
+  const { user } = useUser();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchParams] = useSearchParams();
-  const authStatus = searchParams.get('auth_status');
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (authStatus === 'success') {
-      toast({
-        title: "Success",
-        description: "Successfully connected to Zoho!",
-      });
-      onSuccess();
-    } else if (authStatus === 'error') {
-      toast({
-        title: "Error",
-        description: "Failed to connect to Zoho. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [authStatus, toast, onSuccess]);
+    const checkConnection = async () => {
+      // Logic to check if connected to Zoho
+      // Simulating an API call
+      const response = await fetch('/api/check-zoho-connection');
+      const data = await response.json();
+      setIsConnected(data.isConnected);
+      setIsLoading(false);
+    };
+
+    checkConnection();
+  }, [user, toast]);
 
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const { data: session, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.session?.user) {
-        throw new Error("You must be logged in to connect Zoho");
-      }
-
-      const { data, error } = await supabase.functions.invoke(
-        "initiate-zoho-oauth",
-        {
-          body: {},
-          headers: {
-            Authorization: `Bearer ${session.session.access_token}`,
-          },
-        }
-      );
-
-      console.log("🔍 Response from Supabase function:", data);
-
-      if (error) throw error;
-
-      if (data?.url) {
-        console.log("🔗 Redirecting to Zoho OAuth URL:", data.url);
-        window.location.href = data.url;
-        return;
-      } else if (data?.redirect_url && data?.query_params) {
-        const redirectUrl = new URL(data.redirect_url);
-        Object.entries(data.query_params).forEach(([key, value]) => {
-          redirectUrl.searchParams.set(key, value as string);
-        });
-
-        const fullRedirectUrl = redirectUrl.toString();
-        console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
-        window.location.href = fullRedirectUrl;
-        return;
-      } else {
+      // Logic to connect to Zoho
+      const response = await fetch('/api/connect-zoho', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        setIsConnected(true);
         toast({
-          title: "Warning",
-          description: "Unexpected response from the server. Please try again.",
-          variant: "destructive",
+          title: "Connected",
+          description: "Successfully connected to Zoho Desk.",
         });
-        console.warn("⚠️ Unexpected response structure:", data);
+        if (onSuccess) onSuccess();
+      } else {
+        throw new Error(data.message);
       }
-
-    } catch (error: unknown) {
-      console.error("Error initiating Zoho OAuth:", error);
+    } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message :
-          (error as ApiError).message || "Failed to start authentication",
+        description: "Failed to connect to Zoho Desk.",
         variant: "destructive",
       });
     } finally {
@@ -90,21 +54,64 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
+  const handleDisconnect = async () => {
+    setIsLoading(true);
+    try {
+      // Logic to disconnect from Zoho
+      const response = await fetch('/api/disconnect-zoho', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        setIsConnected(false);
+        toast({
+          title: "Disconnected",
+          description: "Successfully disconnected from Zoho Desk.",
+        });
+        if (onSuccess) onSuccess();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to disconnect from Zoho Desk.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="animate-pulse">Loading...</div>;
+  }
+
   return (
-    <Card className="p-6 space-y-4">
-      <h2 className="text-xl font-semibold">Connect Zoho</h2>
-      <p className="text-sm text-gray-600">
-        Connect your Zoho Desk account to analyze your support tickets.
-      </p>
-      <div className="space-y-2">
-        <Button
-          onClick={handleConnect}
-          disabled={isLoading}
-          className="w-full"
-        >
-          {isLoading ? "Connecting..." : "Connect with Zoho"}
-        </Button>
-      </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Zoho Desk Integration</CardTitle>
+        <CardDescription>
+          Connect your Zoho Desk account to import and analyze support tickets
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isConnected ? (
+          <Button
+            variant="destructive"
+            onClick={handleDisconnect}
+            className="w-full"
+          >
+            Disconnect from Zoho
+          </Button>
+        ) : (
+          <Button
+            variant="default"
+            onClick={handleConnect}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            Connect to Zoho
+          </Button>
+        )}
+      </CardContent>
     </Card>
   );
 };

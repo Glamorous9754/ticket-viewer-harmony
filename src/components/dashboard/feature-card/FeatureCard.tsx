@@ -1,9 +1,11 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { formatDistanceToNow } from "date-fns";
 import { ExternalLink } from "lucide-react";
+import { FeatureCardHeader } from "./FeatureCardHeader";
+import { FeatureCardMetrics } from "./FeatureCardMetrics";
+import { FeatureCardTags } from "./FeatureCardTags";
+import { FeatureCardDetails } from "./FeatureCardDetails";
 
 interface FeatureCardProps {
   summary: string;
@@ -16,7 +18,7 @@ interface FeatureCardProps {
   agentName?: string;
 }
 
-const FeatureCard = ({ 
+export const FeatureCard = ({ 
   summary, 
   priority, 
   tags,
@@ -30,31 +32,12 @@ const FeatureCard = ({
     <HoverCard>
       <HoverCardTrigger asChild>
         <Card className="cursor-pointer transition-all duration-200 hover:shadow-md">
-          <CardHeader className="pb-2">
-            <h3 className="font-semibold text-lg leading-tight">{summary}</h3>
-          </CardHeader>
+          <FeatureCardHeader summary={summary} />
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Priority: {priority.toFixed(1)}</span>
-                <span>•</span>
-                <span>Complexity: {complexity}</span>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-
-              {createdAt && (
-                <div className="text-sm text-muted-foreground">
-                  Created {formatDistanceToNow(new Date(createdAt))} ago
-                  {agentName && ` • Assigned to ${agentName}`}
-                </div>
-              )}
+              <FeatureCardMetrics priority={priority} complexity={complexity} />
+              <FeatureCardTags tags={tags} />
+              <FeatureCardDetails createdAt={createdAt} agentName={agentName} />
 
               {ticketUrl && (
                 <Button 
@@ -75,7 +58,9 @@ const FeatureCard = ({
         <div className="space-y-4">
           <div>
             <h4 className="font-semibold text-lg mb-2">{summary}</h4>
-            <p className="text-muted-foreground text-sm">{description || "No detailed description available."}</p>
+            <p className="text-muted-foreground text-sm">
+              {description || "No detailed description available."}
+            </p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -89,16 +74,7 @@ const FeatureCard = ({
             </div>
           </div>
 
-          <div>
-            <p className="text-sm font-medium mb-2">Tags</p>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
+          <FeatureCardTags tags={tags} />
 
           {ticketUrl && (
             <Button 
@@ -114,5 +90,3 @@ const FeatureCard = ({
     </HoverCard>
   );
 };
-
-export default FeatureCard;
