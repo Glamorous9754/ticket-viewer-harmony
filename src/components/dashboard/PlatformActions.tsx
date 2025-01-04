@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link2Off, RefreshCw } from "lucide-react";
 import { Platform } from "./types/platform";
+import { useToast } from "@/hooks/use-toast";
 
 interface PlatformActionsProps {
   platform: Platform;
@@ -19,6 +20,15 @@ export const PlatformActions = ({
   onConnect,
   onDisconnect,
 }: PlatformActionsProps) => {
+  const { toast } = useToast();
+
+  const handleSyncTickets = () => {
+    toast({
+      title: "Syncing Tickets",
+      description: "Starting ticket synchronization...",
+    });
+  };
+
   if (!isConnected) {
     return (
       <Button
@@ -36,7 +46,7 @@ export const PlatformActions = ({
       <Button
         variant="default"
         className="w-full"
-        disabled={platform === 'freshdesk'}
+        onClick={handleSyncTickets}
       >
         <RefreshCw className="mr-2 h-4 w-4" />
         Sync Tickets
