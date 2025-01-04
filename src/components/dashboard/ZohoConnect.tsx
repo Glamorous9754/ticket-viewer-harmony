@@ -4,13 +4,6 @@ import { useUser } from "@/lib/hooks/auth";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface ZohoCredentials {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  created_at: string;
-}
-
 const ZohoConnect = () => {
   const { toast } = useToast();
   const { user } = useUser();

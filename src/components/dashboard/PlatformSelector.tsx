@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { FreshDeskConnect } from "./FreshDeskConnect";
-import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
 import { PlatformCard } from "./PlatformCard";
 import { PlatformActions } from "./PlatformActions";
 import { Platform } from "./types/platform";
+import ZohoConnect from "./ZohoConnect";
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
