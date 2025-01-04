@@ -1,23 +1,54 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FreshDeskConnect } from "./FreshDeskConnect";
 import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
-import { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
+
+interface PlatformConnection {
+  platform_type: Platform;
+  is_active: boolean;
+}
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<Platform[]>([]);
   const { toast } = useToast();
-  const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
-    const stored = localStorage.getItem('authenticatedPlatform');
-    return stored as Platform;
-  });
+
+  useEffect(() => {
+    fetchConnectedPlatforms();
+  }, []);
+
+  const fetchConnectedPlatforms = async () => {
+    try {
+      const { data: connections, error } = await supabase
+        .from('platform_connections')
+        .select('platform_type, is_active')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const activePlatforms = connections
+        .filter((conn: PlatformConnection) => conn.is_active)
+        .map((conn: PlatformConnection) => conn.platform_type as Platform);
+
+      setConnectedPlatforms(activePlatforms);
+    } catch (error) {
+      console.error('Error fetching platform connections:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch platform connections",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -27,31 +58,21 @@ export const PlatformSelector = () => {
     if (authStatus === 'success' && platform) {
       setIsAuthenticating(false);
       setSelectedPlatform(null);
-      setAuthenticatedPlatform(platform);
-      localStorage.setItem('authenticatedPlatform', platform);
+      fetchConnectedPlatforms(); // Refresh connections after successful auth
     } else if (authStatus === 'error') {
       setIsAuthenticating(false);
       setSelectedPlatform(null);
       const errorMessage = params.get('error_message');
       console.error('Authentication failed:', errorMessage);
-      localStorage.removeItem('authenticatedPlatform');
     }
     
-    // Clean up URL after reading params
     window.history.replaceState({}, '', window.location.pathname);
   }, []);
-
-  useEffect(() => {
-    if (authenticatedPlatform) {
-      localStorage.setItem('authenticatedPlatform', authenticatedPlatform);
-    } else {
-      localStorage.removeItem('authenticatedPlatform');
-    }
-  }, [authenticatedPlatform]);
 
   const handleSuccess = () => {
     setIsAuthenticating(false);
     setSelectedPlatform(null);
+    fetchConnectedPlatforms(); // Refresh connections after success
   };
 
   const handleConnect = (platform: Platform) => {
@@ -61,10 +82,25 @@ export const PlatformSelector = () => {
 
   const handleDisconnect = async (platform: Platform) => {
     try {
-      setAuthenticatedPlatform(null);
-      localStorage.removeItem('authenticatedPlatform');
+      const { error } = await supabase
+        .from('platform_connections')
+        .update({ is_active: false })
+        .eq('platform_type', platform);
+
+      if (error) throw error;
+
+      await fetchConnectedPlatforms(); // Refresh connections after disconnect
+      toast({
+        title: "Success",
+        description: "Platform disconnected successfully",
+      });
     } catch (error) {
       console.error('Failed to disconnect:', error);
+      toast({
+        title: "Error",
+        description: "Failed to disconnect platform",
+        variant: "destructive",
+      });
     }
   };
 
@@ -125,20 +161,20 @@ export const PlatformSelector = () => {
             <div className="space-y-2">
               <Button
                 onClick={() => 
-                  authenticatedPlatform === platform.id 
+                  connectedPlatforms.includes(platform.id)
                     ? handleDisconnect(platform.id)
                     : handleConnect(platform.id)
                 }
                 className="w-full"
                 disabled={isAuthenticating && selectedPlatform !== platform.id || 
-                         (authenticatedPlatform && authenticatedPlatform !== platform.id)}
-                variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
+                         (connectedPlatforms.length > 0 && !connectedPlatforms.includes(platform.id))}
+                variant={connectedPlatforms.includes(platform.id) ? "secondary" : "default"}
               >
-                {authenticatedPlatform === platform.id 
+                {connectedPlatforms.includes(platform.id)
                   ? "Disconnect" 
                   : `Connect ${platform.name}`}
               </Button>
-              {authenticatedPlatform === platform.id && (
+              {connectedPlatforms.includes(platform.id) && (
                 <Button
                   onClick={() => handleSyncTickets(platform.name)}
                   className="w-full"
