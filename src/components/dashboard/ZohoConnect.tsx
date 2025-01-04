@@ -110,7 +110,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       }
 
       // 2. Call your Express API (adjust URL if needed)
-      const response = await fetch("http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets", {
+      const response = await fetch("http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session.access_token}`,

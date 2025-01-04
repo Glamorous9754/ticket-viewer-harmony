@@ -77,7 +77,7 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       }
 
       // Make a POST request to the Express backend to sync Gmail emails
-      const response = await fetch('http://ticker-server-env.eba-easmrrpp.us-east-2.elasticbeanstalk.com/sync-gmail-tickets', {
+      const response = await fetch('http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets/sync-gmail-tickets', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionData.session.access_token}`,
