@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Platform } from "./types/platform";
 import { PlatformCard } from "./PlatformCard";
