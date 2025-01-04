@@ -4,11 +4,11 @@ import FeatureCard from "./FeatureCard";
 interface Feature {
   summary: string;
   priority: number;
-  tags: string[];
+  segments: string[];
   complexity: "Low" | "Medium" | "High";
+  status?: string;
   createdAt?: string;
-  ticketUrl?: string;
-  description?: string;
+  resolvedAt?: string | null;
   agentName?: string;
 }
 
