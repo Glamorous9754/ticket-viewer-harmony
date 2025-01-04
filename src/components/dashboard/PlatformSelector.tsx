@@ -3,6 +3,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Platform } from "./types/platform";
 import { PlatformCard } from "./PlatformCard";
 import { PlatformActions } from "./PlatformActions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const PlatformSelector = () => {
   const [isLoading, setIsLoading] = useState<Platform | null>(null);
@@ -14,14 +15,36 @@ export const PlatformSelector = () => {
 
   const handleConnect = async (platform: Platform) => {
     try {
-      window.location.href = `/profile/integrations/${platform}/connect`;
+      setIsLoading(platform);
+      
+      // Get the appropriate edge function name based on the platform
+      const functionName = `initiate-${platform}-oauth`;
+      console.log(`🔵 Initiating OAuth flow for ${platform} using function: ${functionName}`);
+      
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: {},
+      });
+
+      if (error) {
+        console.error(`Failed to initiate ${platform} connection:`, error);
+        throw error;
+      }
+
+      if (!data?.url) {
+        throw new Error("No authorization URL received");
+      }
+
+      console.log(`🔵 Redirecting to ${platform} OAuth URL:`, data.url);
+      window.location.href = data.url;
     } catch (error) {
       console.error('Failed to initiate connection:', error);
       toast({
         title: "Error",
-        description: "Failed to start platform connection",
+        description: `Failed to start ${platform} connection: ${(error as Error).message}`,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(null);
     }
   };
 
