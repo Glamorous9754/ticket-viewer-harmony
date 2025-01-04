@@ -33,13 +33,14 @@ export const FeatureFilters = ({
       
       <Select value={filterBy} onValueChange={onFilterChange}>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Filter by segment" />
+          <SelectValue placeholder="Filter by product" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Segments</SelectItem>
-          <SelectItem value="Enterprise">Enterprise</SelectItem>
-          <SelectItem value="Pro Users">Pro Users</SelectItem>
-          <SelectItem value="Small Business">Small Business</SelectItem>
+          <SelectItem value="all">All Products</SelectItem>
+          <SelectItem value="ticketing">Ticketing System</SelectItem>
+          <SelectItem value="analytics">Analytics</SelectItem>
+          <SelectItem value="automation">Automation</SelectItem>
+          <SelectItem value="integration">Integrations</SelectItem>
         </SelectContent>
       </Select>
     </div>
