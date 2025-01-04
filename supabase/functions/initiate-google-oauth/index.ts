@@ -17,6 +17,9 @@ const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID")!;
 const googleClientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET")!;
 const googleRedirectUri = "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/google-oauth-callback";
 
+// Frontend Redirect URL
+const frontendRedirectUri = "https://preview--ticket-viewer-harmony.lovable.app/features"; // e.g., "https://yourfrontend.com/oauth-success"
+
 serve(async (req) => {
   console.log("🔵 Request received:", { method: req.method, url: req.url });
 
@@ -69,6 +72,64 @@ serve(async (req) => {
       );
     }
     console.log("🟢 Supabase user validated:", user);
+
+    // Check if the user already has Gmail credentials
+    const { data: existingCredentials, error: fetchError } = await supabase
+      .from("gmail_credentials")
+      .select("*")
+      .eq("profile_id", user.id)
+      .single(); // Assuming one credential per user
+
+    if (fetchError && fetchError.code !== "PGRST116") { // PGRST116: Row not found
+      console.error("🔴 Failed to fetch existing credentials:", fetchError);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch existing credentials" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (existingCredentials) {
+      console.log("🟢 Existing Gmail credentials found for user:", user.id);
+      
+      // Optionally, you can check the status of existing credentials
+      if (existingCredentials.status === "active") {
+        // Redirect to frontend indicating that Gmail is already connected
+        const redirectUrl = `${frontendRedirectUri}?status=already_connected`;
+        console.log("🔵 Redirecting to frontend:", redirectUrl);
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            Location: redirectUrl,
+          },
+        });
+      } else if (existingCredentials.status === "pending") {
+        // If there's a pending OAuth process, redirect or inform the frontend accordingly
+        const redirectUrl = `${frontendRedirectUri}?status=pending`;
+        console.log("🔵 Redirecting to frontend:", redirectUrl);
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            Location: redirectUrl,
+          },
+        });
+      } else {
+        // Handle other statuses as needed
+        const redirectUrl = `${frontendRedirectUri}?status=${existingCredentials.status}`;
+        console.log("🔵 Redirecting to frontend:", redirectUrl);
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            Location: redirectUrl,
+          },
+        });
+      }
+    }
+
+    // If no existing credentials, proceed to create a new OAuth flow
+    console.log("🟢 No existing Gmail credentials found. Proceeding to create new OAuth flow.");
 
     // Generate a unique state to prevent CSRF
     const newCredentialId = crypto.randomUUID();
