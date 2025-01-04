@@ -77,9 +77,9 @@ export const PlatformActions = ({
         });
       } else {
         toast({
-          title: "Warning",
+          title: "Notice",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "default",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }
