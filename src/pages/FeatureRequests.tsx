@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
-import { useFeatureManagement } from "@/hooks/useFeatureManagement";
 
 const mockFeatures = [
   {
@@ -63,14 +62,19 @@ const mockFeatures = [
 ];
 
 const FeatureRequests = () => {
+  const [sortBy, setSortBy] = useState("priority");
+  const [filterBy, setFilterBy] = useState("all");
   const [isLoading] = useState(false);
-  const {
-    sortBy,
-    filterBy,
-    setSortBy,
-    setFilterBy,
-    filteredAndSortedFeatures
-  } = useFeatureManagement(mockFeatures);
+
+  const filteredFeatures = mockFeatures
+    .filter((feature) => 
+      filterBy === "all" ? true : feature.tags.includes(filterBy)
+    )
+    .sort((a, b) => 
+      sortBy === "priority" 
+        ? b.priority - a.priority
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
   return (
     <div className="space-y-8">
@@ -93,7 +97,7 @@ const FeatureRequests = () => {
       </div>
 
       <FeatureGrid 
-        features={filteredAndSortedFeatures}
+        features={filteredFeatures}
         isLoading={isLoading}
       />
     </div>
