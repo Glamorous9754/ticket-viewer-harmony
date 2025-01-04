@@ -8,14 +8,14 @@ const Profile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Profile</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile</h1>
         <p className="text-gray-500">Manage your account settings and integrations</p>
       </div>
 
-      <div className="flex gap-2 sm:gap-4 border-b border-gray-200 overflow-x-auto pb-1 sm:pb-0">
+      <div className="flex gap-4 border-b border-gray-200">
         <Link
           to="/profile/settings"
-          className={`px-3 sm:px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${
+          className={`px-4 py-2 border-b-2 transition-colors ${
             isActive("settings")
               ? "border-primary text-primary-foreground"
               : "border-transparent text-gray-600 hover:text-gray-900"
@@ -25,7 +25,7 @@ const Profile = () => {
         </Link>
         <Link
           to="/profile/integrations"
-          className={`px-3 sm:px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${
+          className={`px-4 py-2 border-b-2 transition-colors ${
             isActive("integrations")
               ? "border-primary text-primary-foreground"
               : "border-transparent text-gray-600 hover:text-gray-900"

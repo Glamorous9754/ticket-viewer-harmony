@@ -19,9 +19,9 @@ interface FeatureGridProps {
 export const FeatureGrid = ({ features, isLoading }: FeatureGridProps) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="space-y-4 p-4 sm:p-6 border rounded-lg">
+          <div key={index} className="space-y-4 p-6 border rounded-lg">
             <Skeleton className="h-6 w-3/4" />
             <div className="space-y-2">
               <Skeleton className="h-4 w-1/2" />
@@ -39,7 +39,7 @@ export const FeatureGrid = ({ features, isLoading }: FeatureGridProps) => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {features.map((feature, index) => (
         <FeatureCard key={index} {...feature} />
       ))}

@@ -1,19 +1,12 @@
-import { Home, MessageSquare, Lightbulb, BarChart, LogOut, Settings, X } from "lucide-react";
+import { Home, MessageSquare, Lightbulb, BarChart, LogOut, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "../ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/components/ui/use-toast";
 
-interface SidebarProps {
-  onClose: () => void;
-}
-
-const Sidebar = ({ onClose }: SidebarProps) => {
+const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   
   const links = [
     {
@@ -47,23 +40,12 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm z-50">
-      {/* Header with close button for mobile */}
-      <div className="p-6 flex items-center justify-between">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm">
+      <div className="p-6">
         <h1 className="text-2xl font-bold text-primary-foreground">Support AI</h1>
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        )}
       </div>
       
-      <nav className="flex-1 px-4 overflow-y-auto">
+      <nav className="flex-1 px-4">
         <ul className="space-y-2">
           {links.map((link) => {
             const isActive = location.pathname === link.path;
@@ -71,7 +53,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
               <li key={link.path}>
                 <Link
                   to={link.path}
-                  onClick={isMobile ? onClose : undefined}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
                       ? "bg-primary text-white shadow-sm"
@@ -90,7 +71,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       <div className="p-4 space-y-2 border-t border-gray-200">
         <Link
           to="/chat"
-          onClick={isMobile ? onClose : undefined}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
             location.pathname === "/chat"
               ? "bg-primary text-white shadow-sm"
@@ -103,7 +83,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
         
         <Link
           to="/profile/settings"
-          onClick={isMobile ? onClose : undefined}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
             location.pathname.startsWith("/profile")
               ? "bg-primary text-white shadow-sm"
