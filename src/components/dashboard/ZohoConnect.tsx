@@ -4,97 +4,89 @@ import { useUser } from "@/lib/hooks/auth";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const ZohoConnect = () => {
-  const { toast } = useToast();
+interface ZohoConnectProps {
+  onSuccess?: () => void;
+}
+
+const ZohoConnect = ({ onSuccess }: ZohoConnectProps) => {
   const { user } = useUser();
+  const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkConnection = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/zoho_credentials?profile_id=eq.${user?.id}`,
-          {
-            headers: {
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch Zoho connection status');
-        }
-
-        const data = await response.json();
-        setIsConnected(data.length > 0);
-      } catch (error) {
-        console.error('Error checking Zoho connection:', error);
-        toast({
-          title: "Error",
-          description: "Failed to check Zoho connection status.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      // Logic to check if connected to Zoho
+      // Simulating an API call
+      const response = await fetch('/api/check-zoho-connection');
+      const data = await response.json();
+      setIsConnected(data.isConnected);
+      setIsLoading(false);
     };
 
-    if (user) {
-      checkConnection();
-    }
+    checkConnection();
   }, [user, toast]);
 
-  const handleConnect = () => {
-    const clientId = import.meta.env.VITE_ZOHO_CLIENT_ID;
-    const redirectUri = import.meta.env.VITE_ZOHO_REDIRECT_URI;
-    const scope = 'Desk.tickets.READ,Desk.basic.READ';
-    const responseType = 'code';
-    const accessType = 'offline';
-
-    const authUrl = `https://accounts.zoho.com/oauth/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=${responseType}&access_type=${accessType}`;
-
-    window.location.href = authUrl;
+  const handleConnect = async () => {
+    setIsLoading(true);
+    try {
+      // Logic to connect to Zoho
+      const response = await fetch('/api/connect-zoho', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        setIsConnected(true);
+        toast({
+          title: "Connected",
+          description: "Successfully connected to Zoho Desk.",
+        });
+        if (onSuccess) onSuccess();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to connect to Zoho Desk.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDisconnect = async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/zoho_credentials?profile_id=eq.${user?.id}`, {
-        method: 'DELETE',
-        headers: {
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to disconnect Zoho');
+      // Logic to disconnect from Zoho
+      const response = await fetch('/api/disconnect-zoho', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        setIsConnected(false);
+        toast({
+          title: "Disconnected",
+          description: "Successfully disconnected from Zoho Desk.",
+        });
+        if (onSuccess) onSuccess();
+      } else {
+        throw new Error(data.message);
       }
-
-      toast({
-        title: "Disconnected from Zoho",
-        description: "Your Zoho account has been disconnected successfully.",
-        variant: "default",
-      });
-
-      setIsConnected(false);
     } catch (error) {
-      console.error('Error disconnecting Zoho:', error);
       toast({
         title: "Error",
-        description: "Failed to disconnect from Zoho. Please try again.",
+        description: "Failed to disconnect from Zoho Desk.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="animate-pulse">Loading...</div>;
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Zoho Desk Integration</CardTitle>
         <CardDescription>
