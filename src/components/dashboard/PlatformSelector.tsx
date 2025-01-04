@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { FreshDeskConnect } from "./FreshDeskConnect";
-import { ZohoConnect } from "./ZohoConnect";
 import { GmailConnect } from "./GmailConnect";
 import { ZendeskConnect } from "./ZendeskConnect";
 import { PlatformCard } from "./PlatformCard";
 import { PlatformActions } from "./PlatformActions";
 import { Platform } from "./types/platform";
+import { ZohoConnect } from "./ZohoConnect";
 
 export const PlatformSelector = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
@@ -49,6 +49,30 @@ export const PlatformSelector = () => {
     }
   }, [authenticatedPlatform]);
 
+  const platforms = [
+    {
+      name: "Zoho Desk",
+      id: "zoho" as Platform,
+      description: "Connect your Zoho Desk account to analyze customer tickets",
+    },
+    {
+      name: "FreshDesk",
+      id: "freshdesk" as Platform,
+      description: "Connect your FreshDesk account to analyze customer tickets",
+      comingSoon: true,
+    },
+    {
+      name: "Gmail",
+      id: "gmail" as Platform,
+      description: "Connect your Gmail account to analyze customer emails",
+    },
+    {
+      name: "Zendesk",
+      id: "zendesk" as Platform,
+      description: "Connect your Zendesk account to analyze support tickets",
+    },
+  ];
+
   const handleSuccess = () => {
     setIsAuthenticating(false);
     setSelectedPlatform(null);
@@ -83,10 +107,28 @@ export const PlatformSelector = () => {
     setIsSyncing(true);
     setSyncingPlatform(platform);
 
+    const endpoints = {
+      zoho: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets',
+      gmail: 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets',
+      zendesk: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets'
+    };
+
     try {
-      const { error } = await supabase.functions.invoke(`sync-${platform}-tickets`);
-      
-      if (error) throw error;
+      const endpoint = endpoints[platform];
+      if (!endpoint) {
+        throw new Error(`No endpoint configured for platform: ${platform}`);
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       toast({
         title: "Sync Complete",
@@ -110,34 +152,10 @@ export const PlatformSelector = () => {
   if (selectedPlatform === "gmail") return <GmailConnect onSuccess={handleSuccess} />;
   if (selectedPlatform === "zendesk") return <ZendeskConnect onSuccess={handleSuccess} />;
 
-  const platforms = [
-    {
-      name: "Zoho Desk",
-      id: "zoho" as Platform,
-      description: "Connect your Zoho Desk account to analyze customer tickets",
-    },
-    {
-      name: "FreshDesk",
-      id: "freshdesk" as Platform,
-      description: "Connect your FreshDesk account to analyze customer tickets",
-      comingSoon: true,
-    },
-    {
-      name: "Gmail",
-      id: "gmail" as Platform,
-      description: "Connect your Gmail account to analyze customer emails",
-    },
-    {
-      name: "Zendesk",
-      id: "zendesk" as Platform,
-      description: "Connect your Zendesk account to analyze support tickets",
-    },
-  ];
-
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-6 p-4">
+      <h2 className="text-xl sm:text-2xl font-semibold">Connect Your Support Platform</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {platforms.map((platform) => (
           <PlatformCard
             key={platform.id}
