@@ -27,16 +27,47 @@ export const PlatformSelector = () => {
 
   const fetchConnectedPlatforms = async () => {
     try {
-      const { data: connections, error } = await supabase
+      // Check platform_connections table
+      const { data: connections, error: connectionsError } = await supabase
         .from('platform_connections')
         .select('platform_type, is_active')
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (connectionsError) throw connectionsError;
+
+      // Check credentials tables for each platform
+      const { data: zohoData } = await supabase
+        .from('zoho_credentials')
+        .select('status')
+        .eq('status', 'active')
+        .single();
+
+      const { data: zendeskData } = await supabase
+        .from('zendesk_credentials')
+        .select('status')
+        .eq('status', 'active')
+        .single();
+
+      const { data: gmailData } = await supabase
+        .from('gmail_credentials')
+        .select('status')
+        .eq('status', 'active')
+        .single();
 
       const activePlatforms = connections
         .filter((conn: PlatformConnection) => conn.is_active)
         .map((conn: PlatformConnection) => conn.platform_type);
+
+      // Add platforms with active credentials if they're not already included
+      if (zohoData?.status === 'active' && !activePlatforms.includes('zoho_desk')) {
+        activePlatforms.push('zoho_desk');
+      }
+      if (zendeskData?.status === 'active' && !activePlatforms.includes('zendesk')) {
+        activePlatforms.push('zendesk');
+      }
+      if (gmailData?.status === 'active' && !activePlatforms.includes('gmail')) {
+        activePlatforms.push('gmail');
+      }
 
       setConnectedPlatforms(activePlatforms);
     } catch (error) {
@@ -57,7 +88,7 @@ export const PlatformSelector = () => {
     if (authStatus === 'success' && platform) {
       setIsAuthenticating(false);
       setSelectedPlatform(null);
-      fetchConnectedPlatforms(); // Refresh connections after successful auth
+      fetchConnectedPlatforms();
     } else if (authStatus === 'error') {
       setIsAuthenticating(false);
       setSelectedPlatform(null);
@@ -71,7 +102,7 @@ export const PlatformSelector = () => {
   const handleSuccess = () => {
     setIsAuthenticating(false);
     setSelectedPlatform(null);
-    fetchConnectedPlatforms(); // Refresh connections after success
+    fetchConnectedPlatforms();
   };
 
   const handleConnect = (platform: Platform) => {
@@ -88,7 +119,7 @@ export const PlatformSelector = () => {
 
       if (error) throw error;
 
-      await fetchConnectedPlatforms(); // Refresh connections after disconnect
+      await fetchConnectedPlatforms();
       toast({
         title: "Success",
         description: "Platform disconnected successfully",
@@ -165,13 +196,18 @@ export const PlatformSelector = () => {
                     : handleConnect(platform.id)
                 }
                 className="w-full"
-                disabled={isAuthenticating && selectedPlatform !== platform.id || 
-                         (connectedPlatforms.length > 0 && !connectedPlatforms.includes(platform.id))}
+                disabled={
+                  isAuthenticating && selectedPlatform !== platform.id || 
+                  (connectedPlatforms.length > 0 && !connectedPlatforms.includes(platform.id)) ||
+                  platform.id === 'freshdesk'
+                }
                 variant={connectedPlatforms.includes(platform.id) ? "secondary" : "default"}
               >
-                {connectedPlatforms.includes(platform.id)
-                  ? "Disconnect" 
-                  : `Connect ${platform.name}`}
+                {platform.id === 'freshdesk' 
+                  ? "Coming Soon"
+                  : connectedPlatforms.includes(platform.id)
+                    ? "Disconnect" 
+                    : `Connect ${platform.name}`}
               </Button>
               {connectedPlatforms.includes(platform.id) && (
                 <Button
