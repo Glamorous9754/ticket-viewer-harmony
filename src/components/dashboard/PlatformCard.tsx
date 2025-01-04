@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Platform } from "./types/platform";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PlatformCardProps {
   name: string;
@@ -15,6 +17,10 @@ interface PlatformCardProps {
   onDisconnect: (platform: Platform) => void;
 }
 
+interface ApiError {
+  message: string;
+}
+
 export const PlatformCard = ({
   name,
   id,
@@ -25,8 +31,12 @@ export const PlatformCard = ({
   onConnect,
   onDisconnect,
 }: PlatformCardProps) => {
+  const [isFetchingTickets, setIsFetchingTickets] = useState(false);
+
   const handleSync = async () => {
+    setIsFetchingTickets(true);
     try {
+      // Show initial toast message
       toast.info(
         "Please wait while we fetch the tickets for you. They will automatically be updated inside the dashboard.",
         {
@@ -34,18 +44,52 @@ export const PlatformCard = ({
         }
       );
 
+      // 1. Retrieve the current session
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error("You must be logged in to fetch tickets");
+      }
+
+      // 2. Call the API with the correct endpoint
       const endpoint = id === 'zoho_desk' 
         ? 'http://zoho-server-env.eba-hsu363pe.us-east-2.elasticbeanstalk.com/sync-zoho-tickets'
         : `http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-${id}-tickets`;
-        
-      const response = await fetch(endpoint);
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
       if (!response.ok) {
-        throw new Error(`Failed to sync ${name} tickets`);
+        const errorText = await response.text();
+        throw new Error(errorText || `Failed to sync ${name} tickets`);
       }
-      toast.success(`Started syncing ${name} tickets`);
-    } catch (error) {
+
+      // 3. Handle JSON response
+      const data = await response.json();
+      console.log("Sync response:", data);
+
+      if (data?.message) {
+        toast.success(data.message || `Successfully synced ${name} tickets!`);
+      } else {
+        toast.warning("Unexpected response from the server. Please try again.");
+        console.warn("⚠️ Unexpected response structure:", data);
+      }
+    } catch (error: unknown) {
       console.error(`Error syncing ${name} tickets:`, error);
-      toast.error(`Failed to sync ${name} tickets`);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : (error as ApiError).message || `Failed to sync ${name} tickets`
+      );
+    } finally {
+      setIsFetchingTickets(false);
     }
   };
 
@@ -75,9 +119,10 @@ export const PlatformCard = ({
           onClick={handleSync}
           className="w-full"
           variant="default"
+          disabled={isFetchingTickets}
         >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Sync Tickets
+          <RefreshCw className={`mr-2 h-4 w-4 ${isFetchingTickets ? 'animate-spin' : ''}`} />
+          {isFetchingTickets ? 'Syncing...' : 'Sync Tickets'}
         </Button>
       </div>
     </Card>
