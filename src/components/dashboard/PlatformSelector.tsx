@@ -155,10 +155,10 @@ export const PlatformSelector = () => {
         setAuthenticatedPlatform(null);
         localStorage.removeItem('authenticatedPlatform');
 
-        // Update database
+        // Update database - using 'invalid' status instead of 'disconnected'
         const { error } = await supabase
           .from('zoho_credentials')
-          .update({ status: 'disconnected' })
+          .update({ status: 'invalid' })
           .eq('profile_id', session.user.id);
 
         if (error) throw error;
