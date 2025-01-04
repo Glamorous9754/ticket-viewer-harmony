@@ -60,7 +60,7 @@ const FeatureCard = ({
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full"
+                  className="w-full bg-primary/10 hover:bg-primary/20 text-primary-foreground border-primary/20"
                   onClick={() => window.open(ticketUrl, '_blank')}
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
@@ -102,7 +102,7 @@ const FeatureCard = ({
 
           {ticketUrl && (
             <Button 
-              className="w-full"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               onClick={() => window.open(ticketUrl, '_blank')}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
