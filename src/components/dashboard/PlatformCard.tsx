@@ -27,6 +27,13 @@ export const PlatformCard = ({
 }: PlatformCardProps) => {
   const handleSync = async () => {
     try {
+      toast.info(
+        "Please wait while we fetch the tickets for you. They will automatically be updated inside the dashboard.",
+        {
+          duration: 5000,
+        }
+      );
+
       const endpoint = id === 'zoho_desk' 
         ? 'http://zoho-server-env.eba-hsu363pe.us-east-2.elasticbeanstalk.com/sync-zoho-tickets'
         : `http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-${id}-tickets`;
