@@ -89,50 +89,29 @@ export const PlatformSelector = () => {
 
   const handleConnect = async (platform: Platform) => {
     if (platform === 'zoho') {
+      setIsAuthenticating(true);
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !session) {
           throw new Error("You must be logged in to connect to Zoho");
         }
 
-        const response = await fetch("https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/initiate-zoho-oauth", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const { data, error } = await supabase.functions.invoke(
+          "initiate-zoho-oauth",
+          {
+            body: {}, // You can include additional data here if needed
+          }
+        );
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Failed to initiate Zoho connection");
-        }
+        if (error) throw error;
+        if (!data?.url) throw new Error("No authorization URL received");
 
-        const data = await response.json();
-        
-        if (data.status === "connected") {
-          // If already connected, update local state
-          setAuthenticatedPlatform("zoho");
-          toast({
-            title: "Already Connected",
-            description: "Your Zoho account is already connected",
-          });
-          return;
-        }
-
-        // If not connected, redirect to Zoho OAuth URL
-        if (data.url) {
-          setSelectedPlatform(platform);
-          setIsAuthenticating(true);
-          window.location.href = data.url;
-        } else {
-          throw new Error("No authorization URL received");
-        }
+        window.location.href = data.url;
       } catch (error) {
-        console.error("Failed to connect to Zoho:", error);
+        console.error("Error initiating Zoho OAuth:", error);
         toast({
-          title: "Connection Failed",
-          description: error instanceof Error ? error.message : "Failed to connect to Zoho",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to start authentication",
           variant: "destructive",
         });
         setIsAuthenticating(false);
