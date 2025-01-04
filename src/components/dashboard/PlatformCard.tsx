@@ -27,7 +27,24 @@ export const PlatformCard = ({
 }: PlatformCardProps) => {
   const handleSync = async () => {
     try {
-      const response = await fetch(`http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-${id}-tickets`);
+      let endpoint = '';
+      
+      // Use the correct endpoints for each platform
+      switch (id) {
+        case 'zoho_desk':
+          endpoint = 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
+          break;
+        case 'gmail':
+          endpoint = 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-gmail-tickets';
+          break;
+        case 'zendesk':
+          endpoint = 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets';
+          break;
+        default:
+          throw new Error(`Sync not supported for ${name}`);
+      }
+
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`Failed to sync ${name} tickets`);
       }
@@ -60,14 +77,16 @@ export const PlatformCard = ({
               ? "Disconnect" 
               : `Connect ${name}`}
         </Button>
-        <Button
-          onClick={handleSync}
-          className="w-full"
-          variant="default"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Sync Tickets
-        </Button>
+        {id !== 'freshdesk' && (
+          <Button
+            onClick={handleSync}
+            className="w-full"
+            variant="default"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Sync Tickets
+          </Button>
+        )}
       </div>
     </Card>
   );
