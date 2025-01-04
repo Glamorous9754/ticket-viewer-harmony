@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Platform } from "./types/platform";
@@ -46,7 +45,7 @@ export const PlatformCard = ({
       let endpoint = '';
       switch (id) {
         case 'zoho_desk':
-          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
+          endpoint = 'http://zoho-server-env.eba-hsu363pe.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
           break;
         case 'gmail':
           endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets';
