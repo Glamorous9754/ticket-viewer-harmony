@@ -46,10 +46,27 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       const { data, error } = await supabase.functions.invoke("initiate-google-oauth");
 
-      if (error) throw error;
-      if (!data?.url) throw new Error("No authorization URL received");
-
-      window.location.href = data.url;
+      if (data?.url) {
+        console.log("🔗 Redirecting to Google OAuth URL:", data.url);
+        window.location.href = data.url;
+        return;
+      } else if (data?.redirect_url && data?.query_params) {
+        const redirectUrl = new URL(data.redirect_url);
+        Object.entries(data.query_params).forEach(([key, value]) => {
+          redirectUrl.searchParams.set(key, value);
+        });
+        const fullRedirectUrl = redirectUrl.toString();
+        console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
+        window.location.href = fullRedirectUrl;
+        return;
+      } else {
+        toast({
+          title: "Warning",
+          description: "Unexpected response from the server. Please try again.",
+          variant: "warning",
+        });
+        console.warn("⚠️ Unexpected response structure:", data);
+      }
     } catch (error) {
       console.error("Error initiating Gmail OAuth:", error);
       toast({
