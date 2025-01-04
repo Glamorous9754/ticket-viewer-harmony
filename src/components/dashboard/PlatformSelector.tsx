@@ -83,12 +83,6 @@ export const PlatformSelector = () => {
     setIsSyncing(true);
     setSyncingPlatform(platform);
 
-    // Show immediate toast notification about the sync process
-    toast({
-      title: "Sync Started",
-      description: "Please wait for several minutes. Changes will be reflected in the dashboard once the process is complete.",
-    });
-
     const endpoints = {
       zoho: 'http://sync-tickets.us-east-2.elasticbeanstalk.com/sync-zoho-tickets',
       gmail: 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets',
