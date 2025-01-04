@@ -1,12 +1,5 @@
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const mockFeatures = [
   {
@@ -63,38 +56,21 @@ const mockFeatures = [
 
 const FeatureRequests = () => {
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6 p-2 sm:p-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#006837]">Feature Requests</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#006837]">Feature Requests</h1>
         <p className="text-gray-600">
           Track and manage feature requests from your customers across all platforms
         </p>
       </div>
 
-      <div className="flex gap-4">
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Priority</SelectItem>
-            <SelectItem value="high">High Priority</SelectItem>
-            <SelectItem value="medium">Medium Priority</SelectItem>
-            <SelectItem value="low">Low Priority</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Products" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Products</SelectItem>
-            <SelectItem value="automation">Automation</SelectItem>
-            <SelectItem value="analytics">Analytics</SelectItem>
-            <SelectItem value="integration">Integration</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="w-full">
+        <FeatureFilters
+          sortBy="all"
+          filterBy="all"
+          onSortChange={() => {}}
+          onFilterChange={() => {}}
+        />
       </div>
 
       <FeatureGrid features={mockFeatures} isLoading={false} />

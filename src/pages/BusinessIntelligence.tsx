@@ -41,7 +41,7 @@ const BusinessIntelligence = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
           Business Intelligence
         </h1>
         <p className="text-gray-500">
@@ -49,9 +49,9 @@ const BusinessIntelligence = () => {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Risk Alerts</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Risk Alerts</h2>
           {isLoading ? (
             <>
               {[1, 2].map((index) => (
@@ -72,7 +72,7 @@ const BusinessIntelligence = () => {
         </div>
         
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Product-Market Insights
           </h2>
           <div className="space-y-4">
