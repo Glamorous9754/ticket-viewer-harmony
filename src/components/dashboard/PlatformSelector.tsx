@@ -40,19 +40,19 @@ export const PlatformSelector = () => {
         .from('zoho_credentials')
         .select('status')
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       const { data: zendeskData } = await supabase
         .from('zendesk_credentials')
         .select('status')
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       const { data: gmailData } = await supabase
         .from('gmail_credentials')
         .select('status')
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       const activePlatforms = connections
         .filter((conn: PlatformConnection) => conn.is_active)
