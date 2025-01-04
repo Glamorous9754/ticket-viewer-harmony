@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link2Off } from "lucide-react";
+import { Link2Off, RefreshCw } from "lucide-react";
 import { Platform } from "./types/platform";
 
 interface PlatformActionsProps {
@@ -33,6 +33,14 @@ export const PlatformActions = ({
 
   return (
     <div className="space-y-2">
+      <Button
+        variant="default"
+        className="w-full"
+        disabled={platform === 'freshdesk'}
+      >
+        <RefreshCw className="mr-2 h-4 w-4" />
+        Sync Tickets
+      </Button>
       <Button
         onClick={() => onDisconnect(platform)}
         variant="destructive"
