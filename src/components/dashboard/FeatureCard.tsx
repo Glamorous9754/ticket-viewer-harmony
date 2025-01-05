@@ -25,14 +25,20 @@ const FeatureCard = ({
   agentName,
 }: FeatureCardProps) => {
   return (
-    <Card className="h-full animate-fade-in">
+    <Card className="h-full animate-fade-in hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
         <div className="space-y-2">
-          <h3 className="font-semibold text-lg leading-tight">{summary}</h3>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-primary-foreground">Priority: {priority.toFixed(1)}</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-primary-foreground">Complexity: {complexity}</span>
+          <h3 className="font-semibold text-base sm:text-lg leading-tight line-clamp-2">
+            {summary}
+          </h3>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-primary-foreground whitespace-nowrap">
+              Priority: {priority.toFixed(1)}
+            </span>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
+            <span className="text-primary-foreground whitespace-nowrap">
+              Complexity: {complexity}
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -43,7 +49,7 @@ const FeatureCard = ({
               <Badge 
                 key={segment} 
                 variant="outline"
-                className="capitalize bg-primary/10"
+                className="capitalize bg-primary/10 text-xs sm:text-sm whitespace-nowrap"
               >
                 {segment}
               </Badge>
@@ -51,15 +57,22 @@ const FeatureCard = ({
           </div>
 
           {createdAt && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs sm:text-sm text-muted-foreground">
               Created {formatDistanceToNow(new Date(createdAt))} ago
-              {agentName && ` • Assigned to ${agentName}`}
+              {agentName && (
+                <>
+                  <span className="hidden sm:inline"> • </span>
+                  <span className="block sm:inline">
+                    Assigned to {agentName}
+                  </span>
+                </>
+              )}
             </div>
           )}
 
           <Button 
             variant="default"
-            className="w-full bg-primary hover:bg-primary/90"
+            className="w-full bg-primary hover:bg-primary/90 text-sm sm:text-base"
           >
             View Ticket
             <ExternalLink className="ml-2 h-4 w-4" />
