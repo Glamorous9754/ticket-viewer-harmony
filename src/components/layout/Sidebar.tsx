@@ -49,19 +49,19 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
     <aside 
       className={cn(
         "fixed left-0 top-0 h-screen bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm transition-all duration-300 ease-in-out",
-        isRetracted ? "w-20" : "w-64"
+        isRetracted ? "w-16" : "w-64"
       )}
     >
       <div className="p-6 flex items-center justify-between">
         <h1 className={cn(
-          "text-2xl font-bold text-primary-foreground transition-all duration-300",
+          "text-2xl font-bold text-primary-foreground transition-opacity duration-300",
           isRetracted ? "opacity-0 w-0" : "opacity-100"
         )}>
           Support AI
         </h1>
         <button
           onClick={onRetract}
-          className="p-2 rounded-lg hover:bg-muted transition-all duration-300 ease-in-out"
+          className="p-2 rounded-lg hover:bg-muted transition-colors duration-300 ease-in-out"
           aria-label={isRetracted ? "Expand sidebar" : "Retract sidebar"}
         >
           <ChevronLeft className={cn(
@@ -80,7 +80,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
                 <Link
                   to={link.path}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group",
                     isActive
                       ? "bg-primary text-white shadow-sm"
                       : "text-gray-600 hover:bg-muted"
@@ -88,7 +88,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
                 >
                   <link.icon className="w-5 h-5 shrink-0" />
                   <span className={cn(
-                    "transition-all duration-300",
+                    "transition-opacity duration-300 whitespace-nowrap",
                     isRetracted ? "opacity-0 w-0" : "opacity-100"
                   )}>
                     {link.title}
@@ -115,7 +115,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
             location.pathname === "/chat" && "animate-pulse"
           )} />
           <span className={cn(
-            "transition-all duration-300",
+            "transition-opacity duration-300 whitespace-nowrap",
             isRetracted ? "opacity-0 w-0" : "opacity-100"
           )}>
             Chat
@@ -133,7 +133,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <Settings className="w-5 h-5 shrink-0" />
           <span className={cn(
-            "transition-all duration-300",
+            "transition-opacity duration-300 whitespace-nowrap",
             isRetracted ? "opacity-0 w-0" : "opacity-100"
           )}>
             Profile
@@ -146,7 +146,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <LogOut className="w-5 h-5 shrink-0" />
           <span className={cn(
-            "transition-all duration-300",
+            "transition-opacity duration-300 whitespace-nowrap",
             isRetracted ? "opacity-0 w-0" : "opacity-100"
           )}>
             Sign Out
