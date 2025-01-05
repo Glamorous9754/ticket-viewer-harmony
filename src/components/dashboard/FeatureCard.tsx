@@ -37,43 +37,43 @@ const FeatureCard = ({
           <div className="flex items-start justify-between gap-2">
             <HoverCard>
               <HoverCardTrigger asChild>
-                <div className="flex items-start gap-2 cursor-help">
+                <div className="flex items-start gap-2 cursor-help group/title">
                   <h3 className="font-semibold text-lg leading-tight">
                     {summary}
                   </h3>
                   <Info 
-                    className="h-4 w-4 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" 
+                    className="h-4 w-4 text-primary/60 opacity-0 group-hover/title:opacity-100 transition-all duration-200" 
                     aria-label="View details"
                   />
                 </div>
               </HoverCardTrigger>
               <HoverCardContent 
                 align="start" 
-                className="w-[320px] backdrop-blur-sm bg-card/95 border-primary/20"
+                className="w-[360px] backdrop-blur-sm bg-card/95 border border-primary/20 shadow-lg animate-in fade-in-0 zoom-in-95"
                 sideOffset={5}
               >
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-semibold">Description</h4>
-                    <p className="text-sm text-muted-foreground">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="text-base font-semibold text-primary-foreground">Description</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {description || "No additional details available."}
                     </p>
                   </div>
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-semibold">Details</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Impact Score:</span>
-                        <span className="ml-1 font-medium">{impactScore}</span>
+                  <div className="space-y-2">
+                    <h4 className="text-base font-semibold text-primary-foreground">Details</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <span className="text-sm text-muted-foreground">Impact Score</span>
+                        <p className="text-base font-medium text-primary-foreground">{impactScore}</p>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Complexity:</span>
-                        <span className="ml-1 font-medium">{complexity}</span>
+                      <div className="space-y-1">
+                        <span className="text-sm text-muted-foreground">Complexity</span>
+                        <p className="text-base font-medium text-primary-foreground">{complexity}</p>
                       </div>
                       {status && (
-                        <div>
-                          <span className="text-muted-foreground">Status:</span>
-                          <span className="ml-1 font-medium">{status}</span>
+                        <div className="space-y-1">
+                          <span className="text-sm text-muted-foreground">Status</span>
+                          <p className="text-base font-medium text-primary-foreground">{status}</p>
                         </div>
                       )}
                     </div>
@@ -96,7 +96,7 @@ const FeatureCard = ({
               <Badge 
                 key={segment} 
                 variant="outline"
-                className="capitalize bg-primary/10"
+                className="capitalize bg-primary/10 hover:bg-primary/20 transition-colors"
               >
                 {segment}
               </Badge>
@@ -111,7 +111,7 @@ const FeatureCard = ({
 
           <Button 
             variant="default"
-            className="w-full bg-primary hover:bg-primary/90"
+            className="w-full bg-primary hover:bg-primary/90 transition-colors"
           >
             View Request
             <ExternalLink className="ml-2 h-4 w-4" />
