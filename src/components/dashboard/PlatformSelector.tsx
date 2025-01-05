@@ -13,36 +13,36 @@ export const PlatformSelector = () => {
   const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
   const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
-    const stored = localStorage.getItem("authenticatedPlatform");
+    const stored = localStorage.getItem('authenticatedPlatform');
     return stored as Platform || null;
   });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const authStatus = params.get("auth_status");
-    const platform = params.get("platform") as Platform;
-
-    if (authStatus === "success" && platform) {
+    const authStatus = params.get('auth_status');
+    const platform = params.get('platform') as Platform;
+    
+    if (authStatus === 'success' && platform) {
       setIsLoading(null);
       setAuthenticatedPlatform(platform);
-      localStorage.setItem("authenticatedPlatform", platform);
+      localStorage.setItem('authenticatedPlatform', platform);
       toast({
         title: "Success",
         description: `Successfully connected to ${platform}!`,
       });
-    } else if (authStatus === "error") {
+    } else if (authStatus === 'error') {
       setIsLoading(null);
-      const errorMessage = params.get("error_message");
-      console.error("Authentication failed:", errorMessage);
-      localStorage.removeItem("authenticatedPlatform");
+      const errorMessage = params.get('error_message');
+      console.error('Authentication failed:', errorMessage);
+      localStorage.removeItem('authenticatedPlatform');
       toast({
         title: "Error",
         description: "Failed to connect. Please try again.",
         variant: "destructive",
       });
     }
-
-    window.history.replaceState({}, "", window.location.pathname);
+    
+    window.history.replaceState({}, '', window.location.pathname);
   }, [toast]);
 
   const handleConnect = async (platform: Platform) => {
@@ -53,19 +53,19 @@ export const PlatformSelector = () => {
         throw new Error("You must be logged in to connect platforms");
       }
 
-      let functionName = "";
+      let functionName = '';
       switch (platform) {
-        case "freshdesk":
-          functionName = "initiate-freshdesk-oauth";
+        case 'freshdesk':
+          functionName = 'initiate-freshdesk-oauth';
           break;
-        case "zoho":
-          functionName = "initiate-zoho-oauth";
+        case 'zoho':
+          functionName = 'initiate-zoho-oauth';
           break;
-        case "gmail":
-          functionName = "initiate-google-oauth";
+        case 'gmail':
+          functionName = 'initiate-google-oauth';
           break;
-        case "zendesk":
-          functionName = "initiate-zendesk-oauth";
+        case 'zendesk':
+          functionName = 'initiate-zendesk-oauth';
           break;
         default:
           throw new Error("Invalid platform");
@@ -91,13 +91,13 @@ export const PlatformSelector = () => {
   const handleDisconnect = async (platform: Platform) => {
     try {
       setAuthenticatedPlatform(null);
-      localStorage.removeItem("authenticatedPlatform");
+      localStorage.removeItem('authenticatedPlatform');
       toast({
         title: "Success",
         description: `Successfully disconnected from ${platform}!`,
       });
     } catch (error) {
-      console.error("Failed to disconnect:", error);
+      console.error('Failed to disconnect:', error);
       toast({
         title: "Error",
         description: "Failed to disconnect. Please try again.",
@@ -119,28 +119,26 @@ export const PlatformSelector = () => {
         throw new Error("You must be logged in to fetch data.");
       }
 
-      // Public proxy URL
-      const proxyUrl = "https://cors-anywhere.herokuapp.com/";
-      let endpoint = "";
+      let endpoint = '';
       switch (platform) {
-        case "zoho":
-          endpoint = `${proxyUrl}http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets`;
+        case 'zoho':
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
           break;
-        case "zendesk":
-          endpoint = `${proxyUrl}http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets`;
+        case 'zendesk':
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets';
           break;
-        case "gmail":
-          endpoint = `${proxyUrl}http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets`;
+        case 'gmail':
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets';
           break;
         default:
           throw new Error("Invalid platform for fetching data");
       }
 
       const response = await fetch(endpoint, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${sessionData.session.access_token}`,
-          "Content-Type": "application/json",
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -200,16 +198,14 @@ export const PlatformSelector = () => {
             <p className="text-gray-600 mb-4">{platform.description}</p>
             <div className="space-y-2">
               <Button
-                onClick={() =>
-                  authenticatedPlatform === platform.id
+                onClick={() => 
+                  authenticatedPlatform === platform.id 
                     ? handleDisconnect(platform.id)
                     : handleConnect(platform.id)
                 }
                 className="w-full"
-                disabled={
-                  isLoading !== null ||
-                  (authenticatedPlatform && authenticatedPlatform !== platform.id)
-                }
+                disabled={isLoading !== null || 
+                         (authenticatedPlatform && authenticatedPlatform !== platform.id)}
                 variant={authenticatedPlatform === platform.id ? "destructive" : "default"}
               >
                 {isLoading === platform.id ? (
@@ -239,7 +235,7 @@ export const PlatformSelector = () => {
                   ) : (
                     <>
                       <RefreshCw className="mr-2 h-4 w-4" />
-                      {platform.id === "gmail" ? "Fetch Emails" : "Fetch Tickets"}
+                      {platform.id === 'gmail' ? 'Fetch Emails' : 'Fetch Tickets'}
                     </>
                   )}
                 </Button>
