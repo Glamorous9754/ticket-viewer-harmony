@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -65,7 +65,11 @@ const TrendingIssue = ({
             </div>
           </div>
           <div className="rounded-full p-2 transition-colors group-hover:bg-accent">
-            <MessageSquare className="w-4 h-4" />
+            {isOpen ? (
+              <ChevronDown className="w-4 h-4 transition-transform duration-200" />
+            ) : (
+              <ChevronRight className="w-4 h-4 transition-transform duration-200" />
+            )}
           </div>
         </div>
       </CollapsibleTrigger>
