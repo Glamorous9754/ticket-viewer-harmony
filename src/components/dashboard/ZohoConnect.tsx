@@ -1,5 +1,3 @@
-// components/ZohoConnect.tsx
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +16,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
-  const authStatus = searchParams.get("auth_status"); // Updated to 'auth_status'
+  const authStatus = searchParams.get("auth_status");
 
   useEffect(() => {
     if (authStatus === "success") {
@@ -36,9 +34,6 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   }, [authStatus, toast, onSuccess]);
 
-  /**
-   * Don't change this: calls the Supabase Edge Function for initiating Zoho OAuth
-   */
   const handleConnect = async () => {
     setIsLoading(true);
     try {
@@ -54,9 +49,11 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         },
       });
 
-      console.log("🔍 Response from Supabase function:", data);
+      if (error) {
+        throw new Error(typeof error === "string" ? error : error.message || "Failed to initiate OAuth");
+      }
 
-      if (error) throw error;
+      console.log("🔍 Response from Supabase function:", data);
 
       if (data?.url) {
         console.log("🔗 Redirecting to Zoho OAuth URL:", data.url);
@@ -65,7 +62,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       } else if (data?.redirect_url && data?.query_params) {
         const redirectUrl = new URL(data.redirect_url);
         Object.entries(data.query_params).forEach(([key, value]) => {
-          redirectUrl.searchParams.set(key, value);
+          redirectUrl.searchParams.set(key, String(value));
         });
         const fullRedirectUrl = redirectUrl.toString();
         console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
@@ -73,9 +70,9 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         return;
       } else {
         toast({
-          title: "Warning",
+          title: "Error",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "destructive",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }
@@ -94,13 +91,9 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
-  /**
-   * Updated function: calls your local Express server for fetching tickets
-   */
   const handleFetchTickets = async () => {
     setIsFetchingTickets(true);
     try {
-      // 1. Retrieve the current session
       const {
         data: { session },
         error: sessionError,
@@ -109,8 +102,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to fetch tickets");
       }
 
-      // 2. Call your Express API (adjust URL if needed)
-      const response = await fetch("http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets", {
+      const response = await fetch("http://zoho-server-env.eba-hsu363pe.us-east-2.elasticbeanstalk.com/sync-zoho-tickets", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -122,20 +114,19 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error(errorText || "Failed to fetch tickets");
       }
 
-      // 3. Handle JSON response from the Express server
       const data = await response.json();
       console.log("Fetch response:", data);
 
       if (data?.message) {
         toast({
           title: "Success",
-          description: data.message || "Successfully synced Zoho tickets!",
+          description: typeof data.message === "string" ? data.message : "Successfully synced Zoho tickets!",
         });
       } else {
         toast({
-          title: "Warning",
+          title: "Error",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "destructive",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }

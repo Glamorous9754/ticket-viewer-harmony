@@ -49,6 +49,10 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         }
       );
 
+      if (error) {
+        throw new Error(typeof error === "string" ? error : error.message || "Failed to initiate OAuth");
+      }
+
       if (data?.url) {
         console.log("🔗 Redirecting to Zendesk OAuth URL:", data.url);
         window.location.href = data.url;
@@ -56,7 +60,7 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       } else if (data?.redirect_url && data?.query_params) {
         const redirectUrl = new URL(data.redirect_url);
         Object.entries(data.query_params).forEach(([key, value]) => {
-          redirectUrl.searchParams.set(key, value);
+          redirectUrl.searchParams.set(key, String(value));
         });
         const fullRedirectUrl = redirectUrl.toString();
         console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
@@ -64,9 +68,9 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         return;
       } else {
         toast({
-          title: "Warning",
+          title: "Error",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "destructive",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }
@@ -82,11 +86,9 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
-  // Updated handleFetchTickets function
   const handleFetchTickets = async () => {
     setIsFetchingTickets(true);
     try {
-      // Retrieve the current session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError) {
@@ -97,27 +99,24 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to fetch tickets.");
       }
 
-      // Make a POST request to the Express backend to sync Zendesk tickets
       const response = await fetch('http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets/sync-zendesk-tickets', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionData.session.access_token}`,
           'Content-Type': 'application/json',
         },
-        // If you need to send a body, include it here. For example:
-        // body: JSON.stringify({ /* any additional data */ }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to sync Zendesk tickets.");
+        throw new Error(typeof errorData.message === 'string' ? errorData.message : "Failed to sync Zendesk tickets.");
       }
 
       const data = await response.json();
 
       toast({
         title: "Success",
-        description: data.message || "Successfully synced Zendesk tickets!",
+        description: typeof data.message === 'string' ? data.message : "Successfully synced Zendesk tickets!",
       });
     } catch (error: any) {
       console.error("Error fetching Zendesk tickets:", error);
