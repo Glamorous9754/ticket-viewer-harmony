@@ -75,9 +75,9 @@ const TrendingIssue = ({
       </CollapsibleTrigger>
 
       <CollapsibleContent className="overflow-hidden transition-all duration-500 ease-in-out">
-        <div className="space-y-4 pt-4 opacity-0 data-[state=open]:opacity-100 transition-opacity duration-500 ease-in-out">
+        <div className="space-y-4 pt-4">
           {overview && (
-            <div className="bg-accent/50 rounded-lg p-4 transition-all duration-500 ease-in-out transform origin-top">
+            <div className="bg-accent/50 rounded-lg p-4 transition-all duration-500 ease-in-out transform origin-top opacity-0 data-[state=open]:opacity-100">
               <p className="text-sm text-foreground">{overview}</p>
             </div>
           )}
