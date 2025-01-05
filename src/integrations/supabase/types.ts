@@ -473,6 +473,9 @@ export type Database = {
         | "hold"
         | "solved"
         | "closed"
+        | "Resolved"
+        | '"On Hold"'
+        | "On Hold"
       zendesk_connection_status:
         | "active"
         | "inactive"

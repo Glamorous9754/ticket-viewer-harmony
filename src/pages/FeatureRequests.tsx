@@ -10,7 +10,7 @@ const mockFeatures = [
     complexity: "High" as const,
     status: "Open",
     createdAt: "2023-03-15T10:00:00Z",
-    agentName: "Sarah Chen"
+    description: "Implement AI-powered system to automatically categorize and tag incoming support tickets based on content and context."
   },
   {
     summary: "Real-time chat translation for support agents",
@@ -19,7 +19,7 @@ const mockFeatures = [
     complexity: "Medium" as const,
     status: "Open",
     createdAt: "2023-03-15T10:00:00Z",
-    agentName: "Michael Brown"
+    description: "Enable automatic translation of chat messages between agents and customers in real-time to support multiple languages."
   },
   {
     summary: "Bulk ticket management tools",
@@ -27,7 +27,8 @@ const mockFeatures = [
     segments: ["ticketing"],
     complexity: "Medium" as const,
     status: "Open",
-    createdAt: "2023-03-15T10:00:00Z"
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Add functionality to manage multiple tickets simultaneously, including bulk updates, assignments, and status changes."
   },
   {
     summary: "Custom dashboard widgets",
@@ -35,7 +36,8 @@ const mockFeatures = [
     segments: ["analytics", "integration"],
     complexity: "Medium" as const,
     status: "Open",
-    createdAt: "2023-03-15T10:00:00Z"
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Allow users to create and customize their own dashboard widgets for better data visualization and monitoring."
   },
   {
     summary: "Advanced analytics for response times",
@@ -43,7 +45,8 @@ const mockFeatures = [
     segments: ["analytics"],
     complexity: "High" as const,
     status: "Open",
-    createdAt: "2023-03-15T10:00:00Z"
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Implement detailed analytics for tracking and improving response times across different ticket categories and priorities."
   },
   {
     summary: "Integration with popular CRM platforms",
@@ -51,7 +54,8 @@ const mockFeatures = [
     segments: ["integration"],
     complexity: "Low" as const,
     status: "Open",
-    createdAt: "2023-03-15T10:00:00Z"
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Add native integration support for major CRM platforms to sync customer data and ticket information."
   }
 ];
 
@@ -74,10 +78,10 @@ const FeatureRequests = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-primary-foreground mb-2">
-          Feature Requests
+          Requests
         </h1>
         <p className="text-muted-foreground">
-          Track and manage feature requests from your customers across all platforms
+          Track and manage requests from your customers across all platforms
         </p>
       </div>
 
