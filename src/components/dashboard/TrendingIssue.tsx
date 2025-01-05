@@ -39,7 +39,7 @@ const TrendingIssue = ({
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-300 ease-in-out cursor-pointer group"
+      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-500 ease-in-out cursor-pointer group"
     >
       <CollapsibleTrigger className="w-full text-left">
         <div className="flex items-start justify-between">
@@ -66,49 +66,49 @@ const TrendingIssue = ({
           </div>
           <div className="rounded-full p-2 transition-colors group-hover:bg-accent">
             <ChevronRight
-              className={`w-4 h-4 transition-transform duration-300 ease-in-out ${
-                isOpen ? "rotate-90" : ""
+              className={`w-4 h-4 transform transition-transform duration-500 ease-in-out ${
+                isOpen ? "rotate-90" : "rotate-0"
               }`}
             />
           </div>
         </div>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="overflow-hidden transition-all duration-300 ease-in-out">
-        <div className="space-y-4 pt-4">
+      <CollapsibleContent className="overflow-hidden transition-all duration-500 ease-in-out">
+        <div className="space-y-4 pt-4 opacity-0 data-[state=open]:opacity-100 transition-opacity duration-500 ease-in-out">
           {overview && (
-            <div className="bg-accent/50 rounded-lg p-4 transition-opacity duration-300 ease-in-out">
+            <div className="bg-accent/50 rounded-lg p-4 transition-all duration-500 ease-in-out transform origin-top">
               <p className="text-sm text-foreground">{overview}</p>
             </div>
           )}
-          <div className="transition-all duration-300 ease-in-out">
+          <div className="transition-all duration-500 ease-in-out transform origin-top">
             <h4 className="text-sm font-medium mb-2">Sample Tickets</h4>
             <ul className="space-y-2">
               {sampleTickets.map((ticket, index) => (
                 <li
                   key={index}
-                  className="text-sm text-muted-foreground bg-muted p-2 rounded transition-all duration-300 ease-in-out"
+                  className="text-sm text-muted-foreground bg-muted p-2 rounded transition-all duration-500 ease-in-out"
                 >
                   "{ticket}"
                 </li>
               ))}
             </ul>
           </div>
-          <div className="transition-all duration-300 ease-in-out">
+          <div className="transition-all duration-500 ease-in-out transform origin-top">
             <h4 className="text-sm font-medium mb-2">Common Phrases</h4>
             <div className="flex flex-wrap gap-2">
               {commonPhrases.map((phrase, index) => (
                 <Badge
                   key={index}
                   variant="outline"
-                  className="font-normal bg-background transition-all duration-300 ease-in-out"
+                  className="font-normal bg-background transition-all duration-500 ease-in-out"
                 >
                   {phrase}
                 </Badge>
               ))}
             </div>
           </div>
-          <div className="pt-2 border-t border-border transition-all duration-300 ease-in-out">
+          <div className="pt-2 border-t border-border transition-all duration-500 ease-in-out transform origin-top">
             <span className="text-xs text-muted-foreground">
               Suggested Category:{" "}
               <Badge variant="secondary" className="font-normal">
