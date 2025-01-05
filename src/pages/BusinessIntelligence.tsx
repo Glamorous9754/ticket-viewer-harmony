@@ -1,4 +1,6 @@
 import RiskAlert from "../components/dashboard/RiskAlert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
 const mockRiskAlerts = [
   {
@@ -31,6 +33,47 @@ const mockInsights = [
 ];
 
 const BusinessIntelligence = () => {
+  const [isLoading] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            <Skeleton className="h-6 w-48 mb-4" />
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div key={index} className="rounded-lg border p-4 space-y-3">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            ))}
+          </div>
+          
+          <div>
+            <Skeleton className="h-6 w-48 mb-4" />
+            <div className="space-y-4">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="rounded-lg border p-4 space-y-3">
+                  <Skeleton className="h-6 w-1/2" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>

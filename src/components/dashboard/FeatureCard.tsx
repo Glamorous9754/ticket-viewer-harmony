@@ -25,7 +25,7 @@ const FeatureCard = ({
   agentName,
 }: FeatureCardProps) => {
   return (
-    <Card className="h-full">
+    <Card className="h-full animate-fade-in">
       <CardHeader className="pb-2">
         <div className="space-y-2">
           <h3 className="font-semibold text-lg leading-tight">{summary}</h3>
@@ -43,7 +43,7 @@ const FeatureCard = ({
               <Badge 
                 key={segment} 
                 variant="outline"
-                className="capitalize"
+                className="capitalize bg-primary/10"
               >
                 {segment}
               </Badge>
@@ -58,8 +58,8 @@ const FeatureCard = ({
           )}
 
           <Button 
-            variant="outline" 
-            className="w-full"
+            variant="default"
+            className="w-full bg-primary hover:bg-primary/90"
           >
             View Ticket
             <ExternalLink className="ml-2 h-4 w-4" />
