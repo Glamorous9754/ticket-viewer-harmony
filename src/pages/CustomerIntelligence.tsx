@@ -7,7 +7,7 @@ const mockTrendingIssues = [
     title: "Login Authentication Failures",
     count: 45,
     isRising: true,
-    lastDate: "2 hours ago",
+    lastDate: "2024-03-20T14:30:00Z",
     sampleTickets: [
       "Unable to login after password reset",
       "2FA verification not receiving codes",
@@ -15,12 +15,17 @@ const mockTrendingIssues = [
     ],
     commonPhrases: ["password reset", "2FA", "timeout", "authentication"],
     suggestedCategory: "Authentication",
+    recommendedSolutions: [
+      "Guide users through the password reset process with step-by-step instructions",
+      "Verify and update phone number for 2FA in account settings",
+      "Clear browser cache and cookies, then try logging in again",
+    ],
   },
   {
     title: "Mobile App Crashes on Startup",
     count: 32,
     isRising: false,
-    lastDate: "4 hours ago",
+    lastDate: "2024-03-20T10:15:00Z",
     sampleTickets: [
       "App crashes immediately after splash screen",
       "Cannot open app after latest update",
@@ -28,6 +33,11 @@ const mockTrendingIssues = [
     ],
     commonPhrases: ["crash", "startup", "black screen", "latest version"],
     suggestedCategory: "Mobile App Stability",
+    recommendedSolutions: [
+      "Uninstall and reinstall the latest version of the app",
+      "Clear app cache and data from device settings",
+      "Ensure device meets minimum OS requirements",
+    ],
   },
 ];
 

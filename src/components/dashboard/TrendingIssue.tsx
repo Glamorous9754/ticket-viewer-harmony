@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronUp, TrendingUp, TrendingDown } from "lucide-react";
 import { useState } from "react";
+import { format } from "date-fns";
 
 interface TrendingIssueProps {
   title: string;
@@ -9,6 +10,7 @@ interface TrendingIssueProps {
   sampleTickets: string[];
   commonPhrases: string[];
   suggestedCategory: string;
+  recommendedSolutions?: string[];
 }
 
 const TrendingIssue = ({
@@ -19,8 +21,18 @@ const TrendingIssue = ({
   sampleTickets,
   commonPhrases,
   suggestedCategory,
+  recommendedSolutions = [],
 }: TrendingIssueProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Format the date if it's a valid date string
+  const formattedDate = (() => {
+    try {
+      return format(new Date(lastDate), "MMM d, yyyy 'at' h:mm a");
+    } catch {
+      return lastDate;
+    }
+  })();
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-200">
@@ -37,7 +49,7 @@ const TrendingIssue = ({
           <div>
             <h3 className="font-medium text-gray-900">{title}</h3>
             <p className="text-sm text-gray-500">
-              {count} related tickets • Last seen {lastDate}
+              {count} related tickets • Last ticket created at {formattedDate}
             </p>
           </div>
         </div>
@@ -66,6 +78,24 @@ const TrendingIssue = ({
                 ))}
               </ul>
             </div>
+            
+            {recommendedSolutions && recommendedSolutions.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm text-gray-700 mb-2">
+                  Recommended Solutions
+                </h4>
+                <ul className="space-y-2">
+                  {recommendedSolutions.map((solution, index) => (
+                    <li
+                      key={index}
+                      className="text-sm text-gray-600 bg-white p-3 rounded border border-gray-200 border-l-4 border-l-primary"
+                    >
+                      {solution}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             
             <div>
               <h4 className="font-medium text-sm text-gray-700 mb-2">
