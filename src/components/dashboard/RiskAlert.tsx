@@ -11,13 +11,13 @@ const RiskAlert = ({ type, severity, segment, evidence }: RiskAlertProps) => {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "Low":
-        return "border-green-200 bg-green-50 text-green-800";
+        return "border-primary/20 bg-primary/10 text-primary-foreground";
       case "Medium":
-        return "border-yellow-200 bg-yellow-50 text-yellow-800";
+        return "border-secondary/20 bg-secondary/10 text-secondary-foreground";
       case "High":
-        return "border-red-200 bg-red-50 text-red-800";
+        return "border-destructive/20 bg-destructive/10 text-destructive-foreground";
       default:
-        return "border-gray-200 bg-gray-50 text-gray-800";
+        return "border-muted bg-muted text-muted-foreground";
     }
   };
 
