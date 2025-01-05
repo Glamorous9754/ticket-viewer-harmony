@@ -45,7 +45,7 @@ const TrendingIssue = ({
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg text-card-foreground">{title}</h3>
+              <h3 className="font-semibold text-lg">{title}</h3>
               <Badge
                 variant={isRising ? "default" : "secondary"}
                 className="font-normal"
@@ -77,11 +77,11 @@ const TrendingIssue = ({
       <CollapsibleContent className="space-y-4 pt-4">
         {overview && (
           <div className="bg-accent/50 rounded-lg p-4">
-            <p className="text-sm text-card-foreground">{overview}</p>
+            <p className="text-sm text-foreground">{overview}</p>
           </div>
         )}
         <div>
-          <h4 className="text-sm font-medium mb-2 text-card-foreground">Sample Tickets</h4>
+          <h4 className="text-sm font-medium mb-2">Sample Tickets</h4>
           <ul className="space-y-2">
             {sampleTickets.map((ticket, index) => (
               <li
@@ -94,7 +94,7 @@ const TrendingIssue = ({
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-medium mb-2 text-card-foreground">Common Phrases</h4>
+          <h4 className="text-sm font-medium mb-2">Common Phrases</h4>
           <div className="flex flex-wrap gap-2">
             {commonPhrases.map((phrase, index) => (
               <Badge
