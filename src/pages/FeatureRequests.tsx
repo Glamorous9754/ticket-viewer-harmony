@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
-import { FeatureRequestForm } from "@/components/dashboard/FeatureRequestForm";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Plus } from "lucide-react";
 
 const mockFeatures = [
   {
@@ -88,37 +85,19 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="list" className="w-full">
-        <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-          <TabsTrigger value="list" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            View Requests
-          </TabsTrigger>
-          <TabsTrigger value="new" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Request
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="list" className="mt-6">
-          <div className="flex justify-between items-center mb-6">
-            <FeatureFilters
-              sortBy={sortBy}
-              filterBy={filterBy}
-              onSortChange={setSortBy}
-              onFilterChange={setFilterBy}
-            />
-          </div>
-          <FeatureGrid 
-            features={filteredFeatures} 
-            isLoading={isLoading} 
-          />
-        </TabsContent>
-        <TabsContent value="new" className="mt-6">
-          <div className="bg-card rounded-lg border border-border p-6">
-            <FeatureRequestForm />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <div className="flex justify-between items-center">
+        <FeatureFilters
+          sortBy={sortBy}
+          filterBy={filterBy}
+          onSortChange={setSortBy}
+          onFilterChange={setFilterBy}
+        />
+      </div>
+
+      <FeatureGrid 
+        features={filteredFeatures} 
+        isLoading={isLoading} 
+      />
     </div>
   );
 };
