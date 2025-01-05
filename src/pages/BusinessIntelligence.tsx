@@ -1,8 +1,9 @@
-import RiskAlert from "../components/dashboard/RiskAlert";
-import TrendingIssue from "../components/dashboard/TrendingIssue";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
-import { TrendingUp, Rocket } from "lucide-react";
+import WorkingWellSection from "../components/dashboard/sections/WorkingWellSection";
+import RiskAlertsSection from "../components/dashboard/sections/RiskAlertsSection";
+import OpportunityMetricsSection from "../components/dashboard/sections/OpportunityMetricsSection";
+import MarketInsightsSection from "../components/dashboard/sections/MarketInsightsSection";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const mockRiskAlerts = [
   {
@@ -103,131 +104,32 @@ const BusinessIntelligence = () => {
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
-        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            <Skeleton className="h-6 w-48 mb-4" />
-            {Array.from({ length: 2 }).map((_, index) => (
-              <div key={index} className="rounded-lg border p-4 space-y-3">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            ))}
+          <div className="lg:col-span-2">
+            <Skeleton className="h-[600px] w-full" />
           </div>
-          
-          <div>
-            <Skeleton className="h-6 w-48 mb-4" />
-            <div className="space-y-4">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <div key={index} className="rounded-lg border p-4 space-y-3">
-                  <Skeleton className="h-6 w-1/2" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Skeleton className="h-[600px] w-full" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Business Intelligence
         </h1>
-        <p className="text-gray-500">
+        <p className="text-muted-foreground">
           Monitor business health, opportunities, and customer satisfaction metrics
         </p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* What's Working Well Section */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-500" />
-            <h2 className="text-xl font-semibold text-gray-900">What's Working Well</h2>
-          </div>
-          <div className="space-y-4">
-            {mockWorkingWell.map((item, index) => (
-              <TrendingIssue key={index} {...item} />
-            ))}
-          </div>
-        </div>
-
-        {/* Risk Alerts Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Risk Alerts</h2>
-          {mockRiskAlerts.map((alert, index) => (
-            <RiskAlert key={index} {...alert} />
-          ))}
-        </div>
-
-        {/* Opportunity Metrics Section */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-2">
-            <Rocket className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-semibold text-gray-900">Opportunity Metrics</h2>
-          </div>
-          <div className="space-y-4">
-            {mockOpportunities.map((item, index) => (
-              <TrendingIssue key={index} {...item} />
-            ))}
-          </div>
-        </div>
-        
-        {/* Product-Market Insights */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Product-Market Insights
-          </h2>
-          <div className="space-y-4">
-            {mockInsights.map((insight, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
-              >
-                <h3 className="font-medium text-gray-900 mb-2">
-                  {insight.segment} Segment
-                </h3>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-sm text-gray-500">Key Pain Points</p>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {insight.painPoints.map((point, idx) => (
-                        <span
-                          key={idx}
-                          className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full"
-                        >
-                          {point}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      Satisfaction Score: {insight.satisfaction}/10
-                    </p>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div
-                        className="bg-primary rounded-full h-2"
-                        style={{
-                          width: `${(insight.satisfaction / 10) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">{insight.suggestions}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <WorkingWellSection items={mockWorkingWell} />
+        <RiskAlertsSection alerts={mockRiskAlerts} />
+        <OpportunityMetricsSection opportunities={mockOpportunities} />
+        <MarketInsightsSection insights={mockInsights} />
       </div>
     </div>
   );
