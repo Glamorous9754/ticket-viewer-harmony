@@ -49,7 +49,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
     <aside 
       className={cn(
         "fixed left-0 top-0 h-screen bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm transition-all duration-300 ease-in-out",
-        isRetracted ? "w-20" : "w-64"
+        isRetracted ? "w-16" : "w-64"
       )}
     >
       <div className="p-4 flex items-center justify-between">
@@ -90,10 +90,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
                     "flex items-center justify-center transition-all duration-300",
                     isRetracted ? "w-full" : "w-6"
                   )}>
-                    <link.icon className={cn(
-                      "w-6 h-6 shrink-0",
-                      isRetracted && "mx-auto"
-                    )} />
+                    <link.icon className="w-5 h-5 shrink-0 mx-auto" />
                   </div>
                   <span className={cn(
                     "transition-all duration-300 overflow-hidden whitespace-nowrap",
@@ -123,9 +120,8 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
             isRetracted ? "w-full" : "w-6"
           )}>
             <MessageSquare className={cn(
-              "w-6 h-6 shrink-0",
-              location.pathname === "/chat" && "animate-pulse",
-              isRetracted && "mx-auto"
+              "w-5 h-5 shrink-0 mx-auto",
+              location.pathname === "/chat" && "animate-pulse"
             )} />
           </div>
           <span className={cn(
@@ -149,10 +145,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
             "flex items-center justify-center transition-all duration-300",
             isRetracted ? "w-full" : "w-6"
           )}>
-            <Settings className={cn(
-              "w-6 h-6 shrink-0",
-              isRetracted && "mx-auto"
-            )} />
+            <Settings className="w-5 h-5 shrink-0 mx-auto" />
           </div>
           <span className={cn(
             "transition-all duration-300 overflow-hidden whitespace-nowrap",
@@ -170,10 +163,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
             "flex items-center justify-center transition-all duration-300",
             isRetracted ? "w-full" : "w-6"
           )}>
-            <LogOut className={cn(
-              "w-6 h-6 shrink-0",
-              isRetracted && "mx-auto"
-            )} />
+            <LogOut className="w-5 h-5 shrink-0 mx-auto" />
           </div>
           <span className={cn(
             "transition-all duration-300 overflow-hidden whitespace-nowrap",
