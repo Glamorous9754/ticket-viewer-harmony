@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -39,7 +39,7 @@ const TrendingIssue = ({
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-500 ease-in-out cursor-pointer group"
+      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-200 cursor-pointer group"
     >
       <CollapsibleTrigger className="w-full text-left">
         <div className="flex items-start justify-between">
@@ -64,18 +64,18 @@ const TrendingIssue = ({
               </span>
             </div>
           </div>
-          <div className="rounded-full p-2 transition-colors duration-300 ease-in-out group-hover:bg-accent">
+          <div className="rounded-full p-2 transition-colors group-hover:bg-accent">
             {isOpen ? (
-              <ChevronDown className="w-4 h-4 transition-transform duration-500 ease-in-out rotate-0" />
+              <ChevronDown className="w-4 h-4 transition-transform duration-300 rotate-0" />
             ) : (
-              <ChevronRight className="w-4 h-4 transition-transform duration-500 ease-in-out -rotate-90" />
+              <ChevronRight className="w-4 h-4 transition-transform duration-300 -rotate-90" />
             )}
           </div>
         </div>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="overflow-hidden transition-all duration-500 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-        <div className="space-y-4 pt-4 transition-opacity duration-500 ease-in-out opacity-0 data-[state=open]:opacity-100">
+      <CollapsibleContent className="overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+        <div className="space-y-4 pt-4 animate-fade-in">
           {overview && (
             <div className="bg-accent/50 rounded-lg p-4">
               <p className="text-sm text-foreground">{overview}</p>
