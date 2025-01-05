@@ -10,7 +10,8 @@ const mockRiskAlerts = [
     type: "High Churn Risk",
     severity: "High" as const,
     segment: "Enterprise Customers",
-    evidence: "5 enterprise customers reported critical bugs in the last 24 hours",
+    evidence:
+      "5 enterprise customers reported critical bugs in the last 24 hours",
   },
   {
     type: "Feature Adoption",
@@ -32,7 +33,8 @@ const mockWorkingWell = [
     ],
     commonPhrases: ["intuitive", "fast", "convenient"],
     suggestedCategory: "Mobile Experience",
-    overview: "The mobile app has seen significant adoption with consistently positive feedback. Users particularly appreciate the intuitive interface and quick access to key features. The trend shows increasing engagement with mobile features, suggesting strong product-market fit in this area.",
+    overview:
+      "The mobile app has seen significant adoption with consistently positive feedback. Users particularly appreciate the intuitive interface and quick access to key features. The trend shows increasing engagement with mobile features, suggesting strong product-market fit in this area.",
   },
   {
     title: "API Integration Success",
@@ -45,7 +47,8 @@ const mockWorkingWell = [
     ],
     commonPhrases: ["easy integration", "well documented", "reliable"],
     suggestedCategory: "Developer Experience",
-    overview: "Developer satisfaction with API integration capabilities is trending upward. The well-documented API and successful integrations with major platforms like Salesforce indicate strong technical foundation and developer-friendly approach.",
+    overview:
+      "Developer satisfaction with API integration capabilities is trending upward. The well-documented API and successful integrations with major platforms like Salesforce indicate strong technical foundation and developer-friendly approach.",
   },
 ];
 
@@ -61,7 +64,8 @@ const mockOpportunities = [
     ],
     commonPhrases: ["carbon tracking", "eco-friendly", "sustainability"],
     suggestedCategory: "Sustainability",
-    overview: "Growing demand for sustainability features, particularly carbon footprint tracking and reporting. This trend aligns with increasing environmental consciousness in the market and could represent a significant differentiation opportunity.",
+    overview:
+      "Growing demand for sustainability features, particularly carbon footprint tracking and reporting. This trend aligns with increasing environmental consciousness in the market and could represent a significant differentiation opportunity.",
   },
   {
     title: "Return Label Automation",
@@ -74,7 +78,8 @@ const mockOpportunities = [
     ],
     commonPhrases: ["return labels", "automation", "bulk processing"],
     suggestedCategory: "Process Automation",
-    overview: "Consistent requests for return label automation indicate a clear pain point in current workflows. The focus on bulk processing suggests this feature could particularly benefit high-volume customers and improve operational efficiency.",
+    overview:
+      "Consistent requests for return label automation indicate a clear pain point in current workflows. The focus on bulk processing suggests this feature could particularly benefit high-volume customers and improve operational efficiency.",
   },
 ];
 
@@ -83,13 +88,15 @@ const mockInsights = [
     segment: "Enterprise",
     painPoints: ["API Performance", "Custom Integrations"],
     satisfaction: 7.5,
-    suggestions: "Improve API documentation and add more integration options",
+    suggestions:
+      "Enterprise customers are generally satisfied but face challenges with API performance during high-load periods. Custom integration requests indicate a need for more flexible integration options and better documentation for complex use cases.",
   },
   {
     segment: "Small Business",
     painPoints: ["Pricing", "Onboarding"],
     satisfaction: 8.2,
-    suggestions: "Simplify onboarding process and review pricing tiers",
+    suggestions:
+      "Small business customers show high satisfaction with core features but express concerns about pricing structure. Simplified onboarding processes and clearer pricing tiers could improve adoption rates in this segment.",
   },
 ];
 
@@ -123,7 +130,7 @@ const BusinessIntelligence = () => {
           Monitor business health, opportunities, and customer satisfaction metrics
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <WorkingWellSection items={mockWorkingWell} />
         <RiskAlertsSection alerts={mockRiskAlerts} />
