@@ -297,6 +297,7 @@ export type Database = {
           summary: string | null
           thread: string | null
           updated_at: string
+          web_url: string | null
         }
         Insert: {
           agent_id?: string | null
@@ -314,6 +315,7 @@ export type Database = {
           summary?: string | null
           thread?: string | null
           updated_at?: string
+          web_url?: string | null
         }
         Update: {
           agent_id?: string | null
@@ -331,6 +333,7 @@ export type Database = {
           summary?: string | null
           thread?: string | null
           updated_at?: string
+          web_url?: string | null
         }
         Relationships: [
           {

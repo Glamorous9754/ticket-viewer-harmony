@@ -88,9 +88,12 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
                 >
                   <div className={cn(
                     "flex items-center justify-center transition-all duration-300",
-                    isRetracted ? "w-full" : "w-7"
+                    isRetracted ? "w-full" : "w-8"
                   )}>
-                    <link.icon className="w-6 h-6 shrink-0" />
+                    <link.icon className={cn(
+                      "w-6 h-6 shrink-0",
+                      isRetracted && "mx-auto"
+                    )} />
                   </div>
                   <span className={cn(
                     "transition-all duration-300 overflow-hidden whitespace-nowrap",
@@ -117,11 +120,12 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <div className={cn(
             "flex items-center justify-center transition-all duration-300",
-            isRetracted ? "w-full" : "w-7"
+            isRetracted ? "w-full" : "w-8"
           )}>
             <MessageSquare className={cn(
               "w-6 h-6 shrink-0",
-              location.pathname === "/chat" && "animate-pulse"
+              location.pathname === "/chat" && "animate-pulse",
+              isRetracted && "mx-auto"
             )} />
           </div>
           <span className={cn(
@@ -143,9 +147,12 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <div className={cn(
             "flex items-center justify-center transition-all duration-300",
-            isRetracted ? "w-full" : "w-7"
+            isRetracted ? "w-full" : "w-8"
           )}>
-            <Settings className="w-6 h-6 shrink-0" />
+            <Settings className={cn(
+              "w-6 h-6 shrink-0",
+              isRetracted && "mx-auto"
+            )} />
           </div>
           <span className={cn(
             "transition-all duration-300 overflow-hidden whitespace-nowrap",
@@ -161,9 +168,12 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <div className={cn(
             "flex items-center justify-center transition-all duration-300",
-            isRetracted ? "w-full" : "w-7"
+            isRetracted ? "w-full" : "w-8"
           )}>
-            <LogOut className="w-6 h-6 shrink-0" />
+            <LogOut className={cn(
+              "w-6 h-6 shrink-0",
+              isRetracted && "mx-auto"
+            )} />
           </div>
           <span className={cn(
             "transition-all duration-300 overflow-hidden whitespace-nowrap",
