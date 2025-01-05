@@ -122,13 +122,13 @@ export const PlatformSelector = () => {
       let endpoint = '';
       switch (platform) {
         case 'zoho':
-          endpoint = 'http://zoho-server-env.eba-hsu363pe.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
           break;
         case 'zendesk':
-          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets/sync-zendesk-tickets';
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets';
           break;
         case 'gmail':
-          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets/sync-gmail-tickets';
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-gmail-tickets';
           break;
         default:
           throw new Error("Invalid platform for fetching data");
