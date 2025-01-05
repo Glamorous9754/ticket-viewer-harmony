@@ -27,7 +27,7 @@ const MarketInsightsSection = ({ insights }: MarketInsightsProps) => {
             {insights.map((insight, index) => (
               <div
                 key={index}
-                className="bg-card rounded-lg shadow-sm border border-border p-4 space-y-4"
+                className="bg-card rounded-lg shadow-sm border border-border p-4 space-y-4 hover:shadow-md transition-all duration-200"
               >
                 <div>
                   <h3 className="font-semibold text-lg text-foreground mb-2">
@@ -50,18 +50,25 @@ const MarketInsightsSection = ({ insights }: MarketInsightsProps) => {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">
-                        Satisfaction Score: {insight.satisfaction}/10
+                        Satisfaction Score
                       </p>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-primary rounded-full h-2 transition-all duration-300"
-                          style={{
-                            width: `${(insight.satisfaction / 10) * 100}%`,
-                          }}
-                        />
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted rounded-full h-2">
+                          <div
+                            className="bg-primary rounded-full h-2 transition-all duration-300"
+                            style={{
+                              width: `${(insight.satisfaction / 10) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium">
+                          {insight.satisfaction}/10
+                        </span>
                       </div>
                     </div>
-                    <p className="text-sm text-foreground">{insight.suggestions}</p>
+                    <p className="text-sm text-foreground p-3 bg-accent rounded-lg">
+                      {insight.suggestions}
+                    </p>
                   </div>
                 </div>
               </div>

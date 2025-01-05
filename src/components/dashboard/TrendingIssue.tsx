@@ -25,7 +25,6 @@ const TrendingIssue = ({
 }: TrendingIssueProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Format the date if it's a valid date string
   const formattedDate = (() => {
     try {
       return format(new Date(lastDate), "MMM d, yyyy 'at' h:mm a");
@@ -42,14 +41,14 @@ const TrendingIssue = ({
       >
         <div className="flex items-center gap-4">
           {isRising ? (
-            <TrendingUp className="w-5 h-5 text-red-500" />
+            <TrendingUp className="w-5 h-5 text-primary" />
           ) : (
             <TrendingDown className="w-5 h-5 text-green-500" />
           )}
           <div>
             <h3 className="font-medium text-gray-900">{title}</h3>
             <p className="text-sm text-gray-500">
-              {count} related tickets • Last ticket created at {formattedDate}
+              {count} related tickets • Last ticket created {formattedDate}
             </p>
           </div>
         </div>
@@ -61,7 +60,7 @@ const TrendingIssue = ({
       </div>
       
       {isExpanded && (
-        <div className="p-4 border-t border-gray-200 bg-gray-50 animate-fade-in">
+        <div className="p-4 border-t border-gray-200 bg-accent animate-fade-in">
           <div className="space-y-4">
             <div>
               <h4 className="font-medium text-sm text-gray-700 mb-2">
