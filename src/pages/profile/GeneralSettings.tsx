@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,19 @@ import { supabase } from "@/integrations/supabase/client";
 
 const GeneralSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setEmail(user.email);
+      }
+    };
+    fetchUserEmail();
+  }, []);
 
   const handleResetPassword = async () => {
     try {
@@ -74,7 +85,7 @@ const GeneralSettings = () => {
             <Input
               id="email"
               type="email"
-              value={supabase.auth.getUser().then(({ data }) => data.user?.email)}
+              value={email}
               disabled
               className="bg-muted"
             />
