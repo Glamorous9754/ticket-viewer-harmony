@@ -48,7 +48,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
   return (
     <aside 
       className={cn(
-        "fixed left-0 top-0 h-screen bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm transition-all duration-300 ease-in-out",
+        "fixed left-0 top-0 h-screen bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm transition-all duration-200 ease-out",
         isRetracted ? "w-16" : "w-64"
       )}
     >
