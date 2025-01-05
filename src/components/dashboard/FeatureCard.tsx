@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface FeatureCardProps {
@@ -20,30 +22,29 @@ const FeatureCard = ({
   complexity,
   status = "Open",
   createdAt,
-  resolvedAt,
   agentName,
 }: FeatureCardProps) => {
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-start gap-4">
+        <div className="space-y-2">
           <h3 className="font-semibold text-lg leading-tight">{summary}</h3>
-          <Badge variant={status === "Open" ? "default" : "secondary"}>
-            {status}
-          </Badge>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-primary-foreground">Priority: {priority.toFixed(1)}</span>
+            <span className="text-muted-foreground">•</span>
+            <span className="text-primary-foreground">Complexity: {complexity}</span>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Priority: {priority.toFixed(1)}</span>
-            <span>•</span>
-            <span>Complexity: {complexity}</span>
-          </div>
-          
           <div className="flex flex-wrap gap-2">
             {segments.map((segment) => (
-              <Badge key={segment} variant="outline">
+              <Badge 
+                key={segment} 
+                variant="outline"
+                className="capitalize"
+              >
                 {segment}
               </Badge>
             ))}
@@ -55,6 +56,14 @@ const FeatureCard = ({
               {agentName && ` • Assigned to ${agentName}`}
             </div>
           )}
+
+          <Button 
+            variant="outline" 
+            className="w-full"
+          >
+            View Ticket
+            <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>

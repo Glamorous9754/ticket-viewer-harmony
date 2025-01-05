@@ -37,9 +37,10 @@ export const FeatureFilters = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Segments</SelectItem>
-          <SelectItem value="Enterprise">Enterprise</SelectItem>
-          <SelectItem value="Pro Users">Pro Users</SelectItem>
-          <SelectItem value="Small Business">Small Business</SelectItem>
+          <SelectItem value="automation">Automation</SelectItem>
+          <SelectItem value="analytics">Analytics</SelectItem>
+          <SelectItem value="integration">Integration</SelectItem>
+          <SelectItem value="ticketing">Ticketing</SelectItem>
         </SelectContent>
       </Select>
     </div>
