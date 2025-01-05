@@ -39,7 +39,7 @@ const TrendingIssue = ({
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="bg-white rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-200"
+      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-200"
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1 flex-1">
@@ -47,9 +47,7 @@ const TrendingIssue = ({
             <h3 className="font-semibold text-lg">{title}</h3>
             <Badge
               variant={isRising ? "default" : "secondary"}
-              className={`font-normal ${
-                isRising ? "bg-primary/10 text-primary hover:bg-primary/20" : ""
-              }`}
+              className="font-normal"
             >
               {count} mentions
             </Badge>
@@ -73,7 +71,7 @@ const TrendingIssue = ({
       <CollapsibleContent className="space-y-4 pt-4">
         {overview && (
           <div className="bg-accent/50 rounded-lg p-4">
-            <p className="text-sm text-foreground leading-relaxed">{overview}</p>
+            <p className="text-sm text-foreground">{overview}</p>
           </div>
         )}
         <div>
@@ -82,7 +80,7 @@ const TrendingIssue = ({
             {sampleTickets.map((ticket, index) => (
               <li
                 key={index}
-                className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border/50"
+                className="text-sm text-muted-foreground bg-muted p-2 rounded"
               >
                 "{ticket}"
               </li>
@@ -96,7 +94,7 @@ const TrendingIssue = ({
               <Badge
                 key={index}
                 variant="outline"
-                className="font-normal bg-background hover:bg-accent/50 transition-colors"
+                className="font-normal bg-background"
               >
                 {phrase}
               </Badge>
