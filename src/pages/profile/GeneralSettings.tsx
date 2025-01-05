@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 
 const GeneralSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -21,6 +23,10 @@ const GeneralSettings = () => {
       }
     };
     fetchUserEmail();
+
+    // Check if dark mode is enabled
+    const isDark = document.documentElement.classList.contains("dark");
+    setIsDarkMode(isDark);
   }, []);
 
   const handleResetPassword = async () => {
@@ -75,6 +81,25 @@ const GeneralSettings = () => {
     }
   };
 
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    
+    if (newDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    // Save the preference
+    localStorage.setItem("darkMode", newDarkMode ? "dark" : "light");
+
+    toast({
+      title: "Theme Updated",
+      description: `Switched to ${newDarkMode ? "dark" : "light"} mode`,
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <Card className="p-6">
@@ -92,6 +117,25 @@ const GeneralSettings = () => {
             <p className="text-sm text-muted-foreground mt-1">
               Your email address is used for account notifications and password resets
             </p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Appearance</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="dark-mode">Dark Mode</Label>
+              <p className="text-sm text-muted-foreground">
+                Toggle between light and dark theme
+              </p>
+            </div>
+            <Switch
+              id="dark-mode"
+              checked={isDarkMode}
+              onCheckedChange={toggleDarkMode}
+            />
           </div>
         </div>
       </Card>
