@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -39,7 +39,7 @@ const TrendingIssue = ({
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-500 ease-in-out cursor-pointer group"
+      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-200 cursor-pointer group"
     >
       <CollapsibleTrigger className="w-full text-left">
         <div className="flex items-start justify-between">
@@ -65,57 +65,55 @@ const TrendingIssue = ({
             </div>
           </div>
           <div className="rounded-full p-2 transition-colors group-hover:bg-accent">
-            <ChevronRight
-              className={`w-4 h-4 transform transition-transform duration-500 ease-in-out ${
-                isOpen ? "rotate-90" : "rotate-0"
-              }`}
-            />
+            {isOpen ? (
+              <ChevronDown className="w-4 h-4 transition-transform duration-200" />
+            ) : (
+              <ChevronRight className="w-4 h-4 transition-transform duration-200" />
+            )}
           </div>
         </div>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="overflow-hidden transition-all duration-500 ease-in-out">
-        <div className="space-y-4 pt-4">
-          {overview && (
-            <div className="bg-accent/50 rounded-lg p-4 transition-all duration-500 ease-in-out transform origin-top opacity-0 data-[state=open]:opacity-100">
-              <p className="text-sm text-foreground">{overview}</p>
-            </div>
-          )}
-          <div className="transition-all duration-500 ease-in-out transform origin-top">
-            <h4 className="text-sm font-medium mb-2">Sample Tickets</h4>
-            <ul className="space-y-2">
-              {sampleTickets.map((ticket, index) => (
-                <li
-                  key={index}
-                  className="text-sm text-muted-foreground bg-muted p-2 rounded transition-all duration-500 ease-in-out"
-                >
-                  "{ticket}"
-                </li>
-              ))}
-            </ul>
+      <CollapsibleContent className="space-y-4 pt-4">
+        {overview && (
+          <div className="bg-accent/50 rounded-lg p-4">
+            <p className="text-sm text-foreground">{overview}</p>
           </div>
-          <div className="transition-all duration-500 ease-in-out transform origin-top">
-            <h4 className="text-sm font-medium mb-2">Common Phrases</h4>
-            <div className="flex flex-wrap gap-2">
-              {commonPhrases.map((phrase, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className="font-normal bg-background transition-all duration-500 ease-in-out"
-                >
-                  {phrase}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          <div className="pt-2 border-t border-border transition-all duration-500 ease-in-out transform origin-top">
-            <span className="text-xs text-muted-foreground">
-              Suggested Category:{" "}
-              <Badge variant="secondary" className="font-normal">
-                {suggestedCategory}
+        )}
+        <div>
+          <h4 className="text-sm font-medium mb-2">Sample Tickets</h4>
+          <ul className="space-y-2">
+            {sampleTickets.map((ticket, index) => (
+              <li
+                key={index}
+                className="text-sm text-muted-foreground bg-muted p-2 rounded"
+              >
+                "{ticket}"
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-sm font-medium mb-2">Common Phrases</h4>
+          <div className="flex flex-wrap gap-2">
+            {commonPhrases.map((phrase, index) => (
+              <Badge
+                key={index}
+                variant="outline"
+                className="font-normal bg-background"
+              >
+                {phrase}
               </Badge>
-            </span>
+            ))}
           </div>
+        </div>
+        <div className="pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground">
+            Suggested Category:{" "}
+            <Badge variant="secondary" className="font-normal">
+              {suggestedCategory}
+            </Badge>
+          </span>
         </div>
       </CollapsibleContent>
     </Collapsible>
