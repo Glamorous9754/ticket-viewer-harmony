@@ -33,7 +33,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-accent via-white to-muted">
       <Sidebar isRetracted={isRetracted} onRetract={() => setIsRetracted(!isRetracted)} />
-      <main className={`transition-all duration-300 ease-in-out ${isRetracted ? 'pl-16' : 'pl-64'} min-h-screen`}>
+      <main className={`transition-all duration-300 ease-in-out ${isRetracted ? 'pl-14' : 'pl-64'} min-h-screen`}>
         <div className="container py-8 animate-fade-in">
           <Outlet />
         </div>

@@ -49,13 +49,13 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
     <aside 
       className={cn(
         "fixed left-0 top-0 h-screen bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm transition-all duration-300 ease-in-out",
-        isRetracted ? "w-16" : "w-64"
+        isRetracted ? "w-14" : "w-64"
       )}
     >
-      <div className="p-6 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between">
         <h1 className={cn(
-          "text-2xl font-bold text-primary-foreground transition-opacity duration-300",
-          isRetracted ? "opacity-0 w-0" : "opacity-100"
+          "text-2xl font-bold text-primary-foreground transition-all duration-300",
+          isRetracted ? "opacity-0 scale-95 w-0" : "opacity-100 scale-100"
         )}>
           Support AI
         </h1>
@@ -71,7 +71,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         </button>
       </div>
       
-      <nav className="flex-1 px-4">
+      <nav className="flex-1 px-2">
         <ul className="space-y-2">
           {links.map((link) => {
             const isActive = location.pathname === link.path;
@@ -80,16 +80,19 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
                 <Link
                   to={link.path}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group",
+                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group",
                     isActive
                       ? "bg-primary text-white shadow-sm"
                       : "text-gray-600 hover:bg-muted"
                   )}
                 >
-                  <link.icon className="w-5 h-5 shrink-0" />
+                  <link.icon className={cn(
+                    "w-5 h-5 shrink-0",
+                    isRetracted && "mx-auto"
+                  )} />
                   <span className={cn(
-                    "transition-opacity duration-300 whitespace-nowrap",
-                    isRetracted ? "opacity-0 w-0" : "opacity-100"
+                    "transition-all duration-300 whitespace-nowrap",
+                    isRetracted ? "opacity-0 scale-95 w-0" : "opacity-100 scale-100"
                   )}>
                     {link.title}
                   </span>
@@ -100,11 +103,11 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         </ul>
       </nav>
 
-      <div className="p-4 space-y-2 border-t border-gray-200">
+      <div className="p-2 space-y-2 border-t border-gray-200">
         <Link
           to="/chat"
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+            "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
             location.pathname === "/chat"
               ? "bg-primary text-white shadow-sm"
               : "text-gray-600 hover:bg-muted"
@@ -112,11 +115,12 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <MessageSquare className={cn(
             "w-5 h-5 shrink-0",
+            isRetracted && "mx-auto",
             location.pathname === "/chat" && "animate-pulse"
           )} />
           <span className={cn(
-            "transition-opacity duration-300 whitespace-nowrap",
-            isRetracted ? "opacity-0 w-0" : "opacity-100"
+            "transition-all duration-300 whitespace-nowrap",
+            isRetracted ? "opacity-0 scale-95 w-0" : "opacity-100 scale-100"
           )}>
             Chat
           </span>
@@ -125,16 +129,19 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         <Link
           to="/profile/settings"
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+            "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
             location.pathname.startsWith("/profile")
               ? "bg-primary text-white shadow-sm"
               : "text-gray-600 hover:bg-muted"
           )}
         >
-          <Settings className="w-5 h-5 shrink-0" />
+          <Settings className={cn(
+            "w-5 h-5 shrink-0",
+            isRetracted && "mx-auto"
+          )} />
           <span className={cn(
-            "transition-opacity duration-300 whitespace-nowrap",
-            isRetracted ? "opacity-0 w-0" : "opacity-100"
+            "transition-all duration-300 whitespace-nowrap",
+            isRetracted ? "opacity-0 scale-95 w-0" : "opacity-100 scale-100"
           )}>
             Profile
           </span>
@@ -142,12 +149,15 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-muted transition-colors"
+          className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-muted transition-colors"
         >
-          <LogOut className="w-5 h-5 shrink-0" />
+          <LogOut className={cn(
+            "w-5 h-5 shrink-0",
+            isRetracted && "mx-auto"
+          )} />
           <span className={cn(
-            "transition-opacity duration-300 whitespace-nowrap",
-            isRetracted ? "opacity-0 w-0" : "opacity-100"
+            "transition-all duration-300 whitespace-nowrap",
+            isRetracted ? "opacity-0 scale-95 w-0" : "opacity-100 scale-100"
           )}>
             Sign Out
           </span>
