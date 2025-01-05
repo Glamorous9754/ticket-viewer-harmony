@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
 
 const Layout = () => {
   const navigate = useNavigate();
+  const [isRetracted, setIsRetracted] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -31,8 +32,8 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-accent via-white to-muted">
-      <Sidebar />
-      <main className="pl-64 min-h-screen">
+      <Sidebar isRetracted={isRetracted} onRetract={() => setIsRetracted(!isRetracted)} />
+      <main className={`transition-all duration-300 ease-in-out ${isRetracted ? 'pl-20' : 'pl-64'} min-h-screen`}>
         <div className="container py-8 animate-fade-in">
           <Outlet />
         </div>

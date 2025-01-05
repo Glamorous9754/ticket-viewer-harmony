@@ -1,9 +1,15 @@
-import { Home, MessageSquare, Lightbulb, BarChart, LogOut, Settings } from "lucide-react";
+import { Home, MessageSquare, Lightbulb, BarChart, LogOut, Settings, ChevronLeft } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 
-const Sidebar = () => {
+interface SidebarProps {
+  isRetracted: boolean;
+  onRetract: () => void;
+}
+
+const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,9 +46,29 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-primary-foreground">Support AI</h1>
+    <aside 
+      className={cn(
+        "fixed left-0 top-0 h-screen bg-gradient-to-b from-white to-accent/20 border-r border-gray-200 flex flex-col animate-fade-in backdrop-blur-sm transition-all duration-300 ease-in-out",
+        isRetracted ? "w-20" : "w-64"
+      )}
+    >
+      <div className="p-6 flex items-center justify-between">
+        <h1 className={cn(
+          "text-2xl font-bold text-primary-foreground transition-all duration-300",
+          isRetracted ? "opacity-0 w-0" : "opacity-100"
+        )}>
+          Support AI
+        </h1>
+        <button
+          onClick={onRetract}
+          className="p-2 rounded-lg hover:bg-muted transition-all duration-300 ease-in-out"
+          aria-label={isRetracted ? "Expand sidebar" : "Retract sidebar"}
+        >
+          <ChevronLeft className={cn(
+            "w-5 h-5 text-primary-foreground transition-transform duration-300",
+            isRetracted && "rotate-180"
+          )} />
+        </button>
       </div>
       
       <nav className="flex-1 px-4">
@@ -53,14 +79,20 @@ const Sidebar = () => {
               <li key={link.path}>
                 <Link
                   to={link.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                     isActive
                       ? "bg-primary text-white shadow-sm"
                       : "text-gray-600 hover:bg-muted"
-                  }`}
+                  )}
                 >
-                  <link.icon className="w-5 h-5" />
-                  <span>{link.title}</span>
+                  <link.icon className="w-5 h-5 shrink-0" />
+                  <span className={cn(
+                    "transition-all duration-300",
+                    isRetracted ? "opacity-0 w-0" : "opacity-100"
+                  )}>
+                    {link.title}
+                  </span>
                 </Link>
               </li>
             );
@@ -71,34 +103,54 @@ const Sidebar = () => {
       <div className="p-4 space-y-2 border-t border-gray-200">
         <Link
           to="/chat"
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
             location.pathname === "/chat"
               ? "bg-primary text-white shadow-sm"
               : "text-gray-600 hover:bg-muted"
-          }`}
+          )}
         >
-          <MessageSquare className={`w-5 h-5 ${location.pathname === "/chat" ? "animate-pulse" : ""}`} />
-          <span>Chat</span>
+          <MessageSquare className={cn(
+            "w-5 h-5 shrink-0",
+            location.pathname === "/chat" && "animate-pulse"
+          )} />
+          <span className={cn(
+            "transition-all duration-300",
+            isRetracted ? "opacity-0 w-0" : "opacity-100"
+          )}>
+            Chat
+          </span>
         </Link>
         
         <Link
           to="/profile/settings"
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
             location.pathname.startsWith("/profile")
               ? "bg-primary text-white shadow-sm"
               : "text-gray-600 hover:bg-muted"
-          }`}
+          )}
         >
-          <Settings className="w-5 h-5" />
-          <span>Profile</span>
+          <Settings className="w-5 h-5 shrink-0" />
+          <span className={cn(
+            "transition-all duration-300",
+            isRetracted ? "opacity-0 w-0" : "opacity-100"
+          )}>
+            Profile
+          </span>
         </Link>
         
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-muted transition-colors"
         >
-          <LogOut className="w-5 h-5" />
-          <span>Sign Out</span>
+          <LogOut className="w-5 h-5 shrink-0" />
+          <span className={cn(
+            "transition-all duration-300",
+            isRetracted ? "opacity-0 w-0" : "opacity-100"
+          )}>
+            Sign Out
+          </span>
         </button>
       </div>
     </aside>
