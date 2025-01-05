@@ -135,7 +135,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         toast({
           title: "Warning",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "destructive",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }
@@ -168,7 +168,7 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         <Button
           onClick={handleFetchTickets}
           disabled={isFetchingTickets}
-          variant="outline"
+          variant="destructive"
           className="w-full"
         >
           {isFetchingTickets ? (
