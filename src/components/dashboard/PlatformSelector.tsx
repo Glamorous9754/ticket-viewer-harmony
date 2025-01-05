@@ -122,7 +122,7 @@ export const PlatformSelector = () => {
       let endpoint = '';
       switch (platform) {
         case 'zoho':
-          endpoint = 'https://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
+          endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
           break;
         case 'zendesk':
           endpoint = 'http://ticket-server.us-east-2.elasticbeanstalk.com/sync-zendesk-tickets';
