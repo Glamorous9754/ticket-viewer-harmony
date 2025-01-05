@@ -39,34 +39,36 @@ const TrendingIssue = ({
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-200"
+      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-200 cursor-pointer group"
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg">{title}</h3>
-            <Badge
-              variant={isRising ? "default" : "secondary"}
-              className="font-normal"
-            >
-              {count} mentions
-            </Badge>
+      <CollapsibleTrigger className="w-full text-left">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-lg">{title}</h3>
+              <Badge
+                variant={isRising ? "default" : "secondary"}
+                className="font-normal"
+              >
+                {count} mentions
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                {isRising ? (
+                  <ChevronUp className="w-4 h-4 text-primary" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-secondary" />
+                )}
+                Since {formattedDate}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              {isRising ? (
-                <ChevronUp className="w-4 h-4 text-primary" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-secondary" />
-              )}
-              Since {formattedDate}
-            </span>
+          <div className="rounded-full p-2 transition-colors group-hover:bg-accent">
+            <MessageSquare className="w-4 h-4" />
           </div>
         </div>
-        <CollapsibleTrigger className="hover:bg-accent rounded-full p-2 transition-colors">
-          <MessageSquare className="w-4 h-4" />
-        </CollapsibleTrigger>
-      </div>
+      </CollapsibleTrigger>
 
       <CollapsibleContent className="space-y-4 pt-4">
         {overview && (
