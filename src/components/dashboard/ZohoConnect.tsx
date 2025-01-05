@@ -1,5 +1,3 @@
-// components/ZohoConnect.tsx
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -65,7 +63,9 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       } else if (data?.redirect_url && data?.query_params) {
         const redirectUrl = new URL(data.redirect_url);
         Object.entries(data.query_params).forEach(([key, value]) => {
-          redirectUrl.searchParams.set(key, value);
+          if (typeof value === "string") {
+            redirectUrl.searchParams.set(key, value);
+          }
         });
         const fullRedirectUrl = redirectUrl.toString();
         console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
@@ -73,9 +73,9 @@ export const ZohoConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         return;
       } else {
         toast({
-          title: "Warning",
+          title: "Error",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "destructive",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }

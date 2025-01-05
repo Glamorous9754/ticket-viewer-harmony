@@ -1,12 +1,11 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Link2Off } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-
-type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
+import { Platform } from "./types/platform";
 
 export const PlatformSelector = () => {
   const { toast } = useToast();
@@ -15,7 +14,7 @@ export const PlatformSelector = () => {
   const [searchParams] = useSearchParams();
   const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
     const stored = localStorage.getItem('authenticatedPlatform');
-    return stored as Platform;
+    return stored as Platform || null;
   });
 
   useEffect(() => {
@@ -24,7 +23,7 @@ export const PlatformSelector = () => {
     const platform = params.get('platform') as Platform;
     
     if (authStatus === 'success' && platform) {
-      setIsLoading(false);
+      setIsLoading(null);
       setAuthenticatedPlatform(platform);
       localStorage.setItem('authenticatedPlatform', platform);
       toast({
@@ -32,7 +31,7 @@ export const PlatformSelector = () => {
         description: `Successfully connected to ${platform}!`,
       });
     } else if (authStatus === 'error') {
-      setIsLoading(false);
+      setIsLoading(null);
       const errorMessage = params.get('error_message');
       console.error('Authentication failed:', errorMessage);
       localStorage.removeItem('authenticatedPlatform');
@@ -43,7 +42,6 @@ export const PlatformSelector = () => {
       });
     }
     
-    // Clean up URL after reading params
     window.history.replaceState({}, '', window.location.pathname);
   }, [toast]);
 
@@ -222,7 +220,7 @@ export const PlatformSelector = () => {
                 )}
               </Button>
 
-              {authenticatedPlatform === platform.id && platform.id !== 'freshdesk' && (
+              {authenticatedPlatform === platform.id && (
                 <Button
                   onClick={() => handleFetchData(platform.id)}
                   disabled={isFetchingTickets}

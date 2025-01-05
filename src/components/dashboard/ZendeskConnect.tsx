@@ -42,12 +42,11 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         throw new Error("You must be logged in to connect Zendesk");
       }
 
-      const { data, error } = await supabase.functions.invoke(
-        "initiate-zendesk-oauth",
-        {
-          body: {}, // You can include additional data here if needed
-        }
-      );
+      const { data, error } = await supabase.functions.invoke("initiate-zendesk-oauth");
+
+      if (error) {
+        throw error;
+      }
 
       if (data?.url) {
         console.log("🔗 Redirecting to Zendesk OAuth URL:", data.url);
@@ -56,7 +55,9 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       } else if (data?.redirect_url && data?.query_params) {
         const redirectUrl = new URL(data.redirect_url);
         Object.entries(data.query_params).forEach(([key, value]) => {
-          redirectUrl.searchParams.set(key, value);
+          if (typeof value === "string") {
+            redirectUrl.searchParams.set(key, value);
+          }
         });
         const fullRedirectUrl = redirectUrl.toString();
         console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
@@ -64,20 +65,20 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         return;
       } else {
         toast({
-          title: "Warning",
+          title: "Error",
           description: "Unexpected response from the server. Please try again.",
-          variant: "warning",
+          variant: "destructive",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error initiating Zendesk OAuth:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 
-          (error as ApiError).message || "Failed to start authentication",
+        description: error instanceof Error ? error.message : "Failed to start authentication",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -168,3 +169,5 @@ export const ZendeskConnect = ({ onSuccess }: { onSuccess: () => void }) => {
     </Card>
   );
 };
+
+export default ZendeskConnect;
