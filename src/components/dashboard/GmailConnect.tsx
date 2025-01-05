@@ -1,3 +1,5 @@
+// components/GmailConnect.tsx
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -5,11 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
-
-interface ApiError {
-  message?: string;
-  error?: string;
-}
 
 export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
   const { toast } = useToast();
@@ -49,10 +46,6 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       const { data, error } = await supabase.functions.invoke("initiate-google-oauth");
 
-      if (error) {
-        throw new Error(typeof error === "string" ? error : error.message || "Failed to initiate OAuth");
-      }
-
       if (data?.url) {
         console.log("🔗 Redirecting to Google OAuth URL:", data.url);
         window.location.href = data.url;
@@ -60,7 +53,7 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
       } else if (data?.redirect_url && data?.query_params) {
         const redirectUrl = new URL(data.redirect_url);
         Object.entries(data.query_params).forEach(([key, value]) => {
-          redirectUrl.searchParams.set(key, String(value));
+          redirectUrl.searchParams.set(key, value);
         });
         const fullRedirectUrl = redirectUrl.toString();
         console.log("🔗 Redirecting to constructed URL:", fullRedirectUrl);
@@ -68,9 +61,9 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
         return;
       } else {
         toast({
-          title: "Error",
+          title: "Warning",
           description: "Unexpected response from the server. Please try again.",
-          variant: "destructive",
+          variant: "warning",
         });
         console.warn("⚠️ Unexpected response structure:", data);
       }
@@ -111,14 +104,14 @@ export const GmailConnect = ({ onSuccess }: { onSuccess: () => void }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(typeof errorData.message === 'string' ? errorData.message : "Failed to sync Gmail emails.");
+        throw new Error(errorData.message || "Failed to sync Gmail emails.");
       }
 
       const data = await response.json();
 
       toast({
         title: "Success",
-        description: typeof data.message === 'string' ? data.message : "Successfully synced Gmail emails!",
+        description: data.message || "Successfully synced Gmail emails!",
       });
     } catch (error: any) {
       console.error("Error fetching Gmail emails:", error);

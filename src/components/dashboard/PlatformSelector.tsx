@@ -1,21 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FreshDeskConnect } from "./FreshDeskConnect";
+import { ZohoConnect } from "./ZohoConnect";
+import { GmailConnect } from "./GmailConnect";
+import { ZendeskConnect } from "./ZendeskConnect";
 import { useState, useEffect } from "react";
-import { Platform } from "./types/platform";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Link2Off } from "lucide-react";
 
-type PlatformInfo = {
-  name: string;
-  id: Platform;
-  description: string;
-};
+type Platform = "freshdesk" | "zoho" | "gmail" | "zendesk" | null;
 
 export const PlatformSelector = () => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState<Platform | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
     const stored = localStorage.getItem('authenticatedPlatform');
     return stored as Platform;
@@ -27,143 +22,85 @@ export const PlatformSelector = () => {
     const platform = params.get('platform') as Platform;
     
     if (authStatus === 'success' && platform) {
+      setIsAuthenticating(false);
+      setSelectedPlatform(null);
       setAuthenticatedPlatform(platform);
       localStorage.setItem('authenticatedPlatform', platform);
-      toast({
-        title: "Success",
-        description: `Successfully connected to ${platform}!`,
-      });
     } else if (authStatus === 'error') {
+      setIsAuthenticating(false);
+      setSelectedPlatform(null);
       const errorMessage = params.get('error_message');
       console.error('Authentication failed:', errorMessage);
-      toast({
-        title: "Error",
-        description: "Authentication failed. Please try again.",
-        variant: "destructive",
-      });
       localStorage.removeItem('authenticatedPlatform');
     }
     
+    // Clean up URL after reading params
     window.history.replaceState({}, '', window.location.pathname);
-  }, [toast]);
+  }, []);
 
-  const handleConnect = async (platform: Platform) => {
-    setIsLoading(platform);
-    try {
-      const { data: session, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.session?.user) {
-        throw new Error("You must be logged in to connect a platform");
-      }
-
-      const functionName = `initiate-${platform}-oauth`;
-      const { data, error } = await supabase.functions.invoke(functionName);
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No authorization URL received");
-      }
-    } catch (error) {
-      console.error(`Error connecting to ${platform}:`, error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to start authentication",
-        variant: "destructive",
-      });
-      setIsLoading(null);
+  useEffect(() => {
+    if (authenticatedPlatform) {
+      localStorage.setItem('authenticatedPlatform', authenticatedPlatform);
+    } else {
+      localStorage.removeItem('authenticatedPlatform');
     }
+  }, [authenticatedPlatform]);
+
+  const handleSuccess = () => {
+    setIsAuthenticating(false);
+    setSelectedPlatform(null);
+  };
+
+  const handleConnect = (platform: Platform) => {
+    setSelectedPlatform(platform);
+    setIsAuthenticating(true);
   };
 
   const handleDisconnect = async (platform: Platform) => {
     try {
       setAuthenticatedPlatform(null);
       localStorage.removeItem('authenticatedPlatform');
-      toast({
-        title: "Success",
-        description: `Disconnected from ${platform}`,
-      });
     } catch (error) {
       console.error('Failed to disconnect:', error);
-      toast({
-        title: "Error",
-        description: "Failed to disconnect. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
-  const handleSync = async (platform: Platform) => {
-    setIsSyncing(true);
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error("You must be logged in to fetch data");
-      }
+  if (selectedPlatform === "freshdesk") {
+    return <FreshDeskConnect onSuccess={handleSuccess} />;
+  }
 
-      let endpoint = '';
-      if (platform === 'zoho_desk') {
-        endpoint = 'http://zoho-server-env.eba-hsu363pe.us-east-2.elasticbeanstalk.com/sync-zoho-tickets';
-      } else {
-        endpoint = `http://ticket-server.us-east-2.elasticbeanstalk.com/sync-${platform}-tickets`;
-      }
+  if (selectedPlatform === "zoho") {
+    return <ZohoConnect onSuccess={handleSuccess} />;
+  }
 
-      toast({
-        title: "Info",
-        description: `Please wait while we fetch the ${platform === 'gmail' ? 'emails' : 'tickets'} for you. They will automatically be updated inside the dashboard.`,
-      });
+  if (selectedPlatform === "gmail") {
+    return <GmailConnect onSuccess={handleSuccess} />;
+  }
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+  if (selectedPlatform === "zendesk") {
+    return <ZendeskConnect onSuccess={handleSuccess} />;
+  }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to sync ${platform}`);
-      }
-
-      const data = await response.json();
-      toast({
-        title: "Success",
-        description: data.message || `Successfully synced ${platform === 'gmail' ? 'emails' : 'tickets'}!`,
-      });
-    } catch (error) {
-      console.error(`Error syncing ${platform}:`, error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to sync data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const platforms: PlatformInfo[] = [
+  const platforms = [
     {
       name: "Zoho Desk",
-      id: "zoho_desk",
+      id: "zoho" as Platform,
       description: "Connect your Zoho Desk account to analyze customer tickets",
     },
     {
+      name: "FreshDesk",
+      id: "freshdesk" as Platform,
+      description: "Connect your FreshDesk account to analyze customer tickets",
+    },
+    {
       name: "Gmail",
-      id: "gmail",
+      id: "gmail" as Platform,
       description: "Connect your Gmail account to analyze customer emails",
     },
     {
       name: "Zendesk",
-      id: "zendesk",
+      id: "zendesk" as Platform,
       description: "Connect your Zendesk account to analyze support tickets",
-    },
-    {
-      name: "Freshdesk",
-      id: "freshdesk",
-      description: "Connect your FreshDesk account to analyze customer tickets",
     },
   ];
 
@@ -175,39 +112,21 @@ export const PlatformSelector = () => {
           <Card key={platform.id} className="p-6">
             <h3 className="text-xl font-medium mb-4">{platform.name}</h3>
             <p className="text-gray-600 mb-4">{platform.description}</p>
-            <div className="space-y-2">
-              {authenticatedPlatform === platform.id ? (
-                <>
-                  <Button
-                    onClick={() => handleDisconnect(platform.id)}
-                    variant="destructive"
-                    disabled={isLoading === platform.id}
-                    className="w-full"
-                  >
-                    <Link2Off className="mr-2 h-4 w-4" />
-                    {isLoading === platform.id ? "Disconnecting..." : "Disconnect"}
-                  </Button>
-                  <Button
-                    onClick={() => handleSync(platform.id)}
-                    variant="outline"
-                    disabled={isSyncing}
-                    className="w-full"
-                  >
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                    {isSyncing ? 'Syncing...' : `Fetch ${platform.id === 'gmail' ? 'Emails' : 'Tickets'}`}
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => handleConnect(platform.id)}
-                  disabled={!!authenticatedPlatform || isLoading === platform.id || platform.id === 'freshdesk'}
-                  className="w-full"
-                >
-                  {platform.id === 'freshdesk' ? 'Coming Soon' : 
-                    isLoading === platform.id ? 'Connecting...' : `Connect ${platform.name}`}
-                </Button>
-              )}
-            </div>
+            <Button
+              onClick={() => 
+                authenticatedPlatform === platform.id 
+                  ? handleDisconnect(platform.id)
+                  : handleConnect(platform.id)
+              }
+              className="w-full"
+              disabled={isAuthenticating && selectedPlatform !== platform.id || 
+                       (authenticatedPlatform && authenticatedPlatform !== platform.id)}
+              variant={authenticatedPlatform === platform.id ? "secondary" : "default"}
+            >
+              {authenticatedPlatform === platform.id 
+                ? "Disconnect" 
+                : `Connect ${platform.name}`}
+            </Button>
           </Card>
         ))}
       </div>
