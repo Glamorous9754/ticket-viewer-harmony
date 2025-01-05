@@ -88,7 +88,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
                 >
                   <div className={cn(
                     "flex items-center justify-center transition-all duration-300",
-                    isRetracted ? "w-full" : "w-8"
+                    isRetracted ? "w-full" : "w-6"
                   )}>
                     <link.icon className={cn(
                       "w-6 h-6 shrink-0",
@@ -120,7 +120,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <div className={cn(
             "flex items-center justify-center transition-all duration-300",
-            isRetracted ? "w-full" : "w-8"
+            isRetracted ? "w-full" : "w-6"
           )}>
             <MessageSquare className={cn(
               "w-6 h-6 shrink-0",
@@ -147,7 +147,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <div className={cn(
             "flex items-center justify-center transition-all duration-300",
-            isRetracted ? "w-full" : "w-8"
+            isRetracted ? "w-full" : "w-6"
           )}>
             <Settings className={cn(
               "w-6 h-6 shrink-0",
@@ -168,7 +168,7 @@ const Sidebar = ({ isRetracted, onRetract }: SidebarProps) => {
         >
           <div className={cn(
             "flex items-center justify-center transition-all duration-300",
-            isRetracted ? "w-full" : "w-8"
+            isRetracted ? "w-full" : "w-6"
           )}>
             <LogOut className={cn(
               "w-6 h-6 shrink-0",
