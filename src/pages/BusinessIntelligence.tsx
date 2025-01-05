@@ -40,7 +40,7 @@ const BusinessIntelligence = () => {
       <div className="space-y-6">
         <div>
           <Skeleton className="h-8 w-64 mb-2" />
-          <Skeleton className="h-4 w-full sm:w-96" />
+          <Skeleton className="h-4 w-96" />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -77,24 +77,24 @@ const BusinessIntelligence = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Business Intelligence
         </h1>
-        <p className="text-gray-500 text-sm sm:text-base">
+        <p className="text-gray-500">
           Monitor business health and customer satisfaction metrics
         </p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Risk Alerts</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Risk Alerts</h2>
           {mockRiskAlerts.map((alert, index) => (
             <RiskAlert key={index} {...alert} />
           ))}
         </div>
         
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
             Product-Market Insights
           </h2>
           <div className="space-y-4">
@@ -108,7 +108,7 @@ const BusinessIntelligence = () => {
                 </h3>
                 <div className="space-y-2">
                   <div>
-                    <p className="text-xs sm:text-sm text-gray-500">Key Pain Points</p>
+                    <p className="text-sm text-gray-500">Key Pain Points</p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {insight.painPoints.map((point, idx) => (
                         <span
@@ -121,7 +121,7 @@ const BusinessIntelligence = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs sm:text-sm text-gray-500">
+                    <p className="text-sm text-gray-500">
                       Satisfaction Score: {insight.satisfaction}/10
                     </p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
@@ -133,7 +133,7 @@ const BusinessIntelligence = () => {
                       />
                     </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-600">{insight.suggestions}</p>
+                  <p className="text-sm text-gray-600">{insight.suggestions}</p>
                 </div>
               </div>
             ))}
