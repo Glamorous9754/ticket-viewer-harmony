@@ -1,6 +1,11 @@
-import { ChevronDown, ChevronUp, TrendingUp, TrendingDown } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useState } from "react";
-import { format } from "date-fns";
 
 interface TrendingIssueProps {
   title: string;
@@ -10,7 +15,7 @@ interface TrendingIssueProps {
   sampleTickets: string[];
   commonPhrases: string[];
   suggestedCategory: string;
-  recommendedSolutions?: string[];
+  overview?: string;
 }
 
 const TrendingIssue = ({
@@ -21,109 +26,91 @@ const TrendingIssue = ({
   sampleTickets,
   commonPhrases,
   suggestedCategory,
-  recommendedSolutions = [],
+  overview,
 }: TrendingIssueProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const formattedDate = (() => {
-    try {
-      return format(new Date(lastDate), "MMM d, yyyy 'at' h:mm a");
-    } catch {
-      return lastDate;
-    }
-  })();
+  const [isOpen, setIsOpen] = useState(false);
+  const formattedDate = new Date(lastDate).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-200">
-      <div
-        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center gap-4">
-          {isRising ? (
-            <TrendingUp className="w-5 h-5 text-primary" />
-          ) : (
-            <TrendingDown className="w-5 h-5 text-green-500" />
-          )}
-          <div>
-            <h3 className="font-medium text-gray-900">{title}</h3>
-            <p className="text-sm text-gray-500">
-              {count} related tickets • Last ticket created {formattedDate}
-            </p>
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="bg-card rounded-lg border border-border p-4 space-y-2 hover:shadow-md transition-all duration-200"
+    >
+      <div className="flex items-start justify-between">
+        <div className="space-y-1 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-lg">{title}</h3>
+            <Badge
+              variant={isRising ? "default" : "secondary"}
+              className="font-normal"
+            >
+              {count} mentions
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              {isRising ? (
+                <ChevronUp className="w-4 h-4 text-primary" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-secondary" />
+              )}
+              Since {formattedDate}
+            </span>
           </div>
         </div>
-        {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-400" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        )}
+        <CollapsibleTrigger className="hover:bg-accent rounded-full p-2 transition-colors">
+          <MessageSquare className="w-4 h-4" />
+        </CollapsibleTrigger>
       </div>
-      
-      {isExpanded && (
-        <div className="p-4 border-t border-gray-200 bg-accent animate-fade-in">
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-sm text-gray-700 mb-2">
-                Sample Tickets
-              </h4>
-              <ul className="space-y-2">
-                {sampleTickets.map((ticket, index) => (
-                  <li
-                    key={index}
-                    className="text-sm text-gray-600 bg-white p-3 rounded border border-gray-200"
-                  >
-                    {ticket}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            {recommendedSolutions && recommendedSolutions.length > 0 && (
-              <div>
-                <h4 className="font-medium text-sm text-gray-700 mb-2">
-                  Recommended Solutions
-                </h4>
-                <ul className="space-y-2">
-                  {recommendedSolutions.map((solution, index) => (
-                    <li
-                      key={index}
-                      className="text-sm text-gray-600 bg-white p-3 rounded border border-gray-200 border-l-4 border-l-primary"
-                    >
-                      {solution}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            <div>
-              <h4 className="font-medium text-sm text-gray-700 mb-2">
-                Common Phrases
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {commonPhrases.map((phrase, index) => (
-                  <span
-                    key={index}
-                    className="text-sm bg-primary/10 text-primary-foreground px-3 py-1 rounded-full"
-                  >
-                    {phrase}
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-medium text-sm text-gray-700 mb-2">
-                Suggested Category
-              </h4>
-              <span className="text-sm bg-secondary/50 text-secondary-foreground px-3 py-1 rounded-full">
-                {suggestedCategory}
-              </span>
-            </div>
+
+      <CollapsibleContent className="space-y-4 pt-4">
+        {overview && (
+          <div className="bg-accent/50 rounded-lg p-4">
+            <p className="text-sm text-foreground">{overview}</p>
+          </div>
+        )}
+        <div>
+          <h4 className="text-sm font-medium mb-2">Sample Tickets</h4>
+          <ul className="space-y-2">
+            {sampleTickets.map((ticket, index) => (
+              <li
+                key={index}
+                className="text-sm text-muted-foreground bg-muted p-2 rounded"
+              >
+                "{ticket}"
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-sm font-medium mb-2">Common Phrases</h4>
+          <div className="flex flex-wrap gap-2">
+            {commonPhrases.map((phrase, index) => (
+              <Badge
+                key={index}
+                variant="outline"
+                className="font-normal bg-background"
+              >
+                {phrase}
+              </Badge>
+            ))}
           </div>
         </div>
-      )}
-    </div>
+        <div className="pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground">
+            Suggested Category:{" "}
+            <Badge variant="secondary" className="font-normal">
+              {suggestedCategory}
+            </Badge>
+          </span>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
