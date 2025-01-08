@@ -3,19 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 import { supabase } from "@/integrations/supabase/client";
-
-interface FeatureRequestsData {
-  segments: string[];
-  requests: {
-    title: string;
-    impact_score: number;
-    complexity: "Low" | "Medium" | "High";
-    tags: string[];
-    since: string;
-    url?: string;
-    description?: string;
-  }[];
-}
+import type { FeatureRequestsData } from "@/types/featureRequests";
 
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
@@ -34,12 +22,22 @@ const FeatureRequests = () => {
         throw error;
       }
 
-      return data?.feature_requests_data as FeatureRequestsData || { segments: [], requests: [] };
+      // Safely cast and provide default values
+      const featureRequestsData = data?.feature_requests_data as FeatureRequestsData || {
+        segments: [],
+        requests: []
+      };
+
+      return featureRequestsData;
     }
   });
 
+  // Safely access arrays with fallbacks
+  const requests = featureData?.requests || [];
+  const segments = featureData?.segments || [];
+
   // Map the data to the format expected by FeatureGrid
-  const mappedFeatures = featureData?.requests.map(request => ({
+  const mappedFeatures = requests.map(request => ({
     summary: request.title,
     priority: request.impact_score,
     segments: request.tags,
@@ -48,7 +46,7 @@ const FeatureRequests = () => {
     createdAt: request.since,
     description: request.description,
     url: request.url
-  })) || [];
+  }));
 
   const filteredFeatures = mappedFeatures
     .filter(feature => 
@@ -59,9 +57,6 @@ const FeatureRequests = () => {
         ? b.priority - a.priority 
         : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-
-  // Get unique segments for the filter dropdown
-  const availableSegments = featureData?.segments || [];
 
   return (
     <div className="space-y-6">
@@ -80,7 +75,7 @@ const FeatureRequests = () => {
           filterBy={filterBy}
           onSortChange={setSortBy}
           onFilterChange={setFilterBy}
-          segments={availableSegments}
+          segments={segments}
         />
       </div>
 
