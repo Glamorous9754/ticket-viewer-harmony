@@ -21,8 +21,9 @@ const CustomerIntelligence = () => {
 
         if (error) throw error;
 
-        if (data?.customer_intelligence_data?.customer_intelligence_issues) {
-          setIssues(data.customer_intelligence_data.customer_intelligence_issues);
+        const customerData = data?.customer_intelligence_data as CustomerIntelligenceData;
+        if (customerData?.customer_intelligence_issues) {
+          setIssues(customerData.customer_intelligence_issues);
         }
       } catch (error) {
         console.error("Error fetching customer intelligence data:", error);
@@ -45,8 +46,9 @@ const CustomerIntelligence = () => {
           table: "dashboard_data"
         },
         (payload) => {
-          if (payload.new?.customer_intelligence_data?.customer_intelligence_issues) {
-            setIssues(payload.new.customer_intelligence_data.customer_intelligence_issues);
+          const newData = payload.new as { customer_intelligence_data: CustomerIntelligenceData };
+          if (newData?.customer_intelligence_data?.customer_intelligence_issues) {
+            setIssues(newData.customer_intelligence_data.customer_intelligence_issues);
           }
         }
       )
@@ -86,13 +88,10 @@ const CustomerIntelligence = () => {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {issues.map((issue, index) => (
-          <Card 
-            key={index}
-            className={`border-l-4 ${
+          <Card key={index} className="overflow-hidden">
+            <CardHeader className={`border-l-4 ${
               issue.color === "red" ? "border-l-red-500" : "border-l-green-500"
-            }`}
-          >
-            <CardHeader>
+            }`}>
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg font-semibold">
                   {issue.title || "Unknown Issue"}
