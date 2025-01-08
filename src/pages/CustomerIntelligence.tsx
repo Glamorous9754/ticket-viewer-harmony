@@ -1,48 +1,61 @@
-import TrendingIssue from "../components/dashboard/TrendingIssue";
+import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
-
-const mockTrendingIssues = [
-  {
-    title: "Login Authentication Failures",
-    count: 45,
-    isRising: true,
-    lastDate: "2024-03-20T14:30:00Z",
-    sampleTickets: [
-      "Unable to login after password reset",
-      "2FA verification not receiving codes",
-      "Session timeout occurring frequently",
-    ],
-    commonPhrases: ["password reset", "2FA", "timeout", "authentication"],
-    suggestedCategory: "Authentication",
-    recommendedSolutions: [
-      "Guide users through the password reset process with step-by-step instructions",
-      "Verify and update phone number for 2FA in account settings",
-      "Clear browser cache and cookies, then try logging in again",
-    ],
-  },
-  {
-    title: "Mobile App Crashes on Startup",
-    count: 32,
-    isRising: false,
-    lastDate: "2024-03-20T10:15:00Z",
-    sampleTickets: [
-      "App crashes immediately after splash screen",
-      "Cannot open app after latest update",
-      "Black screen on app launch",
-    ],
-    commonPhrases: ["crash", "startup", "black screen", "latest version"],
-    suggestedCategory: "Mobile App Stability",
-    recommendedSolutions: [
-      "Uninstall and reinstall the latest version of the app",
-      "Clear app cache and data from device settings",
-      "Ensure device meets minimum OS requirements",
-    ],
-  },
-];
+import { CustomerIntelligenceData, CustomerIntelligenceIssue } from "@/types/customerIntelligence";
+import { toast } from "sonner";
 
 const CustomerIntelligence = () => {
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [issues, setIssues] = useState<CustomerIntelligenceIssue[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("dashboard_data")
+          .select("customer_intelligence_data")
+          .single();
+
+        if (error) throw error;
+
+        if (data?.customer_intelligence_data?.customer_intelligence_issues) {
+          setIssues(data.customer_intelligence_data.customer_intelligence_issues);
+        }
+      } catch (error) {
+        console.error("Error fetching customer intelligence data:", error);
+        toast.error("Failed to load customer intelligence data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel("dashboard_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "dashboard_data"
+        },
+        (payload) => {
+          if (payload.new?.customer_intelligence_data?.customer_intelligence_issues) {
+            setIssues(payload.new.customer_intelligence_data.customer_intelligence_issues);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -51,19 +64,9 @@ const CustomerIntelligence = () => {
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
-        
-        <div className="space-y-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="rounded-lg border p-4 space-y-3">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-5 w-5" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-                <Skeleton className="h-5 w-5" />
-              </div>
-            </div>
+            <Skeleton key={index} className="h-[300px] w-full" />
           ))}
         </div>
       </div>
@@ -80,10 +83,66 @@ const CustomerIntelligence = () => {
           Monitor and analyze trending customer support issues
         </p>
       </div>
-      
-      <div className="space-y-4">
-        {mockTrendingIssues.map((issue, index) => (
-          <TrendingIssue key={index} {...issue} />
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {issues.map((issue, index) => (
+          <Card 
+            key={index}
+            className={`border-l-4 ${
+              issue.color === "red" ? "border-l-red-500" : "border-l-green-500"
+            }`}
+          >
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg font-semibold">
+                  {issue.title || "Unknown Issue"}
+                </CardTitle>
+                <Badge variant={issue.color === "red" ? "destructive" : "default"}>
+                  {issue.mentions || 0} Mentions
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Since {issue.since ? format(new Date(issue.since), "MMM dd, yyyy") : "Date Unavailable"}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">Common Phrases</h4>
+                <div className="flex flex-wrap gap-2">
+                  {issue.common_phrases?.length > 0 ? (
+                    issue.common_phrases.map((phrase, i) => (
+                      <Badge key={i} variant="secondary">
+                        {phrase}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No common phrases available</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Sample Tickets</h4>
+                <ul className="space-y-2">
+                  {issue.sample_tickets?.length > 0 ? (
+                    issue.sample_tickets.map((ticket, i) => (
+                      <li key={i} className="text-sm text-muted-foreground">
+                        • {ticket}
+                      </li>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No sample tickets available</p>
+                  )}
+                </ul>
+              </div>
+
+              <div className="pt-2 border-t">
+                <Badge variant="outline">
+                  Category: {issue.suggested_category || "Uncategorized"}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
