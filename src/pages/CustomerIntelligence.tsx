@@ -1,6 +1,6 @@
+import { useState } from "react";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
 
 const mockTrendingIssues = [
   {
@@ -15,11 +15,6 @@ const mockTrendingIssues = [
     ],
     commonPhrases: ["password reset", "2FA", "timeout", "authentication"],
     suggestedCategory: "Authentication",
-    recommendedSolutions: [
-      "Guide users through the password reset process with step-by-step instructions",
-      "Verify and update phone number for 2FA in account settings",
-      "Clear browser cache and cookies, then try logging in again",
-    ],
   },
   {
     title: "Mobile App Crashes on Startup",
@@ -33,11 +28,6 @@ const mockTrendingIssues = [
     ],
     commonPhrases: ["crash", "startup", "black screen", "latest version"],
     suggestedCategory: "Mobile App Stability",
-    recommendedSolutions: [
-      "Uninstall and reinstall the latest version of the app",
-      "Clear app cache and data from device settings",
-      "Ensure device meets minimum OS requirements",
-    ],
   },
 ];
 

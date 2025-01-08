@@ -32,7 +32,7 @@ const mockWorkingWell = [
     ],
     commonPhrases: ["intuitive", "fast", "convenient"],
     suggestedCategory: "Mobile Experience",
-    overview: "The mobile app has seen significant adoption with consistently positive feedback. Users particularly appreciate the intuitive interface and quick access to key features. The trend shows increasing engagement with mobile features, suggesting strong product-market fit in this area.",
+    overview: "The mobile app has seen significant adoption with consistently positive feedback.",
   },
   {
     title: "API Integration Success",
@@ -45,7 +45,7 @@ const mockWorkingWell = [
     ],
     commonPhrases: ["easy integration", "well documented", "reliable"],
     suggestedCategory: "Developer Experience",
-    overview: "Developer satisfaction with API integration capabilities is trending upward. The well-documented API and successful integrations with major platforms like Salesforce indicate strong technical foundation and developer-friendly approach.",
+    overview: "Developer satisfaction with API integration capabilities is trending upward.",
   },
 ];
 
@@ -61,7 +61,7 @@ const mockOpportunities = [
     ],
     commonPhrases: ["carbon tracking", "eco-friendly", "sustainability"],
     suggestedCategory: "Sustainability",
-    overview: "Growing demand for sustainability features, particularly carbon footprint tracking and reporting. This trend aligns with increasing environmental consciousness in the market and could represent a significant differentiation opportunity.",
+    overview: "Growing demand for sustainability features, particularly carbon footprint tracking.",
   },
   {
     title: "Return Label Automation",
@@ -74,7 +74,7 @@ const mockOpportunities = [
     ],
     commonPhrases: ["return labels", "automation", "bulk processing"],
     suggestedCategory: "Process Automation",
-    overview: "Consistent requests for return label automation indicate a clear pain point in current workflows. The focus on bulk processing suggests this feature could particularly benefit high-volume customers and improve operational efficiency.",
+    overview: "Consistent requests for return label automation indicate a clear pain point.",
   },
 ];
 
