@@ -12,6 +12,7 @@ interface CustomerIntelligenceIssue {
   common_phrases: string[];
   suggested_category: string;
   overview?: string;
+  color: string;
 }
 
 const CustomerIntelligence = () => {
@@ -44,43 +45,28 @@ const CustomerIntelligence = () => {
           return;
         }
 
-        // Ensure we're working with an array of issues and properly type cast
-        let parsedIssues: CustomerIntelligenceIssue[] = [];
-        
-        if (Array.isArray(data.customer_intelligence_issues)) {
-          parsedIssues = data.customer_intelligence_issues.map((issue: any) => ({
-            title: String(issue.title || ''),
-            mentions: Number(issue.mentions || 0),
-            since: String(issue.since || ''),
-            sample_tickets: Array.isArray(issue.sample_tickets) 
-              ? issue.sample_tickets.map(String)
-              : [],
-            common_phrases: Array.isArray(issue.common_phrases)
-              ? issue.common_phrases.map(String)
-              : [],
-            suggested_category: String(issue.suggested_category || ''),
-            overview: issue.overview ? String(issue.overview) : undefined
-          }));
-        } else if (typeof data.customer_intelligence_issues === 'object') {
-          // If it's a single object, wrap it in an array after parsing
-          const issue = data.customer_intelligence_issues;
-          parsedIssues = [{
-            title: String(issue.title || ''),
-            mentions: Number(issue.mentions || 0),
-            since: String(issue.since || ''),
-            sample_tickets: Array.isArray(issue.sample_tickets)
-              ? issue.sample_tickets.map(String)
-              : [],
-            common_phrases: Array.isArray(issue.common_phrases)
-              ? issue.common_phrases.map(String)
-              : [],
-            suggested_category: String(issue.suggested_category || ''),
-            overview: issue.overview ? String(issue.overview) : undefined
-          }];
-        }
+        // Ensure we're working with an array of issues
+        const issuesArray = Array.isArray(data.customer_intelligence_issues) 
+          ? data.customer_intelligence_issues 
+          : [data.customer_intelligence_issues];
+
+        // Type cast and validate each issue
+        const parsedIssues = issuesArray.map((issue: any) => ({
+          title: String(issue.title || ''),
+          mentions: Number(issue.mentions || 0),
+          since: String(issue.since || ''),
+          sample_tickets: Array.isArray(issue.sample_tickets)
+            ? issue.sample_tickets.map(String)
+            : [],
+          common_phrases: Array.isArray(issue.common_phrases)
+            ? issue.common_phrases.map(String)
+            : [],
+          suggested_category: String(issue.suggested_category || ''),
+          color: String(issue.color || 'gray'),
+          overview: issue.overview ? String(issue.overview) : undefined
+        }));
 
         console.log("Parsed issues:", parsedIssues);
-        
         setIssues(parsedIssues);
       } catch (err) {
         console.error("Fetch Issues Error:", err);
@@ -153,7 +139,7 @@ const CustomerIntelligence = () => {
             key={index}
             title={issue.title}
             count={issue.mentions}
-            isRising={issue.mentions > 20}
+            isRising={issue.mentions > 5}
             lastDate={issue.since}
             sampleTickets={issue.sample_tickets}
             commonPhrases={issue.common_phrases}
