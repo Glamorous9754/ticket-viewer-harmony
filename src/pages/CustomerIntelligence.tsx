@@ -11,21 +11,38 @@ const CustomerIntelligence = () => {
   useEffect(() => {
     const fetchIssues = async () => {
       try {
-        // Fetch the customer_intelligence_issues field from dashboard_data table
+        // Fetch all rows from dashboard_data table
         const { data, error } = await supabase
           .from('dashboard_data')
-          .select('customer_intelligence_issues')
-          .single(); // Assuming there's only one row
+          .select('customer_intelligence_issues');
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase Error:", error);
+          throw error;
+        }
 
-        // Set the issues state with the fetched data
-        setIssues(data.customer_intelligence_issues);
+        if (!data || data.length === 0) {
+          console.warn('No data found in dashboard_data');
+          throw new Error('No data found in dashboard_data');
+        }
+
+        // Aggregate all customer_intelligence_issues from all rows
+        const aggregatedIssues = data.reduce((acc, row) => {
+          if (row.customer_intelligence_issues && Array.isArray(row.customer_intelligence_issues)) {
+            return acc.concat(row.customer_intelligence_issues);
+          }
+          return acc;
+        }, []);
+
+        if (aggregatedIssues.length === 0) {
+          throw new Error('No customer intelligence issues found');
+        }
+
+        setIssues(aggregatedIssues);
       } catch (err) {
-        // Handle any errors during fetch
+        console.error("Fetch Issues Error:", err);
         setError(err.message || 'An unexpected error occurred');
       } finally {
-        // Set loading to false after fetch is complete
         setIsLoading(false);
       }
     };
@@ -87,12 +104,11 @@ const CustomerIntelligence = () => {
             key={index}
             title={issue.title}
             count={issue.mentions}
-            isRising={determineIsRising(issue)} // Custom logic to determine if rising
+            isRising={determineIsRising(issue)} // Optional: Custom logic to determine if rising
             lastDate={issue.since}
             sampleTickets={issue.sample_tickets}
             commonPhrases={issue.common_phrases}
             suggestedCategory={issue.suggested_category}
-            // You can add recommendedSolutions here if available
             color={issue.color} // Assuming TrendingIssue can handle a color prop
           />
         ))}
@@ -101,11 +117,9 @@ const CustomerIntelligence = () => {
   );
 };
 
-// Helper function to determine if an issue is rising
-// You can implement your own logic based on your data
+// Optional: Helper function to determine if an issue is rising
 const determineIsRising = (issue) => {
-  // Example: If mentions are greater than a threshold, it's rising
-  const threshold = 20;
+  const threshold = 20; // Adjust the threshold as needed
   return issue.mentions > threshold;
 };
 
