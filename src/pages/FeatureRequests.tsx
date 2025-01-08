@@ -3,27 +3,26 @@ import { useQuery } from "@tanstack/react-query";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 import { supabase } from "@/integrations/supabase/client";
-import type { FeatureRequestsData } from "@/types/featureRequests";
 
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority"); // Sorting logic: "priority" or "created"
   const [filterBy, setFilterBy] = useState("all"); // Filter by segment
 
-  const { data: featureData, isLoading } = useQuery({
+  const { data: dashboardData, isLoading } = useQuery({
     queryKey: ["dashboard_data", "feature_requests"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dashboard_data")
-        .select("feature_requests_data")
+        .select("dashboard")
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching feature requests:", error);
+        console.error("Error fetching dashboard data:", error);
         throw error;
       }
 
-      // Provide default structure if data is missing or undefined
-      const featureRequestsData = (data?.feature_requests_data as FeatureRequestsData) || {
+      // Safely extract the feature_requests field
+      const featureRequestsData = data?.dashboard?.feature_requests || {
         segments: [],
         requests: [],
       };
@@ -34,8 +33,8 @@ const FeatureRequests = () => {
   });
 
   // Safely access arrays with fallbacks
-  const requests = featureData?.requests || [];
-  const segments = featureData?.segments || [];
+  const requests = dashboardData?.requests || [];
+  const segments = dashboardData?.segments || [];
 
   // Map data to format expected by FeatureGrid
   const mappedFeatures = requests.map((request) => ({
@@ -46,7 +45,7 @@ const FeatureRequests = () => {
     status: "Open", // Default status
     createdAt: request.since || new Date().toISOString(),
     description: request.description || "No description available",
-    url: request.url || "#",
+    url: request.url?.[0] || "#", // Use the first URL or default to "#"
   }));
 
   // Apply filtering and sorting
