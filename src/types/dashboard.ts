@@ -1,11 +1,13 @@
+import { Json } from "@/integrations/supabase/types";
+
 export interface DashboardData {
   id: string;
   profile_id: string;
   created_at: string | null;
   updated_at: string | null;
-  customer_intelligence_issues: CustomerIntelligenceIssue[] | null;
-  business_intelligence_metrics: BusinessIntelligenceMetric[] | null;
-  feature_requests: FeatureRequest[] | null;
+  customer_intelligence_issues: Json;
+  business_intelligence_metrics: Json;
+  feature_requests: Json;
 }
 
 export interface CustomerIntelligenceIssue {

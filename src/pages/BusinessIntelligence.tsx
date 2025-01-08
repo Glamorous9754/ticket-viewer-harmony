@@ -6,7 +6,8 @@ import RiskAlertsSection from "../components/dashboard/sections/RiskAlertsSectio
 import OpportunityMetricsSection from "../components/dashboard/sections/OpportunityMetricsSection";
 import MarketInsightsSection from "../components/dashboard/sections/MarketInsightsSection";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardData } from "@/types/dashboard";
+import { DashboardData, BusinessIntelligenceMetric } from "@/types/dashboard";
+import { toast } from "sonner";
 
 const BusinessIntelligence = () => {
   const { data: dashboardData, isLoading } = useQuery({
@@ -15,10 +16,11 @@ const BusinessIntelligence = () => {
       const { data, error } = await supabase
         .from("dashboard_data")
         .select("*")
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to load dashboard data");
         return null;
       }
 
@@ -44,6 +46,7 @@ const BusinessIntelligence = () => {
     );
   }
 
+  // Use mock data until we properly parse the JSON from Supabase
   const mockRiskAlerts = [
     {
       type: "High Churn Risk",
