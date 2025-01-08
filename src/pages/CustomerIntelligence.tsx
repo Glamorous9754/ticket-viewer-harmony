@@ -1,57 +1,41 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
-
-const mockTrendingIssues = [
-  {
-    title: "Login Authentication Failures",
-    count: 45,
-    isRising: true,
-    lastDate: "2024-03-20T14:30:00Z",
-    sampleTickets: [
-      "Unable to login after password reset",
-      "2FA verification not receiving codes",
-      "Session timeout occurring frequently",
-    ],
-    commonPhrases: ["password reset", "2FA", "timeout", "authentication"],
-    suggestedCategory: "Authentication",
-    recommendedSolutions: [
-      "Guide users through the password reset process with step-by-step instructions",
-      "Verify and update phone number for 2FA in account settings",
-      "Clear browser cache and cookies, then try logging in again",
-    ],
-  },
-  {
-    title: "Mobile App Crashes on Startup",
-    count: 32,
-    isRising: false,
-    lastDate: "2024-03-20T10:15:00Z",
-    sampleTickets: [
-      "App crashes immediately after splash screen",
-      "Cannot open app after latest update",
-      "Black screen on app launch",
-    ],
-    commonPhrases: ["crash", "startup", "black screen", "latest version"],
-    suggestedCategory: "Mobile App Stability",
-    recommendedSolutions: [
-      "Uninstall and reinstall the latest version of the app",
-      "Clear app cache and data from device settings",
-      "Ensure device meets minimum OS requirements",
-    ],
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const CustomerIntelligence = () => {
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (isLoading) {
+  const { data: dashboardData, isLoading: isQueryLoading } = useQuery({
+    queryKey: ["dashboard_data", "customer_intelligence"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dashboard_data")
+        .select("dashboard")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching customer intelligence data:", error);
+        throw error;
+      }
+
+      const customerIntelligenceData =
+        data?.dashboard?.customer_intelligence_issues || [];
+      console.log("Customer Intelligence Data:", customerIntelligenceData);
+      return customerIntelligenceData;
+    },
+    onSuccess: () => setIsLoading(false),
+  });
+
+  if (isLoading || isQueryLoading) {
     return (
       <div className="space-y-6">
         <div>
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
-        
+
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="rounded-lg border p-4 space-y-3">
@@ -70,6 +54,14 @@ const CustomerIntelligence = () => {
     );
   }
 
+  if (!dashboardData || dashboardData.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-8">
+        No customer intelligence data available.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -80,10 +72,19 @@ const CustomerIntelligence = () => {
           Monitor and analyze trending customer support issues
         </p>
       </div>
-      
+
       <div className="space-y-4">
-        {mockTrendingIssues.map((issue, index) => (
-          <TrendingIssue key={index} {...issue} />
+        {dashboardData.map((issue, index) => (
+          <TrendingIssue
+            key={index}
+            title={issue.title}
+            count={issue.mentions}
+            isRising={issue.color === "red"} // Assuming red indicates rising issues
+            lastDate={issue.since}
+            sampleTickets={issue.sample_tickets}
+            commonPhrases={issue.common_phrases}
+            suggestedCategory={issue.suggested_category}
+          />
         ))}
       </div>
     </div>
