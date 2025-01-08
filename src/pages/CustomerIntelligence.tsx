@@ -346,7 +346,7 @@ const CustomerIntelligence = () => {
         }
       } catch (error) {
         console.error("Error fetching customer intelligence data:", error);
-        toast.error("Failed to load customer intelligence data");
+        toast.error("Failed to load customer in telligence data");
       } finally {
         setIsLoading(false);
       }
