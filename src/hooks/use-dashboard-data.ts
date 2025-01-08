@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { DashboardData } from "@/types/dashboard";
+import { DashboardData, BusinessIntelligenceData } from "@/types/dashboard";
 
 const mapCustomerIntelligence = (data: any) => {
   if (!data?.customer_intelligence_data?.customer_intelligence_issues) {
