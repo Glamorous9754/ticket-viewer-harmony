@@ -4,16 +4,16 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface CustomerIntelligenceIssue {
-  title: string;
-  mentions: number;
-  since: string;
-  sample_tickets: string[];
-  common_phrases: string[];
-  suggested_category: string;
-  overview?: string;
-  color: string;
-}
+// interface CustomerIntelligenceIssue {
+//   title: string;
+//   mentions: number;
+//   since: string;
+//   sample_tickets: string[];
+//   common_phrases: string[];
+//   suggested_category: string;
+//   overview?: string;
+//   color: string;
+// }
 
 const CustomerIntelligence = () => {
   const [issues, setIssues] = useState<CustomerIntelligenceIssue[]>([]);
