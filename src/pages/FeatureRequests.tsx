@@ -1,70 +1,56 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
+import { supabase } from "@/integrations/supabase/client";
 
-const mockFeatures = [
-  {
-    summary: "Automated ticket categorization using AI",
-    priority: 4.8,
-    segments: ["automation", "analytics"],
-    complexity: "High" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Implement AI-powered system to automatically categorize and tag incoming support tickets based on content and context."
-  },
-  {
-    summary: "Real-time chat translation for support agents",
-    priority: 4.5,
-    segments: ["integration", "automation"],
-    complexity: "Medium" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Enable automatic translation of chat messages between agents and customers in real-time to support multiple languages."
-  },
-  {
-    summary: "Bulk ticket management tools",
-    priority: 4.2,
-    segments: ["ticketing"],
-    complexity: "Medium" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Add functionality to manage multiple tickets simultaneously, including bulk updates, assignments, and status changes."
-  },
-  {
-    summary: "Custom dashboard widgets",
-    priority: 3.9,
-    segments: ["analytics", "integration"],
-    complexity: "Medium" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Allow users to create and customize their own dashboard widgets for better data visualization and monitoring."
-  },
-  {
-    summary: "Advanced analytics for response times",
-    priority: 3.7,
-    segments: ["analytics"],
-    complexity: "High" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Implement detailed analytics for tracking and improving response times across different ticket categories and priorities."
-  },
-  {
-    summary: "Integration with popular CRM platforms",
-    priority: 3.5,
-    segments: ["integration"],
-    complexity: "Low" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Add native integration support for major CRM platforms to sync customer data and ticket information."
-  }
-];
+interface FeatureRequestsData {
+  segments: string[];
+  requests: {
+    title: string;
+    impact_score: number;
+    complexity: "Low" | "Medium" | "High";
+    tags: string[];
+    since: string;
+    url?: string;
+    description?: string;
+  }[];
+}
 
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
   const [filterBy, setFilterBy] = useState("all");
-  const [isLoading] = useState(false);
 
-  const filteredFeatures = mockFeatures
+  const { data: featureData, isLoading } = useQuery({
+    queryKey: ['dashboard_data', 'feature_requests'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dashboard_data')
+        .select('feature_requests_data')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching feature requests:', error);
+        throw error;
+      }
+
+      return data?.feature_requests_data as FeatureRequestsData || { segments: [], requests: [] };
+    }
+  });
+
+  // Map the data to the format expected by FeatureGrid
+  const mappedFeatures = featureData?.requests.map(request => ({
+    summary: request.title,
+    priority: request.impact_score,
+    segments: request.tags,
+    complexity: request.complexity,
+    status: "Open",
+    createdAt: request.since,
+    description: request.description,
+    url: request.url
+  })) || [];
+
+  const filteredFeatures = mappedFeatures
     .filter(feature => 
       filterBy === "all" ? true : feature.segments.includes(filterBy.toLowerCase())
     )
@@ -73,6 +59,9 @@ const FeatureRequests = () => {
         ? b.priority - a.priority 
         : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+
+  // Get unique segments for the filter dropdown
+  const availableSegments = featureData?.segments || [];
 
   return (
     <div className="space-y-6">
@@ -91,8 +80,15 @@ const FeatureRequests = () => {
           filterBy={filterBy}
           onSortChange={setSortBy}
           onFilterChange={setFilterBy}
+          segments={availableSegments}
         />
       </div>
+
+      {filteredFeatures.length === 0 && !isLoading && (
+        <div className="text-center py-8 text-muted-foreground">
+          No Feature Requests Found
+        </div>
+      )}
 
       <FeatureGrid 
         features={filteredFeatures} 

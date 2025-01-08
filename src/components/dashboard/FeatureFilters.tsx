@@ -11,6 +11,7 @@ interface FeatureFiltersProps {
   filterBy: string;
   onSortChange: (value: string) => void;
   onFilterChange: (value: string) => void;
+  segments?: string[];
 }
 
 export const FeatureFilters = ({
@@ -18,6 +19,7 @@ export const FeatureFilters = ({
   filterBy,
   onSortChange,
   onFilterChange,
+  segments = [],
 }: FeatureFiltersProps) => {
   return (
     <div className="flex gap-4">
@@ -37,10 +39,11 @@ export const FeatureFilters = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Segments</SelectItem>
-          <SelectItem value="automation">Automation</SelectItem>
-          <SelectItem value="analytics">Analytics</SelectItem>
-          <SelectItem value="integration">Integration</SelectItem>
-          <SelectItem value="ticketing">Ticketing</SelectItem>
+          {segments.map((segment) => (
+            <SelectItem key={segment} value={segment.toLowerCase()}>
+              {segment}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
