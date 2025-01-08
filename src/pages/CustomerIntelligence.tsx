@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
@@ -17,13 +17,14 @@ interface CustomerIntelligenceIssue {
 
 const CustomerIntelligence = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ["customer-intelligence"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dashboard_data")
-        .select("dashboard")
+        .select("customer_intelligence_issues")
         .eq("profile_id", (await supabase.auth.getUser()).data.user?.id)
         .maybeSingle();
 
@@ -37,7 +38,7 @@ const CustomerIntelligence = () => {
         throw error;
       }
 
-      return (data?.dashboard?.customer_intelligence_issues || []) as CustomerIntelligenceIssue[];
+      return (data?.customer_intelligence_issues || []) as CustomerIntelligenceIssue[];
     },
   });
 
@@ -62,7 +63,7 @@ const CustomerIntelligence = () => {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [queryClient]);
 
   if (isLoading) {
     return (
