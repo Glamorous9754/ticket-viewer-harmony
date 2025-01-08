@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CustomerIntelligenceData, CustomerIntelligenceIssue } from "@/types/customerIntelligence";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -16,7 +15,9 @@ import {
 const CustomerIntelligence = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [issues, setIssues] = useState<CustomerIntelligenceIssue[]>([]);
-  const [openItems, setOpenItems] = useState<{ [key: number]: boolean }>({});
+  const [openItems, setOpenItems] = useState<{ [key: number]: boolean }>({
+    0: true // First item expanded by default
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,65 +111,64 @@ const CustomerIntelligence = () => {
             <CollapsibleTrigger className="w-full">
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-4">
-                  {openItems[index] ? (
-                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  {issue.color === "red" ? (
+                    <div className="text-red-500">
+                      {openItems[index] ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </div>
                   ) : (
-                    <ChevronRight className="h-5 w-5 text-gray-500" />
+                    <div className="text-green-500">
+                      {openItems[index] ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </div>
                   )}
                   <div className="text-left">
-                    <h3 className="font-semibold text-lg">
-                      {issue.title || "Unknown Issue"}
+                    <h3 className="font-semibold text-lg text-gray-900">
+                      {issue.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Since {issue.since ? format(new Date(issue.since), "MMM dd, yyyy") : "Date Unavailable"}
+                    <p className="text-sm text-gray-500">
+                      {issue.mentions} related tickets • Last seen {format(new Date(issue.since), "d 'hours ago'")}
                     </p>
                   </div>
                 </div>
-                <Badge variant={issue.color === "red" ? "destructive" : "default"}>
-                  {issue.mentions || 0} mentions
-                </Badge>
               </div>
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-              <div className="px-4 pb-4 space-y-6 border-t">
+              <div className="px-4 pb-4 space-y-6">
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Sample Tickets</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Sample Tickets</h4>
                   <div className="space-y-2">
-                    {issue.sample_tickets?.length > 0 ? (
-                      issue.sample_tickets.map((ticket, i) => (
-                        <div key={i} className="text-sm text-green-600 bg-green-50 p-2 rounded">
-                          "{ticket}"
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No sample tickets available</p>
-                    )}
+                    {issue.sample_tickets?.map((ticket, i) => (
+                      <div key={i} className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                        {ticket}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Common Phrases</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Common Phrases</h4>
                   <div className="flex flex-wrap gap-2">
-                    {issue.common_phrases?.length > 0 ? (
-                      issue.common_phrases.map((phrase, i) => (
-                        <Badge key={i} variant="outline" className="bg-gray-50">
-                          {phrase}
-                        </Badge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No common phrases available</p>
-                    )}
+                    {issue.common_phrases?.map((phrase, i) => (
+                      <Badge key={i} variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        {phrase}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Suggested Category:</span>
-                    <Badge variant="secondary" className="bg-yellow-50">
-                      {issue.suggested_category || "Uncategorized"}
-                    </Badge>
-                  </div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Suggested Category</h4>
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                    {issue.suggested_category}
+                  </Badge>
                 </div>
               </div>
             </CollapsibleContent>
