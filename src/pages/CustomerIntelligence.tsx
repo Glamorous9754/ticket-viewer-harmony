@@ -1,61 +1,66 @@
 import TrendingIssue from "../components/dashboard/TrendingIssue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
-import supabase from "@/integrations/supabase/client"; // Ensure this path is correct
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface CustomerIntelligenceIssue {
+  title: string;
+  mentions: number;
+  since: string;
+  sample_tickets: string[];
+  common_phrases: string[];
+  suggested_category: string;
+  overview?: string;
+}
 
 const CustomerIntelligence = () => {
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState<CustomerIntelligenceIssue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchIssues = async () => {
       try {
         console.log("Fetching customer intelligence issues...");
 
-        // Fetch all rows from dashboard_data table
         const { data, error } = await supabase
           .from('dashboard_data')
-          .select('customer_intelligence_issues');
+          .select('customer_intelligence_issues')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        console.log("Supabase data:", data);
         if (error) {
           console.error("Supabase Error:", error);
           throw error;
         }
 
-        if (!data || data.length === 0) {
-          console.warn('No data found in dashboard_data');
-          throw new Error('No data found in dashboard_data');
+        if (!data) {
+          console.log('No data found in dashboard_data');
+          setIssues([]);
+          return;
         }
 
-        // Aggregate all customer_intelligence_issues from all rows
-        const aggregatedIssues = data.reduce((acc, row) => {
-          if (row.customer_intelligence_issues && Array.isArray(row.customer_intelligence_issues)) {
-            return acc.concat(row.customer_intelligence_issues);
-          }
-          return acc;
-        }, []);
-
-        console.log("Aggregated issues:", aggregatedIssues);
-
-        if (aggregatedIssues.length === 0) {
-          throw new Error('No customer intelligence issues found');
-        }
-
-        setIssues(aggregatedIssues);
+        const issues = data.customer_intelligence_issues || [];
+        console.log("Retrieved issues:", issues);
+        
+        setIssues(issues);
       } catch (err) {
         console.error("Fetch Issues Error:", err);
-        setError(err.message || 'An unexpected error occurred');
+        toast({
+          title: "Error fetching data",
+          description: "Could not load customer intelligence data. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchIssues();
-  }, []);
+  }, [toast]);
 
-  // Render loading skeletons while data is being fetched
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -82,16 +87,19 @@ const CustomerIntelligence = () => {
     );
   }
 
-  // Render error message if there's an error during fetch
-  if (error) {
+  if (issues.length === 0) {
     return (
-      <div className="text-red-500">
-        <p>Error: {error}</p>
+      <div className="text-center py-12">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          No Customer Intelligence Data
+        </h2>
+        <p className="text-gray-500">
+          There are currently no customer intelligence issues to display.
+        </p>
       </div>
     );
   }
 
-  // Render the fetched issues using the TrendingIssue component
   return (
     <div className="space-y-6">
       <div>
@@ -109,23 +117,17 @@ const CustomerIntelligence = () => {
             key={index}
             title={issue.title}
             count={issue.mentions}
-            isRising={determineIsRising(issue)} // Optional: Custom logic to determine if rising
+            isRising={issue.mentions > 20}
             lastDate={issue.since}
             sampleTickets={issue.sample_tickets}
             commonPhrases={issue.common_phrases}
             suggestedCategory={issue.suggested_category}
-            color={issue.color} // Assuming TrendingIssue can handle a color prop
+            overview={issue.overview}
           />
         ))}
       </div>
     </div>
   );
-};
-
-// Optional: Helper function to determine if an issue is rising
-const determineIsRising = (issue) => {
-  const threshold = 20; // Adjust the threshold as needed
-  return issue.mentions > threshold;
 };
 
 export default CustomerIntelligence;
