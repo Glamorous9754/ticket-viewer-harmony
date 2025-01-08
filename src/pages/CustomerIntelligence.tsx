@@ -36,16 +36,28 @@ const CustomerIntelligence = () => {
           throw error;
         }
 
-        if (!data) {
-          console.log('No data found in dashboard_data');
+        // Log the raw data to see what we're getting
+        console.log("Raw data from Supabase:", data);
+
+        if (!data || !data.customer_intelligence_issues) {
+          console.log('No customer intelligence issues found in dashboard_data');
           setIssues([]);
           return;
         }
 
-        const issues = data.customer_intelligence_issues || [];
-        console.log("Retrieved issues:", issues);
+        // Ensure we're working with an array of issues
+        let parsedIssues: CustomerIntelligenceIssue[] = [];
         
-        setIssues(issues);
+        if (Array.isArray(data.customer_intelligence_issues)) {
+          parsedIssues = data.customer_intelligence_issues;
+        } else if (typeof data.customer_intelligence_issues === 'object') {
+          // If it's a single object, wrap it in an array
+          parsedIssues = [data.customer_intelligence_issues];
+        }
+
+        console.log("Parsed issues:", parsedIssues);
+        
+        setIssues(parsedIssues);
       } catch (err) {
         console.error("Fetch Issues Error:", err);
         toast({
