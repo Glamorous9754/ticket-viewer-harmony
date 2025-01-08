@@ -1,109 +1,102 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { FeatureRequest, DashboardData } from "@/types/dashboard";
-import FeatureCard from "@/components/dashboard/FeatureCard";
-import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
-import { Skeleton } from "@/components/ui/skeleton";
+import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
+
+const mockFeatures = [
+  {
+    summary: "Automated ticket categorization using AI",
+    priority: 4.8,
+    segments: ["automation", "analytics"],
+    complexity: "High" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Implement AI-powered system to automatically categorize and tag incoming support tickets based on content and context."
+  },
+  {
+    summary: "Real-time chat translation for support agents",
+    priority: 4.5,
+    segments: ["integration", "automation"],
+    complexity: "Medium" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Enable automatic translation of chat messages between agents and customers in real-time to support multiple languages."
+  },
+  {
+    summary: "Bulk ticket management tools",
+    priority: 4.2,
+    segments: ["ticketing"],
+    complexity: "Medium" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Add functionality to manage multiple tickets simultaneously, including bulk updates, assignments, and status changes."
+  },
+  {
+    summary: "Custom dashboard widgets",
+    priority: 3.9,
+    segments: ["analytics", "integration"],
+    complexity: "Medium" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Allow users to create and customize their own dashboard widgets for better data visualization and monitoring."
+  },
+  {
+    summary: "Advanced analytics for response times",
+    priority: 3.7,
+    segments: ["analytics"],
+    complexity: "High" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Implement detailed analytics for tracking and improving response times across different ticket categories and priorities."
+  },
+  {
+    summary: "Integration with popular CRM platforms",
+    priority: 3.5,
+    segments: ["integration"],
+    complexity: "Low" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Add native integration support for major CRM platforms to sync customer data and ticket information."
+  }
+];
 
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
   const [filterBy, setFilterBy] = useState("all");
+  const [isLoading] = useState(false);
 
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ["dashboard_data"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dashboard_data")
-        .select("*")
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching dashboard data:", error);
-        toast.error("Failed to load dashboard data");
-        return null;
-      }
-
-      console.log("Raw dashboard data:", data);
-      
-      if (data?.feature_requests) {
-        try {
-          const features = typeof data.feature_requests === 'string' 
-            ? JSON.parse(data.feature_requests)
-            : data.feature_requests;
-            
-          console.log("Parsed feature requests:", features);
-          return {
-            ...data,
-            feature_requests: features
-          };
-        } catch (e) {
-          console.error("Error parsing feature requests:", e);
-          toast.error("Error parsing dashboard data");
-          return data;
-        }
-      }
-      
-      return data;
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-64 mb-2" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <Skeleton className="h-[600px]" />
-      </div>
+  const filteredFeatures = mockFeatures
+    .filter(feature => 
+      filterBy === "all" ? true : feature.segments.includes(filterBy.toLowerCase())
+    )
+    .sort((a, b) => 
+      sortBy === "priority" 
+        ? b.priority - a.priority 
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }
-
-  // Map the mock data to match FeatureCard props
-  const mockFeatures = [
-    {
-      summary: "Dark Mode Support",
-      priority: 4,
-      segments: ["UI/UX", "Accessibility"],
-      complexity: "Medium" as const,
-      description: "Add system-wide dark mode support",
-      createdAt: "2024-03-15T09:00:00",
-    },
-  ];
-
-  const featureRequests = dashboardData?.feature_requests?.map(feature => ({
-    summary: feature.title,
-    priority: Math.floor(feature.impact_score / 20),
-    segments: feature.tags,
-    complexity: feature.complexity,
-    description: feature.description,
-    createdAt: feature.since,
-  })) || mockFeatures;
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          Feature Requests
+        <h1 className="text-3xl font-bold text-primary-foreground mb-2">
+          Requests
         </h1>
         <p className="text-muted-foreground">
-          Track and prioritize feature requests from customers
+          Track and manage requests from your customers across all platforms
         </p>
       </div>
 
-      <FeatureFilters 
-        sortBy={sortBy}
-        filterBy={filterBy}
-        onSortChange={setSortBy}
-        onFilterChange={setFilterBy}
-      />
-      
+      <div className="flex justify-between items-center">
+        <FeatureFilters
+          sortBy={sortBy}
+          filterBy={filterBy}
+          onSortChange={setSortBy}
+          onFilterChange={setFilterBy}
+        />
+      </div>
+
       <FeatureGrid 
-        features={featureRequests}
-        isLoading={isLoading}
+        features={filteredFeatures} 
+        isLoading={isLoading} 
       />
     </div>
   );

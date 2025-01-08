@@ -9,44 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      dashboard_data: {
-        Row: {
-          business_intelligence_metrics: Json | null
-          created_at: string | null
-          customer_intelligence_issues: Json | null
-          feature_requests: Json | null
-          id: string
-          profile_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          business_intelligence_metrics?: Json | null
-          created_at?: string | null
-          customer_intelligence_issues?: Json | null
-          feature_requests?: Json | null
-          id?: string
-          profile_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          business_intelligence_metrics?: Json | null
-          created_at?: string | null
-          customer_intelligence_issues?: Json | null
-          feature_requests?: Json | null
-          id?: string
-          profile_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dashboard_data_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       gmail_credentials: {
         Row: {
           access_token: string | null
@@ -254,9 +216,74 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_jobs: {
+        Row: {
+          completed_at: string | null
+          continuation_offset: number | null
+          created_at: string | null
+          error_message: string | null
+          id: number
+          profile_id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          continuation_offset?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: never
+          profile_id: string
+          status: string
+        }
+        Update: {
+          completed_at?: string | null
+          continuation_offset?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: never
+          profile_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_jobs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_progress: {
+        Row: {
+          job_id: number
+          last_offset: number
+          updated_at: string | null
+        }
+        Insert: {
+          job_id: number
+          last_offset: number
+          updated_at?: string | null
+        }
+        Update: {
+          job_id?: number
+          last_offset?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_progress_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "sync_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           agent_id: string | null
+          comments: Json | null
           created_at: string
           created_date: string
           customer_id: string | null
@@ -267,7 +294,6 @@ export type Database = {
           profile_id: string
           resolved_date: string | null
           status: Database["public"]["Enums"]["ticket_status"]
-          subjects: Json | null
           summary: string | null
           thread: string | null
           updated_at: string
@@ -275,6 +301,7 @@ export type Database = {
         }
         Insert: {
           agent_id?: string | null
+          comments?: Json | null
           created_at?: string
           created_date: string
           customer_id?: string | null
@@ -285,7 +312,6 @@ export type Database = {
           profile_id: string
           resolved_date?: string | null
           status: Database["public"]["Enums"]["ticket_status"]
-          subjects?: Json | null
           summary?: string | null
           thread?: string | null
           updated_at?: string
@@ -293,6 +319,7 @@ export type Database = {
         }
         Update: {
           agent_id?: string | null
+          comments?: Json | null
           created_at?: string
           created_date?: string
           customer_id?: string | null
@@ -303,7 +330,6 @@ export type Database = {
           profile_id?: string
           resolved_date?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
-          subjects?: Json | null
           summary?: string | null
           thread?: string | null
           updated_at?: string
