@@ -179,6 +179,7 @@ const CustomerIntelligence = () => {
         const { data, error } = await supabase
           .from("dashboard_data")
           .select("customer_intelligence_issues")
+        .eq("profile_id", "e13c8d86-17d2-472f-8fe4-85c44433fb24")
           .single();
 console.log(data);
         if (error) throw error;
