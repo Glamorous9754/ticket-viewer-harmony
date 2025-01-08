@@ -28,9 +28,7 @@ const CustomerIntelligence = () => {
         const { data, error } = await supabase
           .from('dashboard_data')
           .select('customer_intelligence_issues')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .single();
 
         if (error) {
           console.error("Supabase Error:", error);
