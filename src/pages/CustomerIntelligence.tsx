@@ -180,7 +180,7 @@ const CustomerIntelligence = () => {
           .from("dashboard_data")
           .select("customer_intelligence_issues")
           .single();
-
+console.log(data);
         if (error) throw error;
 
         if (data[0]?.customer_intelligence_issues) {
