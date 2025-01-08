@@ -22,12 +22,11 @@ const CustomerIntelligence = () => {
   const { data: issues, isLoading } = useQuery({
     queryKey: ["customer-intelligence"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dashboard_data")
-        .select("customer_intelligence_issues")
-        .eq("profile_id", (await supabase.auth.getUser()).data.user?.id)
-        .maybeSingle();
-
+        const { data, error } = await supabase
+          .from("dashboard_data")
+          .select("customer_intelligence_issues")
+          .eq("profile_id", (await supabase.auth.getUser()).data.user?.id)
+          .maybeSingle();
       if (error) {
         console.error("Error fetching customer intelligence data:", error);
         toast({
@@ -37,8 +36,23 @@ const CustomerIntelligence = () => {
         });
         throw error;
       }
-
-      return (data?.customer_intelligence_issues || []) as CustomerIntelligenceIssue[];
+      if (!data || !data.customer_intelligence_issues) {
+        return [];
+      }
+      try {
+        const parsedIssues = JSON.parse(
+          data.customer_intelligence_issues as string
+        ) as CustomerIntelligenceIssue[];
+        return parsedIssues;
+      } catch (parseError) {
+        console.error("Error parsing customer intelligence data:", parseError);
+          toast({
+            title: "Error",
+            description: "Failed to parse customer intelligence data",
+              variant: "destructive",
+          });
+        return [];
+      }
     },
   });
 
@@ -72,7 +86,7 @@ const CustomerIntelligence = () => {
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
-        
+
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="rounded-lg border p-4 space-y-3">
@@ -101,7 +115,7 @@ const CustomerIntelligence = () => {
           Monitor and analyze trending customer support issues
         </p>
       </div>
-      
+
       <div className="space-y-4">
         {issues?.map((issue, index) => (
           <TrendingIssue
