@@ -183,7 +183,7 @@ const CustomerIntelligence = () => {
 console.log(data);
         if (error) throw error;
 
-        if (data[0]?.customer_intelligence_issues) {
+        if (data?.customer_intelligence_issues) {
           setIssues(data.customer_intelligence_issues);
         }
       } catch (error) {
