@@ -11,11 +11,14 @@ const CustomerIntelligence = () => {
   useEffect(() => {
     const fetchIssues = async () => {
       try {
+        console.log("Fetching customer intelligence issues...");
+
         // Fetch all rows from dashboard_data table
         const { data, error } = await supabase
           .from('dashboard_data')
           .select('customer_intelligence_issues');
 
+        console.log("Supabase data:", data);
         if (error) {
           console.error("Supabase Error:", error);
           throw error;
@@ -33,6 +36,8 @@ const CustomerIntelligence = () => {
           }
           return acc;
         }, []);
+
+        console.log("Aggregated issues:", aggregatedIssues);
 
         if (aggregatedIssues.length === 0) {
           throw new Error('No customer intelligence issues found');
