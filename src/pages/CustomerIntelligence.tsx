@@ -36,7 +36,6 @@ const CustomerIntelligence = () => {
           throw error;
         }
 
-        // Log the raw data to see what we're getting
         console.log("Raw data from Supabase:", data);
 
         if (!data || !data.customer_intelligence_issues) {
@@ -50,25 +49,33 @@ const CustomerIntelligence = () => {
         
         if (Array.isArray(data.customer_intelligence_issues)) {
           parsedIssues = data.customer_intelligence_issues.map((issue: any) => ({
-            title: issue.title || '',
-            mentions: issue.mentions || 0,
-            since: issue.since || '',
-            sample_tickets: Array.isArray(issue.sample_tickets) ? issue.sample_tickets : [],
-            common_phrases: Array.isArray(issue.common_phrases) ? issue.common_phrases : [],
-            suggested_category: issue.suggested_category || '',
-            overview: issue.overview
+            title: String(issue.title || ''),
+            mentions: Number(issue.mentions || 0),
+            since: String(issue.since || ''),
+            sample_tickets: Array.isArray(issue.sample_tickets) 
+              ? issue.sample_tickets.map(String)
+              : [],
+            common_phrases: Array.isArray(issue.common_phrases)
+              ? issue.common_phrases.map(String)
+              : [],
+            suggested_category: String(issue.suggested_category || ''),
+            overview: issue.overview ? String(issue.overview) : undefined
           }));
         } else if (typeof data.customer_intelligence_issues === 'object') {
           // If it's a single object, wrap it in an array after parsing
           const issue = data.customer_intelligence_issues;
           parsedIssues = [{
-            title: issue.title || '',
-            mentions: issue.mentions || 0,
-            since: issue.since || '',
-            sample_tickets: Array.isArray(issue.sample_tickets) ? issue.sample_tickets : [],
-            common_phrases: Array.isArray(issue.common_phrases) ? issue.common_phrases : [],
-            suggested_category: issue.suggested_category || '',
-            overview: issue.overview
+            title: String(issue.title || ''),
+            mentions: Number(issue.mentions || 0),
+            since: String(issue.since || ''),
+            sample_tickets: Array.isArray(issue.sample_tickets)
+              ? issue.sample_tickets.map(String)
+              : [],
+            common_phrases: Array.isArray(issue.common_phrases)
+              ? issue.common_phrases.map(String)
+              : [],
+            suggested_category: String(issue.suggested_category || ''),
+            overview: issue.overview ? String(issue.overview) : undefined
           }];
         }
 
