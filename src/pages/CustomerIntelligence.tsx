@@ -21,7 +21,7 @@ const CustomerIntelligence = () => {
 
         if (error) throw error;
 
-        const customerData = data?.customer_intelligence_data as CustomerIntelligenceData;
+        const customerData = data?.customer_intelligence_data as unknown as CustomerIntelligenceData;
         if (customerData?.customer_intelligence_issues) {
           setIssues(customerData.customer_intelligence_issues);
         }
@@ -86,31 +86,44 @@ const CustomerIntelligence = () => {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
         {issues.map((issue, index) => (
-          <Card key={index} className="overflow-hidden">
-            <CardHeader className={`border-l-4 ${
-              issue.color === "red" ? "border-l-red-500" : "border-l-green-500"
-            }`}>
-              <div className="flex justify-between items-start">
+          <Card key={index} className="w-full">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-center mb-1">
                 <CardTitle className="text-lg font-semibold">
                   {issue.title || "Unknown Issue"}
                 </CardTitle>
                 <Badge variant={issue.color === "red" ? "destructive" : "default"}>
-                  {issue.mentions || 0} Mentions
+                  {issue.mentions || 0} mentions
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 Since {issue.since ? format(new Date(issue.since), "MMM dd, yyyy") : "Date Unavailable"}
               </p>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div>
-                <h4 className="font-medium mb-2">Common Phrases</h4>
+                <h4 className="text-sm font-medium mb-3">Sample Tickets</h4>
+                <div className="space-y-2">
+                  {issue.sample_tickets?.length > 0 ? (
+                    issue.sample_tickets.map((ticket, i) => (
+                      <div key={i} className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                        "{ticket}"
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No sample tickets available</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium mb-3">Common Phrases</h4>
                 <div className="flex flex-wrap gap-2">
                   {issue.common_phrases?.length > 0 ? (
                     issue.common_phrases.map((phrase, i) => (
-                      <Badge key={i} variant="secondary">
+                      <Badge key={i} variant="outline" className="bg-gray-50">
                         {phrase}
                       </Badge>
                     ))
@@ -120,25 +133,13 @@ const CustomerIntelligence = () => {
                 </div>
               </div>
 
-              <div>
-                <h4 className="font-medium mb-2">Sample Tickets</h4>
-                <ul className="space-y-2">
-                  {issue.sample_tickets?.length > 0 ? (
-                    issue.sample_tickets.map((ticket, i) => (
-                      <li key={i} className="text-sm text-muted-foreground">
-                        • {ticket}
-                      </li>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No sample tickets available</p>
-                  )}
-                </ul>
-              </div>
-
-              <div className="pt-2 border-t">
-                <Badge variant="outline">
-                  Category: {issue.suggested_category || "Uncategorized"}
-                </Badge>
+              <div className="pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Suggested Category:</span>
+                  <Badge variant="secondary" className="bg-yellow-50">
+                    {issue.suggested_category || "Uncategorized"}
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
