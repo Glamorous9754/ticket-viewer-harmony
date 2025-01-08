@@ -11,30 +11,41 @@ export type Database = {
     Tables: {
       dashboard_data: {
         Row: {
-          business_intelligence_data: Json | null
+          business_intelligence_metrics: Json | null
           created_at: string | null
-          dashboard: Json | null
-          feature_requests_data: Json | null
+          customer_intelligence_issues: Json | null
+          feature_requests: Json | null
           id: string
+          profile_id: string
           updated_at: string | null
         }
         Insert: {
-          business_intelligence_data?: Json | null
+          business_intelligence_metrics?: Json | null
           created_at?: string | null
-          dashboard?: Json | null
-          feature_requests_data?: Json | null
+          customer_intelligence_issues?: Json | null
+          feature_requests?: Json | null
           id?: string
+          profile_id: string
           updated_at?: string | null
         }
         Update: {
-          business_intelligence_data?: Json | null
+          business_intelligence_metrics?: Json | null
           created_at?: string | null
-          dashboard?: Json | null
-          feature_requests_data?: Json | null
+          customer_intelligence_issues?: Json | null
+          feature_requests?: Json | null
           id?: string
+          profile_id?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_data_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gmail_credentials: {
         Row: {
