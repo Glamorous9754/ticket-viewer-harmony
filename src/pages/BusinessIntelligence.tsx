@@ -24,8 +24,28 @@ const BusinessIntelligence = () => {
         return null;
       }
 
-      console.log("Fetched dashboard data:", data);
-      return data as DashboardData;
+      console.log("Raw dashboard data:", data);
+      
+      if (data?.business_intelligence_metrics) {
+        try {
+          // Parse the JSON data if it's a string
+          const metrics = typeof data.business_intelligence_metrics === 'string' 
+            ? JSON.parse(data.business_intelligence_metrics)
+            : data.business_intelligence_metrics;
+            
+          console.log("Parsed business metrics:", metrics);
+          return {
+            ...data,
+            business_intelligence_metrics: metrics
+          };
+        } catch (e) {
+          console.error("Error parsing business metrics:", e);
+          toast.error("Error parsing dashboard data");
+          return data;
+        }
+      }
+      
+      return data;
     },
   });
 
@@ -101,6 +121,8 @@ const BusinessIntelligence = () => {
     },
   ];
 
+  const businessMetrics = dashboardData?.business_intelligence_metrics as BusinessIntelligenceMetric[] || mockRiskAlerts;
+
   return (
     <div className="space-y-6 pb-8">
       <div>
@@ -114,7 +136,7 @@ const BusinessIntelligence = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <WorkingWellSection items={mockWorkingWell} />
-        <RiskAlertsSection alerts={mockRiskAlerts} />
+        <RiskAlertsSection alerts={businessMetrics} />
         <OpportunityMetricsSection opportunities={mockOpportunities} />
         <MarketInsightsSection insights={mockInsights} />
       </div>
