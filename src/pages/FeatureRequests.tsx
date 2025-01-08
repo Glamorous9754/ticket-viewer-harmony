@@ -13,7 +13,8 @@ const FeatureRequests = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dashboard_data")
-        .select("dashboard")
+        .select("feature_requests")
+        .eq("profile_id", (await supabase.auth.getUser()).data.user?.id)
         .maybeSingle();
 
       if (error) {
@@ -22,7 +23,7 @@ const FeatureRequests = () => {
       }
 
       // Safely extract the feature_requests field
-      const featureRequestsData = data?.dashboard?.feature_requests || {
+      const featureRequestsData = data?.feature_requests || {
         segments: [],
         requests: [],
       };
@@ -80,7 +81,6 @@ const FeatureRequests = () => {
           filterBy={filterBy}
           onSortChange={setSortBy}
           onFilterChange={setFilterBy}
-          segments={segments}
         />
       </div>
 
@@ -97,7 +97,7 @@ const FeatureRequests = () => {
           ...feature,
           actions: (
             <button
-              disabled={!feature.url} // Disable button if URL is missing
+              disabled={!feature.url}
               onClick={() => feature.url && window.open(feature.url, "_blank")}
               className={`px-4 py-2 rounded ${
                 feature.url ? "bg-primary text-white" : "bg-gray-300 text-gray-500 cursor-not-allowed"
