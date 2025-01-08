@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { DashboardData, FeatureRequest } from "@/types/dashboard";
 
 const mockFeatureRequests = {
   requests: [
@@ -8,7 +11,7 @@ const mockFeatureRequests = {
       title: "Mobile App Integration",
       impact_score: 85,
       tags: ["Mobile", "Integration"],
-      complexity: "Medium",
+      complexity: "Medium" as const,
       description: "Enable seamless integration with mobile applications",
       since: "2024-03-01T00:00:00Z",
     },
@@ -16,7 +19,7 @@ const mockFeatureRequests = {
       title: "Bulk Export Feature",
       impact_score: 75,
       tags: ["Data", "Export"],
-      complexity: "Low",
+      complexity: "Low" as const,
       description: "Add ability to export data in bulk",
       since: "2024-03-05T00:00:00Z",
     },
@@ -26,16 +29,27 @@ const mockFeatureRequests = {
 const FeatureRequests = () => {
   const [sortBy, setSortBy] = useState("priority");
   const [filterBy, setFilterBy] = useState("all");
-  const [isLoading] = useState(false);
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ["dashboard_data"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dashboard_data")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return data as DashboardData;
+    },
+  });
 
   const mappedFeatures = mockFeatureRequests.requests.map((request) => ({
-    summary: request.title || "No Title",
-    priority: request.impact_score || 0,
-    segments: request.tags || [],
-    complexity: request.complexity || "Low",
+    summary: request.title,
+    priority: request.impact_score,
+    segments: request.tags,
+    complexity: request.complexity,
     status: "Open",
-    createdAt: request.since || new Date().toISOString(),
-    description: request.description || "No description available",
+    createdAt: request.since,
+    description: request.description,
     url: null,
   }));
 
