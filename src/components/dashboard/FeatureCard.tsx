@@ -17,7 +17,6 @@ interface FeatureCardProps {
   status?: string;
   createdAt?: string;
   description?: string;
-  url?: string;
 }
 
 const FeatureCard = ({ 
@@ -28,7 +27,6 @@ const FeatureCard = ({
   status = "Open",
   createdAt,
   description,
-  url,
 }: FeatureCardProps) => {
   const impactScore = Math.round((priority * 20));
   
@@ -114,8 +112,6 @@ const FeatureCard = ({
           <Button 
             variant="default"
             className="w-full bg-primary hover:bg-primary/90 transition-colors"
-            onClick={() => url && window.open(url, '_blank')}
-            disabled={!url}
           >
             View Request
             <ExternalLink className="ml-2 h-4 w-4" />

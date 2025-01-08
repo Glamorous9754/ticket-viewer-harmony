@@ -1,98 +1,103 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
-import { supabase } from "@/integrations/supabase/client";
+
+const mockFeatures = [
+  {
+    summary: "Automated ticket categorization using AI",
+    priority: 4.8,
+    segments: ["automation", "analytics"],
+    complexity: "High" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Implement AI-powered system to automatically categorize and tag incoming support tickets based on content and context."
+  },
+  {
+    summary: "Real-time chat translation for support agents",
+    priority: 4.5,
+    segments: ["integration", "automation"],
+    complexity: "Medium" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Enable automatic translation of chat messages between agents and customers in real-time to support multiple languages."
+  },
+  {
+    summary: "Bulk ticket management tools",
+    priority: 4.2,
+    segments: ["ticketing"],
+    complexity: "Medium" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Add functionality to manage multiple tickets simultaneously, including bulk updates, assignments, and status changes."
+  },
+  {
+    summary: "Custom dashboard widgets",
+    priority: 3.9,
+    segments: ["analytics", "integration"],
+    complexity: "Medium" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Allow users to create and customize their own dashboard widgets for better data visualization and monitoring."
+  },
+  {
+    summary: "Advanced analytics for response times",
+    priority: 3.7,
+    segments: ["analytics"],
+    complexity: "High" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Implement detailed analytics for tracking and improving response times across different ticket categories and priorities."
+  },
+  {
+    summary: "Integration with popular CRM platforms",
+    priority: 3.5,
+    segments: ["integration"],
+    complexity: "Low" as const,
+    status: "Open",
+    createdAt: "2023-03-15T10:00:00Z",
+    description: "Add native integration support for major CRM platforms to sync customer data and ticket information."
+  }
+];
 
 const FeatureRequests = () => {
-  const [sortBy, setSortBy] = useState("priority"); // Sorting logic: "priority" or "created"
-  const [filterBy, setFilterBy] = useState("all"); // Filter by segment
+  const [sortBy, setSortBy] = useState("priority");
+  const [filterBy, setFilterBy] = useState("all");
+  const [isLoading] = useState(false);
 
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ["dashboard_data", "feature_requests"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dashboard_data")
-        .select("dashboard")
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching dashboard data:", error);
-        throw error;
-      }
-
-      // Safely extract the feature_requests field
-      const featureRequestsData = data?.dashboard?.feature_requests || {
-        segments: [],
-        requests: [],
-      };
-
-      console.log("Feature Requests Data:", featureRequestsData); // Debug log
-      return featureRequestsData;
-    },
-  });
-
-  // Safely access arrays with fallbacks
-  const requests = dashboardData?.requests || [];
-  const segments = dashboardData?.segments || [];
-
-  // Map data to format expected by FeatureGrid
-  const mappedFeatures = requests.map((request) => ({
-    summary: request.title || "No Title",
-    priority: request.impact_score || 0,
-    segments: request.tags || [],
-    complexity: request.complexity || "Low",
-    status: "Open", // Default status
-    createdAt: request.since || new Date().toISOString(),
-    description: request.description || "No description available",
-    url: request.url?.[0] || "#", // Use the first URL or default to "#"
-  }));
-
-  // Apply filtering and sorting
-  const filteredFeatures = mappedFeatures
-    .filter((feature) =>
-      filterBy === "all"
-        ? true
-        : feature.segments.some((segment) => segment.toLowerCase() === filterBy.toLowerCase())
+  const filteredFeatures = mockFeatures
+    .filter(feature => 
+      filterBy === "all" ? true : feature.segments.includes(filterBy.toLowerCase())
     )
-    .sort((a, b) => {
-      if (sortBy === "priority") {
-        return b.priority - a.priority || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      } else {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.priority - a.priority;
-      }
-    });
+    .sort((a, b) => 
+      sortBy === "priority" 
+        ? b.priority - a.priority 
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-primary-foreground mb-2">Requests</h1>
+        <h1 className="text-3xl font-bold text-primary-foreground mb-2">
+          Requests
+        </h1>
         <p className="text-muted-foreground">
           Track and manage requests from your customers across all platforms
         </p>
       </div>
 
-      {/* Filters */}
       <div className="flex justify-between items-center">
         <FeatureFilters
           sortBy={sortBy}
           filterBy={filterBy}
           onSortChange={setSortBy}
           onFilterChange={setFilterBy}
-          segments={segments}
         />
       </div>
 
-      {/* Loading or Empty State */}
-      {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading Feature Requests...</div>
-      ) : filteredFeatures.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">No Feature Requests Found</div>
-      ) : null}
-
-      {/* Feature Requests Grid */}
-      <FeatureGrid features={filteredFeatures} isLoading={isLoading} />
+      <FeatureGrid 
+        features={filteredFeatures} 
+        isLoading={isLoading} 
+      />
     </div>
   );
 };
