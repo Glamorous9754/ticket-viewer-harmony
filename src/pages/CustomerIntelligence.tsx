@@ -45,14 +45,31 @@ const CustomerIntelligence = () => {
           return;
         }
 
-        // Ensure we're working with an array of issues
+        // Ensure we're working with an array of issues and properly type cast
         let parsedIssues: CustomerIntelligenceIssue[] = [];
         
         if (Array.isArray(data.customer_intelligence_issues)) {
-          parsedIssues = data.customer_intelligence_issues;
+          parsedIssues = data.customer_intelligence_issues.map((issue: any) => ({
+            title: issue.title || '',
+            mentions: issue.mentions || 0,
+            since: issue.since || '',
+            sample_tickets: Array.isArray(issue.sample_tickets) ? issue.sample_tickets : [],
+            common_phrases: Array.isArray(issue.common_phrases) ? issue.common_phrases : [],
+            suggested_category: issue.suggested_category || '',
+            overview: issue.overview
+          }));
         } else if (typeof data.customer_intelligence_issues === 'object') {
-          // If it's a single object, wrap it in an array
-          parsedIssues = [data.customer_intelligence_issues];
+          // If it's a single object, wrap it in an array after parsing
+          const issue = data.customer_intelligence_issues;
+          parsedIssues = [{
+            title: issue.title || '',
+            mentions: issue.mentions || 0,
+            since: issue.since || '',
+            sample_tickets: Array.isArray(issue.sample_tickets) ? issue.sample_tickets : [],
+            common_phrases: Array.isArray(issue.common_phrases) ? issue.common_phrases : [],
+            suggested_category: issue.suggested_category || '',
+            overview: issue.overview
+          }];
         }
 
         console.log("Parsed issues:", parsedIssues);
