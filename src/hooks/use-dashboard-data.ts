@@ -2,68 +2,88 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DashboardData } from "@/types/dashboard";
 
-export interface CustomerIntelligenceItem {
-  title: string;
-  count: number;
-  isRising: boolean;
-  lastDate: string;
-  sampleTickets: string[];
-  commonPhrases: string[];
-  suggestedCategory: string;
-  overview?: string;
-}
+const mapCustomerIntelligence = (data: any) => {
+  if (!data?.customer_intelligence_data?.customer_intelligence_issues) {
+    return [];
+  }
+  
+  return data.customer_intelligence_data.customer_intelligence_issues.map((issue: any) => ({
+    title: issue.title,
+    count: issue.mentions,
+    isRising: true, // You might want to calculate this based on historical data
+    lastDate: issue.since,
+    sampleTickets: issue.sample_tickets,
+    commonPhrases: issue.common_phrases,
+    suggestedCategory: issue.suggested_category,
+    overview: issue.description
+  }));
+};
 
-export interface FeatureRequest {
-  summary: string;
-  priority: number;
-  segments: string[];
-  complexity: "Low" | "Medium" | "High";
-  status?: string;
-  createdAt: string;
-  description?: string;
-}
+const mapFeatureRequests = (data: any) => {
+  if (!data?.feature_requests_data?.feature_requests?.requests) {
+    return [];
+  }
 
-export interface BusinessIntelligenceData {
-  workingWell: {
-    title: string;
-    count: number;
-    isRising: boolean;
-    lastDate: string;
-    sampleTickets: string[];
-    commonPhrases: string[];
-    suggestedCategory: string;
-    overview?: string;
-  }[];
-  opportunities: {
-    title: string;
-    count: number;
-    isRising: boolean;
-    lastDate: string;
-    sampleTickets: string[];
-    commonPhrases: string[];
-    suggestedCategory: string;
-    overview?: string;
-  }[];
-  risks: {
-    type: string;
-    severity: "Low" | "Medium" | "High";
-    segment: string;
-    evidence: string;
-  }[];
-  insights: {
-    segment: string;
-    painPoints: string[];
-    satisfaction: number;
-    suggestions: string;
-  }[];
-}
+  return data.feature_requests_data.feature_requests.requests.map((request: any) => ({
+    summary: request.title,
+    priority: request.impact_score,
+    segments: request.tags,
+    complexity: request.complexity.charAt(0).toUpperCase() + request.complexity.slice(1),
+    status: "Open",
+    createdAt: request.since,
+    description: request.description
+  }));
+};
 
-export interface DashboardData {
-  customerIntelligence: CustomerIntelligenceItem[];
-  featureRequests: FeatureRequest[];
-  businessIntelligence: BusinessIntelligenceData;
-}
+const mapBusinessIntelligence = (data: any): BusinessIntelligenceData => {
+  if (!data?.business_intelligence_data?.business_intelligence_metrics?.segments) {
+    return {
+      workingWell: [],
+      opportunities: [],
+      risks: [],
+      insights: []
+    };
+  }
+
+  const segments = data.business_intelligence_data.business_intelligence_metrics.segments;
+
+  return {
+    workingWell: segments.working_well?.map((item: any) => ({
+      title: item.title,
+      count: item.mentions,
+      isRising: true,
+      lastDate: item.since,
+      sampleTickets: item.sample_tickets,
+      commonPhrases: item.common_phrases,
+      suggestedCategory: item.suggested_category,
+      overview: item.description
+    })) || [],
+    opportunities: segments.opportunities?.map((item: any) => ({
+      title: item.title,
+      count: item.mentions,
+      isRising: true,
+      lastDate: item.since,
+      sampleTickets: item.sample_tickets,
+      commonPhrases: item.common_phrases,
+      suggestedCategory: item.suggested_category,
+      overview: item.description
+    })) || [],
+    risks: segments.risks?.map((risk: any) => ({
+      type: risk.title,
+      severity: risk.severity,
+      segment: risk.affecting,
+      evidence: risk.details
+    })) || [],
+    insights: segments.product_market_insights?.map((insight: any) => ({
+      segment: insight.segment,
+      painPoints: insight.key_pain_points,
+      satisfaction: insight.satisfaction_score,
+      suggestions: insight.actionable_insights
+    })) || []
+  };
+};
 
 const fetchDashboardData = async (): Promise<DashboardData> => {
   const { data, error } = await supabase
@@ -76,14 +96,9 @@ const fetchDashboardData = async (): Promise<DashboardData> => {
   }
 
   return {
-    customerIntelligence: data.customer_intelligence_data || [],
-    featureRequests: data.feature_requests_data || [],
-    businessIntelligence: data.business_intelligence_data || {
-      workingWell: [],
-      opportunities: [],
-      risks: [],
-      insights: [],
-    },
+    customerIntelligence: mapCustomerIntelligence(data),
+    featureRequests: mapFeatureRequests(data),
+    businessIntelligence: mapBusinessIntelligence(data)
   };
 };
 
