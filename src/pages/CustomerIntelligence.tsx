@@ -25,7 +25,6 @@ const CustomerIntelligence = () => {
       
       if (data?.customer_intelligence_issues) {
         try {
-          // Parse the JSON data if it's a string
           const issues = typeof data.customer_intelligence_issues === 'string' 
             ? JSON.parse(data.customer_intelligence_issues)
             : data.customer_intelligence_issues;
@@ -62,23 +61,33 @@ const CustomerIntelligence = () => {
     );
   }
 
-  // Use mock data until we properly parse the JSON from Supabase
+  // Map mock data to match TrendingIssue props
   const mockIssues = [
     {
       title: "App Performance",
-      mentions: 45,
-      since: "2024-03-15T10:30:00",
-      sample_tickets: [
+      count: 45,
+      isRising: true,
+      lastDate: "2024-03-15T10:30:00",
+      sampleTickets: [
         "App is slow during peak hours",
         "Loading times are inconsistent",
       ],
-      common_phrases: ["slow", "loading", "performance"],
-      suggested_category: "Performance",
+      commonPhrases: ["slow", "loading", "performance"],
+      suggestedCategory: "Performance",
       overview: "Multiple users reporting performance issues during peak hours",
     },
   ];
 
-  const customerIssues = dashboardData?.customer_intelligence_issues as CustomerIntelligenceIssue[] || mockIssues;
+  const customerIssues = dashboardData?.customer_intelligence_issues?.map(issue => ({
+    title: issue.title,
+    count: issue.mentions,
+    isRising: true, // You might want to calculate this based on historical data
+    lastDate: issue.since,
+    sampleTickets: issue.sample_tickets,
+    commonPhrases: issue.common_phrases,
+    suggestedCategory: issue.suggested_category,
+    overview: issue.overview,
+  })) || mockIssues;
 
   return (
     <div className="space-y-6 pb-8">

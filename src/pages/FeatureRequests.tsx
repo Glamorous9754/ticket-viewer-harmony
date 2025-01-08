@@ -4,11 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FeatureRequest, DashboardData } from "@/types/dashboard";
 import FeatureCard from "@/components/dashboard/FeatureCard";
-import FeatureFilters from "@/components/dashboard/FeatureFilters";
-import FeatureGrid from "@/components/dashboard/FeatureGrid";
+import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
+import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const FeatureRequests = () => {
+  const [sortBy, setSortBy] = useState("priority");
+  const [filterBy, setFilterBy] = useState("all");
+
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ["dashboard_data"],
     queryFn: async () => {
@@ -27,7 +30,6 @@ const FeatureRequests = () => {
       
       if (data?.feature_requests) {
         try {
-          // Parse the JSON data if it's a string
           const features = typeof data.feature_requests === 'string' 
             ? JSON.parse(data.feature_requests)
             : data.feature_requests;
@@ -60,19 +62,26 @@ const FeatureRequests = () => {
     );
   }
 
-  // Use mock data until we properly parse the JSON from Supabase
+  // Map the mock data to match FeatureCard props
   const mockFeatures = [
     {
-      title: "Dark Mode Support",
-      impact_score: 85,
-      tags: ["UI/UX", "Accessibility"],
+      summary: "Dark Mode Support",
+      priority: 4,
+      segments: ["UI/UX", "Accessibility"],
       complexity: "Medium" as const,
       description: "Add system-wide dark mode support",
-      since: "2024-03-15T09:00:00",
+      createdAt: "2024-03-15T09:00:00",
     },
   ];
 
-  const featureRequests = dashboardData?.feature_requests as FeatureRequest[] || mockFeatures;
+  const featureRequests = dashboardData?.feature_requests?.map(feature => ({
+    summary: feature.title,
+    priority: Math.floor(feature.impact_score / 20),
+    segments: feature.tags,
+    complexity: feature.complexity,
+    description: feature.description,
+    createdAt: feature.since,
+  })) || mockFeatures;
 
   return (
     <div className="space-y-6 pb-8">
@@ -85,12 +94,17 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      <FeatureFilters />
-      <FeatureGrid>
-        {featureRequests.map((feature, index) => (
-          <FeatureCard key={index} {...feature} />
-        ))}
-      </FeatureGrid>
+      <FeatureFilters 
+        sortBy={sortBy}
+        filterBy={filterBy}
+        onSortChange={setSortBy}
+        onFilterChange={setFilterBy}
+      />
+      
+      <FeatureGrid 
+        features={featureRequests}
+        isLoading={isLoading}
+      />
     </div>
   );
 };
