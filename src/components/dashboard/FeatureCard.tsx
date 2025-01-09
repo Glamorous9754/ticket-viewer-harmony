@@ -17,7 +17,7 @@ interface FeatureCardProps {
   status?: string;
   createdAt?: string;
   description?: string;
-  url?: string | null;
+  url?: string;
 }
 
 const FeatureCard = ({ 
@@ -31,7 +31,6 @@ const FeatureCard = ({
   url,
 }: FeatureCardProps) => {
   const impactScore = Math.round(priority * 20);
-  const hasValidUrl = url && url.trim().length > 0;
   
   return (
     <Card className="h-full animate-fade-in group relative">
@@ -114,9 +113,9 @@ const FeatureCard = ({
 
           <Button 
             variant="default"
-            className="w-full bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!hasValidUrl}
-            onClick={() => hasValidUrl && window.open(url, '_blank')}
+            className="w-full bg-primary hover:bg-primary/90 transition-colors"
+            disabled={!url}
+            onClick={() => url && window.open(url, '_blank')}
           >
             View Request
             <ExternalLink className="ml-2 h-4 w-4" />
