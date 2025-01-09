@@ -67,7 +67,11 @@ const FeatureRequests = () => {
 
   const sortedAndFilteredFeatures = features
     .filter((feature) =>
-      filterBy === "all" ? true : feature.segments.includes(filterBy)
+      filterBy === "all" 
+        ? true 
+        : feature.segments.some(segment => 
+            segment.toLowerCase() === filterBy.toLowerCase()
+          )
     )
     .sort((a, b) => {
       if (sortBy === "priority") {
