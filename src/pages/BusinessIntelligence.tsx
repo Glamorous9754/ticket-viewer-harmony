@@ -41,29 +41,65 @@ const BusinessIntelligence = () => {
           return;
         }
 
-        // Ensure `db` field is parsed as JSON
+        // Parse the db field if it's a string
         let parsedDb;
         if (data?.db) {
           parsedDb = typeof data.db === "string" ? JSON.parse(data.db) : data.db;
         }
 
-        if (parsedDb?.business_intelligence_metrics) {
-          const { whats_working, risk_alerts, opportunity_metrics, segments } =
-            parsedDb.business_intelligence_metrics;
+        if (parsedDb?.business_intelligence_metrics?.segments) {
+          const { whats_working, risk_alerts, opportunity_metrics, product_market_insights } =
+            parsedDb.business_intelligence_metrics.segments;
 
-          setWorkingWell(whats_working || []);
-          setRiskAlerts(risk_alerts || []);
-          setOpportunities(opportunity_metrics || []);
-          setInsights(
-            Object.keys(segments || {}).map((segment) => ({
-              segment,
-              painPoints: segments[segment]?.key_pain_points || [],
-              satisfaction: segments[segment]?.satisfaction_score || 0,
-              suggestions: segments[segment]?.actionable_insights || "",
-            }))
+          // Map working well items
+          setWorkingWell(
+            whats_working?.map((item) => ({
+              title: item.title,
+              count: parseInt(item.mentions),
+              isRising: false, // You might want to add this to your data structure
+              lastDate: item.since,
+              sampleTickets: item.sample_tickets,
+              commonPhrases: item.common_phrases,
+              suggestedCategory: item.suggested_category,
+              color: item.color,
+            })) || []
           );
-        } else {
-          console.warn("No business intelligence metrics found in the database.");
+
+          // Map risk alerts
+          setRiskAlerts(
+            risk_alerts?.map((item) => ({
+              type: item.title,
+              severity: "High", // You might want to add this to your data structure
+              segment: item.affecting,
+              evidence: item.details,
+            })) || []
+          );
+
+          // Map opportunities
+          setOpportunities(
+            opportunity_metrics?.map((item) => ({
+              title: item.title,
+              count: parseInt(item.mentions),
+              isRising: true, // You might want to add this to your data structure
+              lastDate: item.since,
+              sampleTickets: item.sample_tickets,
+              commonPhrases: item.common_phrases,
+              suggestedCategory: item.suggested_category,
+              color: item.color,
+            })) || []
+          );
+
+          // Map market insights
+          if (product_market_insights) {
+            setInsights(
+              Object.entries(product_market_insights).map(([segment, data]) => ({
+                segment,
+                painPoints: data.key_pain_points || [],
+                satisfaction: parseFloat(data.satisfaction_score) || 0,
+                suggestions: data.actionable_insights || "",
+              }))
+            );
+          }
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
