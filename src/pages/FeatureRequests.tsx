@@ -59,7 +59,7 @@ const FeatureRequests = () => {
           }));
 
           setFeatures(mappedFeatures);
-          setSegments(["all", ...dynamicSegments]); // Add "all" option for filtering
+          setSegments(["all", ...dynamicSegments]); // Dynamically add "all" option and fetched segments
         } else {
           console.log("No feature requests found in the database.");
         }
@@ -88,12 +88,12 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      {/* Filtering UI */}
+      {/* Dynamic Filtering UI */}
       <div className="flex justify-between items-center">
         <FeatureFilters
           filterBy={filterBy}
           onFilterChange={setFilterBy}
-          availableSegments={segments} // Pass dynamic segments
+          availableSegments={segments} // Pass dynamic segments for filter options
         />
       </div>
 
