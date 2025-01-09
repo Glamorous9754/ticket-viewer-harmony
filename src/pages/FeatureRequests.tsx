@@ -1,76 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../integrations/supabase/client"; // Import your Supabase client
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
-const mockFeatures = [
-  {
-    summary: "Automated ticket categorization using AI",
-    priority: 4.8,
-    segments: ["automation", "analytics"],
-    complexity: "High" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Implement AI-powered system to automatically categorize and tag incoming support tickets based on content and context."
-  },
-  {
-    summary: "Real-time chat translation for support agents",
-    priority: 4.5,
-    segments: ["integration", "automation"],
-    complexity: "Medium" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Enable automatic translation of chat messages between agents and customers in real-time to support multiple languages."
-  },
-  {
-    summary: "Bulk ticket management tools",
-    priority: 4.2,
-    segments: ["ticketing"],
-    complexity: "Medium" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Add functionality to manage multiple tickets simultaneously, including bulk updates, assignments, and status changes."
-  },
-  {
-    summary: "Custom dashboard widgets",
-    priority: 3.9,
-    segments: ["analytics", "integration"],
-    complexity: "Medium" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Allow users to create and customize their own dashboard widgets for better data visualization and monitoring."
-  },
-  {
-    summary: "Advanced analytics for response times",
-    priority: 3.7,
-    segments: ["analytics"],
-    complexity: "High" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Implement detailed analytics for tracking and improving response times across different ticket categories and priorities."
-  },
-  {
-    summary: "Integration with popular CRM platforms",
-    priority: 3.5,
-    segments: ["integration"],
-    complexity: "Low" as const,
-    status: "Open",
-    createdAt: "2023-03-15T10:00:00Z",
-    description: "Add native integration support for major CRM platforms to sync customer data and ticket information."
-  }
-];
-
 const FeatureRequests = () => {
+  const [features, setFeatures] = useState([]);
   const [sortBy, setSortBy] = useState("priority");
   const [filterBy, setFilterBy] = useState("all");
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredFeatures = mockFeatures
-    .filter(feature => 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("Error retrieving authenticated user:", userError);
+          return;
+        }
+
+        if (!userData?.user) {
+          console.error("No authenticated user found");
+          return;
+        }
+
+        const userProfileId = userData.user.id;
+
+        const { data, error } = await supabase
+          .from("dashboard_data")
+          .select("db, profile_id")
+          .eq("profile_id", userProfileId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching data from dashboard_data:", error);
+          return;
+        }
+
+        if (data && data.db?.feature_requests?.requests) {
+          // Filter out features without a URL
+          const validFeatures = data.db.feature_requests.requests.filter(
+            (feature) => feature.url && feature.url.length > 0
+          );
+
+          // Map data to match the required structure
+          const mappedFeatures = validFeatures.map((feature) => ({
+            summary: feature.title,
+            priority: feature.impact_score,
+            segments: feature.tags,
+            complexity: feature.complexity,
+            status: "Open", // Assuming status is "Open" as not provided
+            createdAt: feature.since,
+            description: feature.description || "No description available",
+          }));
+
+          setFeatures(mappedFeatures);
+        }
+      } catch (error) {
+        console.error("Error fetching data from Supabase:", error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const filteredFeatures = features
+    .filter((feature) =>
       filterBy === "all" ? true : feature.segments.includes(filterBy.toLowerCase())
     )
-    .sort((a, b) => 
-      sortBy === "priority" 
-        ? b.priority - a.priority 
+    .sort((a, b) =>
+      sortBy === "priority"
+        ? b.priority - a.priority
         : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
@@ -94,10 +95,7 @@ const FeatureRequests = () => {
         />
       </div>
 
-      <FeatureGrid 
-        features={filteredFeatures} 
-        isLoading={isLoading} 
-      />
+      <FeatureGrid features={filteredFeatures} isLoading={isLoading} />
     </div>
   );
 };
