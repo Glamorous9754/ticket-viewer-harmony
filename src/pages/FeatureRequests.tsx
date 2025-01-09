@@ -53,9 +53,9 @@ const FeatureRequests = () => {
             summary: feature.title,
             segments: feature.tags,
             complexity: feature.complexity,
-            status: "Open", // Assuming status is "Open" as not provided
-            createdAt: feature.since,
-            description: feature.description || "No description available",
+            impactScore: feature.impact_score, // Ensure impact score is correctly displayed
+            createdAt: new Date(feature.since).toLocaleDateString("en-US"), // Format date accurately
+            description: "No description available", // Add placeholder if needed
           }));
 
           setFeatures(mappedFeatures);
