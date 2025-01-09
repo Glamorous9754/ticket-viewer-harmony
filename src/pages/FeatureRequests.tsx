@@ -65,16 +65,19 @@ const FeatureRequests = () => {
     fetchData();
   }, []);
 
-  const sortedAndFilteredFeatures = features
-    .filter((feature) =>
-      filterBy === "all" ? true : feature.segments.includes(filterBy)
-    )
-    .sort((a, b) => {
-      if (sortBy === "priority") {
-        return b.priority - a.priority;
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+ const sortedAndFilteredFeatures = features
+  .filter((feature) =>
+    filterBy === "all" 
+      ? true 
+      : feature.segments.some((tag) => tag.toLowerCase() === filterBy.toLowerCase())
+  )
+  .sort((a, b) => {
+    if (sortBy === "priority") {
+      return b.priority - a.priority;
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
 
   return (
     <div className="space-y-6">
