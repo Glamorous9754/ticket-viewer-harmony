@@ -5,7 +5,7 @@ import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
-  const [segments, setSegments] = useState([]); // Dynamic segments
+  const [segments, setSegments] = useState<string[]>([]);
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +30,7 @@ const FeatureRequests = () => {
 
         const { data, error } = await supabase
           .from("dashboard_data")
-          .select("db, profile_id")
+          .select("db")
           .eq("profile_id", userProfileId)
           .single();
 
@@ -39,42 +39,21 @@ const FeatureRequests = () => {
           return;
         }
 
-        if (data && typeof data.db === "string") {
-          // Parse the `db` field if it's a string
-          const parsedDb = JSON.parse(data.db);
-
-          if (parsedDb.feature_requests) {
-            const { requests, segments: dynamicSegments } = parsedDb.feature_requests;
-
-            // Map data to match the required structure
-            const mappedFeatures = requests.map((feature) => ({
-              summary: feature.title,
-              priority: feature.impact_score || 0,
-              segments: feature.tags || [],
-              complexity: feature.complexity || "Low",
-              createdAt: new Date(feature.since).toLocaleDateString("en-US"), // Format date accurately
-              description: feature.description || "No description available",
-            }));
-
-            setFeatures(mappedFeatures);
-            setSegments(["all", ...dynamicSegments]); // Add "all" option and fetched segments
-          }
-        } else if (data?.db?.feature_requests) {
-          // If already parsed
+        if (data?.db?.feature_requests) {
           const { requests, segments: dynamicSegments } = data.db.feature_requests;
 
-          // Map data to match the required structure
           const mappedFeatures = requests.map((feature) => ({
             summary: feature.title,
             priority: feature.impact_score || 0,
             segments: feature.tags || [],
             complexity: feature.complexity || "Low",
-            createdAt: new Date(feature.since).toLocaleDateString("en-US"), // Format date accurately
+            createdAt: feature.since,
             description: feature.description || "No description available",
+            url: feature.url || null,
           }));
 
           setFeatures(mappedFeatures);
-          setSegments(["all", ...dynamicSegments]); // Add "all" option and fetched segments
+          setSegments(dynamicSegments || []);
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -86,9 +65,16 @@ const FeatureRequests = () => {
     fetchData();
   }, []);
 
-  const filteredFeatures = features.filter((feature) =>
-    filterBy === "all" ? true : feature.segments.includes(filterBy)
-  );
+  const sortedAndFilteredFeatures = features
+    .filter((feature) =>
+      filterBy === "all" ? true : feature.segments.includes(filterBy)
+    )
+    .sort((a, b) => {
+      if (sortBy === "priority") {
+        return b.priority - a.priority;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   return (
     <div className="space-y-6">
@@ -107,11 +93,11 @@ const FeatureRequests = () => {
           filterBy={filterBy}
           onSortChange={setSortBy}
           onFilterChange={setFilterBy}
-          availableSegments={segments} // Pass dynamic segments
+          segments={segments}
         />
       </div>
 
-      <FeatureGrid features={filteredFeatures} isLoading={isLoading} />
+      <FeatureGrid features={sortedAndFilteredFeatures} isLoading={isLoading} />
     </div>
   );
 };
