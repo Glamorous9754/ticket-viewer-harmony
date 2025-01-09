@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Link2Off } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Platform } from "./types/platform";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const PlatformSelector = () => {
   const { toast } = useToast();
@@ -85,24 +86,6 @@ export const PlatformSelector = () => {
         variant: "destructive",
       });
       setIsLoading(null);
-    }
-  };
-
-  const handleDisconnect = async (platform: Platform) => {
-    try {
-      setAuthenticatedPlatform(null);
-      localStorage.removeItem('authenticatedPlatform');
-      toast({
-        title: "Success",
-        description: `Successfully disconnected from ${platform}!`,
-      });
-    } catch (error) {
-      console.error('Failed to disconnect:', error);
-      toast({
-        title: "Error",
-        description: "Failed to disconnect. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -188,6 +171,23 @@ export const PlatformSelector = () => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="p-6 space-y-4">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-9 w-full" />
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Connect Your Support Platform</h2>
@@ -198,23 +198,13 @@ export const PlatformSelector = () => {
             <p className="text-gray-600 mb-4">{platform.description}</p>
             <div className="space-y-2">
               <Button
-                onClick={() => 
-                  authenticatedPlatform === platform.id 
-                    ? handleDisconnect(platform.id)
-                    : handleConnect(platform.id)
-                }
+                onClick={() => handleConnect(platform.id)}
                 className="w-full"
                 disabled={isLoading !== null || 
                          (authenticatedPlatform && authenticatedPlatform !== platform.id)}
-                variant={authenticatedPlatform === platform.id ? "destructive" : "default"}
               >
                 {isLoading === platform.id ? (
                   "Connecting..."
-                ) : authenticatedPlatform === platform.id ? (
-                  <>
-                    <Link2Off className="mr-2 h-4 w-4" />
-                    Disconnect
-                  </>
                 ) : (
                   `Connect ${platform.name}`
                 )}
