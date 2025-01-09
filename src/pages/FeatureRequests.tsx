@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client"; // Import your Supabase client
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
-import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
-  const [segments, setSegments] = useState([]); // Store dynamic segments
-  const [filterBy, setFilterBy] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +34,7 @@ const FeatureRequests = () => {
         }
 
         if (data && data.db?.feature_requests) {
-          const { requests, segments: dynamicSegments } = data.db.feature_requests;
+          const { requests } = data.db.feature_requests;
 
           // Filter out features without a URL
           const validFeatures = requests.filter(
@@ -55,7 +52,6 @@ const FeatureRequests = () => {
           }));
 
           setFeatures(mappedFeatures);
-          setSegments(dynamicSegments); // Set dynamic segments
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -66,14 +62,6 @@ const FeatureRequests = () => {
 
     fetchData();
   }, []);
-
-  const filteredFeatures = features
-    .filter((feature) =>
-      filterBy === "all" ? true : feature.segments.includes(filterBy.toLowerCase())
-    )
-    .sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
 
   return (
     <div className="space-y-6">
@@ -86,15 +74,7 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      <div className="flex justify-between items-center">
-        <FeatureFilters
-          filterBy={filterBy}
-          onFilterChange={setFilterBy}
-          availableSegments={segments} // Pass dynamic segments
-        />
-      </div>
-
-      <FeatureGrid features={filteredFeatures} isLoading={isLoading} />
+      <FeatureGrid features={features} isLoading={isLoading} />
     </div>
   );
 };
