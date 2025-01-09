@@ -5,6 +5,7 @@ import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
+  const [segments, setSegments] = useState([]); // Dynamic segments
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +39,28 @@ const FeatureRequests = () => {
           return;
         }
 
-        if (data && data.db?.feature_requests) {
+        if (data && typeof data.db === "string") {
+          // Parse the `db` field if it's a string
+          const parsedDb = JSON.parse(data.db);
+
+          if (parsedDb.feature_requests) {
+            const { requests, segments: dynamicSegments } = parsedDb.feature_requests;
+
+            // Map data to match the required structure
+            const mappedFeatures = requests.map((feature) => ({
+              summary: feature.title,
+              priority: feature.impact_score || 0,
+              segments: feature.tags || [],
+              complexity: feature.complexity || "Low",
+              createdAt: new Date(feature.since).toLocaleDateString("en-US"), // Format date accurately
+              description: feature.description || "No description available",
+            }));
+
+            setFeatures(mappedFeatures);
+            setSegments(["all", ...dynamicSegments]); // Add "all" option and fetched segments
+          }
+        } else if (data?.db?.feature_requests) {
+          // If already parsed
           const { requests, segments: dynamicSegments } = data.db.feature_requests;
 
           // Map data to match the required structure
@@ -47,11 +69,12 @@ const FeatureRequests = () => {
             priority: feature.impact_score || 0,
             segments: feature.tags || [],
             complexity: feature.complexity || "Low",
-            createdAt: feature.since,
+            createdAt: new Date(feature.since).toLocaleDateString("en-US"), // Format date accurately
             description: feature.description || "No description available",
           }));
 
           setFeatures(mappedFeatures);
+          setSegments(["all", ...dynamicSegments]); // Add "all" option and fetched segments
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -84,6 +107,7 @@ const FeatureRequests = () => {
           filterBy={filterBy}
           onSortChange={setSortBy}
           onFilterChange={setFilterBy}
+          availableSegments={segments} // Pass dynamic segments
         />
       </div>
 
