@@ -5,7 +5,7 @@ import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
-  const [sortBy, setSortBy] = useState("priority");
+  const [segments, setSegments] = useState([]); // Store dynamic segments
   const [filterBy, setFilterBy] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,16 +36,17 @@ const FeatureRequests = () => {
           return;
         }
 
-        if (data && data.db?.feature_requests?.requests) {
+        if (data && data.db?.feature_requests) {
+          const { requests, segments: dynamicSegments } = data.db.feature_requests;
+
           // Filter out features without a URL
-          const validFeatures = data.db.feature_requests.requests.filter(
+          const validFeatures = requests.filter(
             (feature) => feature.url && feature.url.length > 0
           );
 
           // Map data to match the required structure
           const mappedFeatures = validFeatures.map((feature) => ({
             summary: feature.title,
-            priority: feature.impact_score, // Keep priority as-is
             segments: feature.tags,
             complexity: feature.complexity,
             status: "Open", // Assuming status is "Open" as not provided
@@ -54,6 +55,7 @@ const FeatureRequests = () => {
           }));
 
           setFeatures(mappedFeatures);
+          setSegments(dynamicSegments); // Set dynamic segments
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -70,9 +72,7 @@ const FeatureRequests = () => {
       filterBy === "all" ? true : feature.segments.includes(filterBy.toLowerCase())
     )
     .sort((a, b) =>
-      sortBy === "priority"
-        ? b.priority - a.priority
-        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
   return (
@@ -88,10 +88,9 @@ const FeatureRequests = () => {
 
       <div className="flex justify-between items-center">
         <FeatureFilters
-          sortBy={sortBy}
           filterBy={filterBy}
-          onSortChange={setSortBy}
           onFilterChange={setFilterBy}
+          availableSegments={segments} // Pass dynamic segments
         />
       </div>
 
