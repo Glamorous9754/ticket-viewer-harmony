@@ -33,8 +33,15 @@ const CustomerIntelligence = () => {
           return;
         }
 
-        // Assuming the data has your JSON in the "db" field
-        if (data && data?.db?.customer_intelligence_issues) {
+        if (data && typeof data.db === "string") {
+          // Parse the `db` field if it's a string
+          const parsedDb = JSON.parse(data.db);
+
+          if (parsedDb.customer_intelligence_issues) {
+            setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
+          }
+        } else if (data?.db?.customer_intelligence_issues) {
+          // If already parsed
           setCustomerIntelligenceData(data.db.customer_intelligence_issues);
         }
       } catch (error) {
