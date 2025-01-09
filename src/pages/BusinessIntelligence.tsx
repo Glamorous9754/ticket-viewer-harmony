@@ -6,6 +6,13 @@ import OpportunityMetricsSection from "../components/dashboard/sections/Opportun
 import MarketInsightsSection from "../components/dashboard/sections/MarketInsightsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface ProductMarketInsight {
+  color: string;
+  key_pain_points: string[];
+  satisfaction_score: string;
+  actionable_insights: string;
+}
+
 const BusinessIntelligence = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [workingWell, setWorkingWell] = useState([]);
@@ -56,7 +63,7 @@ const BusinessIntelligence = () => {
             whats_working?.map((item) => ({
               title: item.title,
               count: parseInt(item.mentions),
-              isRising: false, // You might want to add this to your data structure
+              isRising: false,
               lastDate: item.since,
               sampleTickets: item.sample_tickets,
               commonPhrases: item.common_phrases,
@@ -69,7 +76,7 @@ const BusinessIntelligence = () => {
           setRiskAlerts(
             risk_alerts?.map((item) => ({
               type: item.title,
-              severity: "High", // You might want to add this to your data structure
+              severity: item.color === "red" ? "High" : "Low",
               segment: item.affecting,
               evidence: item.details,
             })) || []
@@ -80,7 +87,7 @@ const BusinessIntelligence = () => {
             opportunity_metrics?.map((item) => ({
               title: item.title,
               count: parseInt(item.mentions),
-              isRising: true, // You might want to add this to your data structure
+              isRising: item.color === "red",
               lastDate: item.since,
               sampleTickets: item.sample_tickets,
               commonPhrases: item.common_phrases,
@@ -94,9 +101,9 @@ const BusinessIntelligence = () => {
             setInsights(
               Object.entries(product_market_insights).map(([segment, data]) => ({
                 segment,
-                painPoints: data.key_pain_points || [],
-                satisfaction: parseFloat(data.satisfaction_score) || 0,
-                suggestions: data.actionable_insights || "",
+                painPoints: (data as ProductMarketInsight).key_pain_points || [],
+                satisfaction: parseFloat((data as ProductMarketInsight).satisfaction_score) || 0,
+                suggestions: (data as ProductMarketInsight).actionable_insights || "",
               }))
             );
           }

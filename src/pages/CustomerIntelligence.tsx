@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../integrations/supabase/client"; // Import your Supabase client
+import { supabase } from "../integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
 
+interface CustomerIntelligenceIssue {
+  title: string;
+  mentions: number;
+  since: string;
+  common_phrases: string[];
+  sample_tickets: string[];
+  suggested_category: string;
+  color: "red" | "green";
+}
+
 const CustomerIntelligence = () => {
-  const [customerIntelligenceData, setCustomerIntelligenceData] = useState(null);
+  const [customerIntelligenceData, setCustomerIntelligenceData] = useState<CustomerIntelligenceIssue[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +34,7 @@ const CustomerIntelligence = () => {
 
         const { data, error } = await supabase
           .from("dashboard_data")
-          .select("db, profile_id")
+          .select("db")
           .eq("profile_id", userProfileId)
           .single();
 
@@ -34,14 +44,11 @@ const CustomerIntelligence = () => {
         }
 
         if (data && typeof data.db === "string") {
-          // Parse the `db` field if it's a string
           const parsedDb = JSON.parse(data.db);
-
           if (parsedDb.customer_intelligence_issues) {
             setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
           }
         } else if (data?.db?.customer_intelligence_issues) {
-          // If already parsed
           setCustomerIntelligenceData(data.db.customer_intelligence_issues);
         }
       } catch (error) {
@@ -95,10 +102,10 @@ const CustomerIntelligence = () => {
             <TrendingIssue
               key={index}
               title={issue.title}
-              count={issue.mentions}              // JSON calls it 'mentions'
-              lastDate={issue.since}               // JSON calls it 'since'
-              sampleTickets={issue.sample_tickets} // JSON calls it 'sample_tickets'
-              commonPhrases={issue.common_phrases} // JSON calls it 'common_phrases'
+              count={issue.mentions}
+              lastDate={issue.since}
+              sampleTickets={issue.sample_tickets}
+              commonPhrases={issue.common_phrases}
               suggestedCategory={issue.suggested_category}
               color={issue.color}
               isRising={isRising}
