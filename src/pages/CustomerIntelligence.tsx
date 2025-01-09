@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CustomerIntelligenceIssue {
   title: string;
@@ -64,10 +65,15 @@ const CustomerIntelligence = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Customer Intelligence Hub
-        </h1>
-        <p className="text-gray-500">Loading data...</p>
+        <Skeleton className="h-10 w-64 mb-2" />
+        <Skeleton className="h-5 w-96 mb-6" />
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <Skeleton className="h-24 w-full rounded-lg" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
