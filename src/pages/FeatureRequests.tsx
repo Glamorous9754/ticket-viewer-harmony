@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../integrations/supabase/client"; // Import your Supabase client
+import { supabase } from "../integrations/supabase/client";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
-import { FeatureFilters } from "@/components/dashboard/FeatureFilters"; // Assuming this handles filter UI
+import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
-  const [segments, setSegments] = useState([]); // Dynamic segments
   const [filterBy, setFilterBy] = useState("all");
+  const [sortBy, setSortBy] = useState("priority");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Fetching authenticated user...");
         const { data: userData, error: userError } = await supabase.auth.getUser();
 
         if (userError) {
@@ -28,7 +27,6 @@ const FeatureRequests = () => {
         const userProfileId = userData.user.id;
         console.log("Authenticated user ID:", userProfileId);
 
-        console.log("Fetching dashboard data...");
         const { data, error } = await supabase
           .from("dashboard_data")
           .select("db, profile_id")
@@ -40,28 +38,20 @@ const FeatureRequests = () => {
           return;
         }
 
-        console.log("Fetched dashboard data:", data);
-
         if (data && data.db?.feature_requests) {
           const { requests, segments: dynamicSegments } = data.db.feature_requests;
-
-          console.log("Raw feature requests:", requests);
-          console.log("Dynamic segments:", dynamicSegments);
 
           // Map data to match the required structure
           const mappedFeatures = requests.map((feature) => ({
             summary: feature.title,
-            segments: feature.tags,
-            complexity: feature.complexity,
-            impactScore: feature.impact_score, // Ensure impact score is correctly displayed
-            createdAt: new Date(feature.since).toLocaleDateString("en-US"), // Format date accurately
-            description: "No description available", // Add placeholder if needed
+            priority: feature.impact_score || 0,
+            segments: feature.tags || [],
+            complexity: feature.complexity || "Low",
+            createdAt: feature.since,
+            description: feature.description || "No description available",
           }));
 
           setFeatures(mappedFeatures);
-          setSegments(["all", ...dynamicSegments]); // Dynamically add "all" option and fetched segments
-        } else {
-          console.log("No feature requests found in the database.");
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -88,16 +78,15 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      {/* Dynamic Filtering UI */}
       <div className="flex justify-between items-center">
         <FeatureFilters
+          sortBy={sortBy}
           filterBy={filterBy}
+          onSortChange={setSortBy}
           onFilterChange={setFilterBy}
-          availableSegments={segments} // Pass dynamic segments for filter options
         />
       </div>
 
-      {/* Feature Grid */}
       <FeatureGrid features={filteredFeatures} isLoading={isLoading} />
     </div>
   );

@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Info } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import {
   HoverCard,
   HoverCardContent,
@@ -28,7 +28,7 @@ const FeatureCard = ({
   createdAt,
   description,
 }: FeatureCardProps) => {
-  const impactScore = Math.round((priority * 20));
+  const impactScore = Math.round(priority * 20);
   
   return (
     <Card className="h-full animate-fade-in group relative">
@@ -105,7 +105,7 @@ const FeatureCard = ({
 
           {createdAt && (
             <div className="text-sm text-muted-foreground">
-              Created {formatDistanceToNow(new Date(createdAt))} ago
+              Created on {format(new Date(createdAt), 'MMM dd, yyyy')}
             </div>
           )}
 
