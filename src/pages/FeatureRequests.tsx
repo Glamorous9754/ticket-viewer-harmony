@@ -9,7 +9,9 @@ const FeatureRequests = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("Fetching authenticated user..."); // Log user fetching
         const { data: userData, error: userError } = await supabase.auth.getUser();
+
         if (userError) {
           console.error("Error retrieving authenticated user:", userError);
           return;
@@ -21,7 +23,9 @@ const FeatureRequests = () => {
         }
 
         const userProfileId = userData.user.id;
+        console.log("Authenticated user ID:", userProfileId); // Log user ID
 
+        console.log("Fetching dashboard data...");
         const { data, error } = await supabase
           .from("dashboard_data")
           .select("db, profile_id")
@@ -33,13 +37,20 @@ const FeatureRequests = () => {
           return;
         }
 
+        console.log("Fetched dashboard data:", data); // Log fetched data
+
         if (data && data.db?.feature_requests) {
           const { requests } = data.db.feature_requests;
+
+          // Log raw requests data
+          console.log("Raw feature requests:", requests);
 
           // Filter out features without a URL
           const validFeatures = requests.filter(
             (feature) => feature.url && feature.url.length > 0
           );
+
+          console.log("Valid features after filtering:", validFeatures); // Log valid features
 
           // Map data to match the required structure
           const mappedFeatures = validFeatures.map((feature) => ({
@@ -51,7 +62,11 @@ const FeatureRequests = () => {
             description: feature.description || "No description available",
           }));
 
+          console.log("Mapped features:", mappedFeatures); // Log mapped features
+
           setFeatures(mappedFeatures);
+        } else {
+          console.log("No feature requests found in the database.");
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -62,6 +77,28 @@ const FeatureRequests = () => {
 
     fetchData();
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-primary-foreground mb-2">
+          Requests
+        </h1>
+        <p className="text-muted-foreground">Loading data...</p>
+      </div>
+    );
+  }
+
+  if (features.length === 0) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-primary-foreground mb-2">
+          Requests
+        </h1>
+        <p className="text-muted-foreground">No feature requests available.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
