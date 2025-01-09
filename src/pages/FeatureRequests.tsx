@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client"; // Import your Supabase client
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
+import { FeatureFilters } from "@/components/dashboard/FeatureFilters"; // Assuming this handles filter UI
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
+  const [segments, setSegments] = useState([]); // Dynamic segments
+  const [filterBy, setFilterBy] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Fetching authenticated user..."); // Log user fetching
+        console.log("Fetching authenticated user...");
         const { data: userData, error: userError } = await supabase.auth.getUser();
 
         if (userError) {
@@ -23,7 +26,7 @@ const FeatureRequests = () => {
         }
 
         const userProfileId = userData.user.id;
-        console.log("Authenticated user ID:", userProfileId); // Log user ID
+        console.log("Authenticated user ID:", userProfileId);
 
         console.log("Fetching dashboard data...");
         const { data, error } = await supabase
@@ -37,14 +40,15 @@ const FeatureRequests = () => {
           return;
         }
 
-        console.log("Fetched dashboard data:", data); // Log fetched data
+        console.log("Fetched dashboard data:", data);
 
         if (data && data.db?.feature_requests) {
-          const { requests } = data.db.feature_requests;
+          const { requests, segments: dynamicSegments } = data.db.feature_requests;
 
-          console.log("Raw feature requests:", requests); // Log raw requests
+          console.log("Raw feature requests:", requests);
+          console.log("Dynamic segments:", dynamicSegments);
 
-          // Map data directly without filtering
+          // Map data to match the required structure
           const mappedFeatures = requests.map((feature) => ({
             summary: feature.title,
             segments: feature.tags,
@@ -54,8 +58,8 @@ const FeatureRequests = () => {
             description: feature.description || "No description available",
           }));
 
-          console.log("Mapped features:", mappedFeatures); // Log mapped features
           setFeatures(mappedFeatures);
+          setSegments(["all", ...dynamicSegments]); // Add "all" option for filtering
         } else {
           console.log("No feature requests found in the database.");
         }
@@ -69,27 +73,9 @@ const FeatureRequests = () => {
     fetchData();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-primary-foreground mb-2">
-          Requests
-        </h1>
-        <p className="text-muted-foreground">Loading data...</p>
-      </div>
-    );
-  }
-
-  if (features.length === 0) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-primary-foreground mb-2">
-          Requests
-        </h1>
-        <p className="text-muted-foreground">No feature requests available.</p>
-      </div>
-    );
-  }
+  const filteredFeatures = features.filter((feature) =>
+    filterBy === "all" ? true : feature.segments.includes(filterBy)
+  );
 
   return (
     <div className="space-y-6">
@@ -102,7 +88,17 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      <FeatureGrid features={features} isLoading={isLoading} />
+      {/* Filtering UI */}
+      <div className="flex justify-between items-center">
+        <FeatureFilters
+          filterBy={filterBy}
+          onFilterChange={setFilterBy}
+          availableSegments={segments} // Pass dynamic segments
+        />
+      </div>
+
+      {/* Feature Grid */}
+      <FeatureGrid features={filteredFeatures} isLoading={isLoading} />
     </div>
   );
 };
