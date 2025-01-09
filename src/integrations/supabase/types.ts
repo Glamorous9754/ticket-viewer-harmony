@@ -9,44 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      dashboard_data: {
-        Row: {
-          business_intelligence_metrics: Json | null
-          created_at: string | null
-          customer_intelligence_issues: Json | null
-          feature_requests: Json | null
-          id: string
-          profile_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          business_intelligence_metrics?: Json | null
-          created_at?: string | null
-          customer_intelligence_issues?: Json | null
-          feature_requests?: Json | null
-          id?: string
-          profile_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          business_intelligence_metrics?: Json | null
-          created_at?: string | null
-          customer_intelligence_issues?: Json | null
-          feature_requests?: Json | null
-          id?: string
-          profile_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dashboard_data_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       gmail_credentials: {
         Row: {
           access_token: string | null
@@ -96,49 +58,34 @@ export type Database = {
       }
       gmail_tickets: {
         Row: {
-          body: string | null
-          created_at: string | null
-          date: string | null
-          from_email: string | null
+          created_at: string
           id: string
-          last_fetched_at: string | null
+          last_date: string
           profile_id: string
-          snippet: string | null
-          subject: string | null
           summary: string | null
+          thread: string | null
           thread_id: string
-          to_email: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          body?: string | null
-          created_at?: string | null
-          date?: string | null
-          from_email?: string | null
+          created_at?: string
           id?: string
-          last_fetched_at?: string | null
+          last_date: string
           profile_id: string
-          snippet?: string | null
-          subject?: string | null
           summary?: string | null
+          thread?: string | null
           thread_id: string
-          to_email?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
-          body?: string | null
-          created_at?: string | null
-          date?: string | null
-          from_email?: string | null
+          created_at?: string
           id?: string
-          last_fetched_at?: string | null
+          last_date?: string
           profile_id?: string
-          snippet?: string | null
-          subject?: string | null
           summary?: string | null
+          thread?: string | null
           thread_id?: string
-          to_email?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -257,6 +204,7 @@ export type Database = {
       tickets: {
         Row: {
           agent_id: string | null
+          comments: Json | null
           created_at: string
           created_date: string
           customer_id: string | null
@@ -267,14 +215,13 @@ export type Database = {
           profile_id: string
           resolved_date: string | null
           status: Database["public"]["Enums"]["ticket_status"]
-          subjects: Json | null
           summary: string | null
           thread: string | null
           updated_at: string
-          web_url: string | null
         }
         Insert: {
           agent_id?: string | null
+          comments?: Json | null
           created_at?: string
           created_date: string
           customer_id?: string | null
@@ -285,14 +232,13 @@ export type Database = {
           profile_id: string
           resolved_date?: string | null
           status: Database["public"]["Enums"]["ticket_status"]
-          subjects?: Json | null
           summary?: string | null
           thread?: string | null
           updated_at?: string
-          web_url?: string | null
         }
         Update: {
           agent_id?: string | null
+          comments?: Json | null
           created_at?: string
           created_date?: string
           customer_id?: string | null
@@ -303,11 +249,9 @@ export type Database = {
           profile_id?: string
           resolved_date?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
-          subjects?: Json | null
           summary?: string | null
           thread?: string | null
           updated_at?: string
-          web_url?: string | null
         }
         Relationships: [
           {
@@ -334,9 +278,7 @@ export type Database = {
           id: string
           profile_id: string | null
           refresh_token: string | null
-          status:
-            | Database["public"]["Enums"]["zendesk_connection_status"]
-            | null
+          status: Database["public"]["Enums"]["zendesk_connection_status"] | null
           subdomain: string | null
           token_type: string | null
           updated_at: string
@@ -348,9 +290,7 @@ export type Database = {
           id?: string
           profile_id?: string | null
           refresh_token?: string | null
-          status?:
-            | Database["public"]["Enums"]["zendesk_connection_status"]
-            | null
+          status?: Database["public"]["Enums"]["zendesk_connection_status"] | null
           subdomain?: string | null
           token_type?: string | null
           updated_at?: string
@@ -362,9 +302,7 @@ export type Database = {
           id?: string
           profile_id?: string | null
           refresh_token?: string | null
-          status?:
-            | Database["public"]["Enums"]["zendesk_connection_status"]
-            | null
+          status?: Database["public"]["Enums"]["zendesk_connection_status"] | null
           subdomain?: string | null
           token_type?: string | null
           updated_at?: string
@@ -426,6 +364,47 @@ export type Database = {
           },
         ]
       }
+      // -----------------------------
+      // NEW TABLE: dashboard_data
+      // -----------------------------
+      dashboard_data: {
+        Row: {
+          id: string
+          profile_id: string | null
+          created_at: string
+          updated_at: string
+          customer_intelligence_data: Json | null
+          business_intelligence_metrics: Json | null
+          feature_requests: Json | null
+        }
+        Insert: {
+          id?: string
+          profile_id?: string | null
+          created_at?: string
+          updated_at?: string
+          customer_intelliegence_data?: Json | null
+          business_intelligence_metrics?: Json | null
+          feature_requests?: Json | null
+        }
+        Update: {
+          id?: string
+          profile_id?: string | null
+          created_at?: string
+          updated_at?: string
+          customer_intelliegence_data?: Json | null
+          business_intelligence_metrics?: Json | null
+          feature_requests?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_data_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -450,9 +429,6 @@ export type Database = {
         | "hold"
         | "solved"
         | "closed"
-        | "Resolved"
-        | '"On Hold"'
-        | "On Hold"
       zendesk_connection_status:
         | "active"
         | "inactive"
@@ -491,13 +467,13 @@ export type Tables<
     : never
   : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
         PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+  ? (PublicSchema["Tables"] &
+      PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
     : never
+  : never
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
@@ -513,12 +489,12 @@ export type TablesInsert<
     ? I
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
     : never
+  : never
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
@@ -534,12 +510,12 @@ export type TablesUpdate<
     ? U
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
     : never
+  : never
 
 export type Enums<
   PublicEnumNameOrOptions extends
@@ -551,8 +527,8 @@ export type Enums<
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
-    : never
+  ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
@@ -566,5 +542,5 @@ export type CompositeTypes<
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
