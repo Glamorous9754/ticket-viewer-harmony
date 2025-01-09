@@ -45,7 +45,7 @@ const FeatureRequests = () => {
           // Map data to match the required structure
           const mappedFeatures = validFeatures.map((feature) => ({
             summary: feature.title,
-            priority: feature.impact_score,
+            priority: feature.impact_score, // Keep priority as-is
             segments: feature.tags,
             complexity: feature.complexity,
             status: "Open", // Assuming status is "Open" as not provided
