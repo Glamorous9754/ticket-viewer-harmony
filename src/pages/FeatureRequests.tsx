@@ -5,7 +5,7 @@ import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
-  const [segments, setSegments] = useState<string[]>([]);
+  const [segments, setSegments] = useState<string[]>([]); // Dynamic segments
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +26,6 @@ const FeatureRequests = () => {
         }
 
         const userProfileId = userData.user.id;
-        console.log("Authenticated user ID:", userProfileId);
 
         const { data, error } = await supabase
           .from("dashboard_data")
@@ -39,8 +38,14 @@ const FeatureRequests = () => {
           return;
         }
 
-        if (data?.db?.feature_requests) {
-          const { requests, segments: dynamicSegments } = data.db.feature_requests;
+        // Ensure `db` field is parsed as JSON
+        let parsedDb;
+        if (data?.db) {
+          parsedDb = typeof data.db === "string" ? JSON.parse(data.db) : data.db;
+        }
+
+        if (parsedDb?.feature_requests) {
+          const { requests, segments: dynamicSegments } = parsedDb.feature_requests;
 
           const mappedFeatures = requests.map((feature) => ({
             summary: feature.title,
@@ -49,11 +54,13 @@ const FeatureRequests = () => {
             complexity: feature.complexity || "Low",
             createdAt: feature.since,
             description: feature.description || "No description available",
-            url: feature.url || null,
+            url: feature.url || null, // Pass the URL to the FeatureCard component
           }));
 
           setFeatures(mappedFeatures);
           setSegments(dynamicSegments || []);
+        } else {
+          console.warn("No feature requests found in the database.");
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -65,19 +72,18 @@ const FeatureRequests = () => {
     fetchData();
   }, []);
 
- const sortedAndFilteredFeatures = features
-  .filter((feature) =>
-    filterBy === "all" 
-      ? true 
-      : feature.segments.some((tag) => tag.toLowerCase() === filterBy.toLowerCase())
-  )
-  .sort((a, b) => {
-    if (sortBy === "priority") {
-      return b.priority - a.priority;
-    }
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-
+  const sortedAndFilteredFeatures = features
+    .filter((feature) =>
+      filterBy === "all" 
+        ? true 
+        : feature.segments.some((tag) => tag.toLowerCase() === filterBy.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === "priority") {
+        return b.priority - a.priority;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   return (
     <div className="space-y-6">
