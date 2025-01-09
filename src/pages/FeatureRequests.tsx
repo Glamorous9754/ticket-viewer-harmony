@@ -42,18 +42,10 @@ const FeatureRequests = () => {
         if (data && data.db?.feature_requests) {
           const { requests } = data.db.feature_requests;
 
-          // Log raw requests data
-          console.log("Raw feature requests:", requests);
+          console.log("Raw feature requests:", requests); // Log raw requests
 
-          // Filter out features without a URL
-          const validFeatures = requests.filter(
-            (feature) => feature.url && feature.url.length > 0
-          );
-
-          console.log("Valid features after filtering:", validFeatures); // Log valid features
-
-          // Map data to match the required structure
-          const mappedFeatures = validFeatures.map((feature) => ({
+          // Map data directly without filtering
+          const mappedFeatures = requests.map((feature) => ({
             summary: feature.title,
             segments: feature.tags,
             complexity: feature.complexity,
@@ -63,7 +55,6 @@ const FeatureRequests = () => {
           }));
 
           console.log("Mapped features:", mappedFeatures); // Log mapped features
-
           setFeatures(mappedFeatures);
         } else {
           console.log("No feature requests found in the database.");
