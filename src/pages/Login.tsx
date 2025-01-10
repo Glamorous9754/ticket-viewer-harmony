@@ -4,17 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
-const Login = () => {
+export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN") navigate("/");
+    // Listen for auth changes (sign in / sign out)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        // Redirect user to home page after successful sign-in
+        navigate("/");
       }
-    );
+    });
 
-    return () => subscription.unsubscribe();
+    // Cleanup subscription on unmount
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [navigate]);
 
   return (
@@ -43,12 +50,14 @@ const Login = () => {
                 input: "rounded-md",
               },
             }}
+            // Enable Google as an OAuth provider
             providers={["google"]}
+            // IMPORTANT: Make sure this URL matches what you put in both
+            // your Google console and your Supabase settings
+            redirectTo={`${window.location.origin}/`}
           />
         </div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}
