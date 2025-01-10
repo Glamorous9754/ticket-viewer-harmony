@@ -32,11 +32,16 @@ const Chat = () => {
     setIsLoading(true);
 
     try {
-      const { data: { secret: openRouterKey } } = await supabase
-        .from('secrets')
-        .select('secret')
-        .eq('name', 'OPEN_ROUTER_KEY')
-        .single();
+      // Get API key from serverless function
+      const keyResponse = await supabase.functions.invoke('get-api-key', {
+        method: 'POST',
+      });
+
+      if (keyResponse.error) {
+        throw new Error('Failed to retrieve API key');
+      }
+
+      const { data: { secret: openRouterKey } } = keyResponse;
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
