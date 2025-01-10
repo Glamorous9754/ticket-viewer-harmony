@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,52 +11,17 @@ interface Message {
   content: string;
 }
 
-interface TicketContext {
-  id: string;
-  summary: string;
-}
-
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [ticketContext, setTicketContext] = useState<TicketContext[]>([]);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchTicketSummaries = async () => {
-      try {
-        const { data: tickets, error } = await supabase
-          .from('tickets')
-          .select('id, summary')
-          .order('created_at', { ascending: false })
-          .limit(500)
-          .not('summary', 'is', null);
-
-        if (error) {
-          console.error('Error fetching tickets:', error);
-          return;
-        }
-
-        setTicketContext(tickets as TicketContext[]);
-      } catch (error) {
-        console.error('Error in fetchTicketSummaries:', error);
-      }
-    };
-
-    fetchTicketSummaries();
-  }, []);
-
-  const formatTicketContext = () => {
-    return ticketContext
-      .map(ticket => `Ticket ${ticket.id}: ${ticket.summary}`)
-      .join('\n');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
     
+    // Add user message
     const newMessage: Message = {
       role: "user",
       content: message.trim()
@@ -67,6 +32,7 @@ const Chat = () => {
     setIsLoading(true);
 
     try {
+      // Get API key from serverless function
       const keyResponse = await supabase.functions.invoke('get-api-key', {
         method: 'POST',
       });
@@ -76,12 +42,6 @@ const Chat = () => {
       }
 
       const { data: { secret: openRouterKey } } = keyResponse;
-
-      // Create system message with ticket context
-      const systemMessage = {
-        role: "system",
-        content: `You are a helpful assistant with access to the following ticket summaries. Use this context to provide relevant answers:\n\n${formatTicketContext()}\n\nWhen referring to tickets, use their IDs. Base your responses on this historical ticket data when relevant.`
-      };
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -93,7 +53,10 @@ const Chat = () => {
         },
         body: JSON.stringify({
           model: 'deepseek/deepseek-chat',
-          messages: [systemMessage, ...messages, newMessage],
+          messages: [...messages, newMessage].map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
           temperature: 0.7,
           max_tokens: 1000,
         }),
@@ -201,6 +164,8 @@ const Chat = () => {
                 <Send className="w-5 h-5" />
               </Button>
             </div>
+          </form>
+        </div>
       </div>
     </div>
   );
