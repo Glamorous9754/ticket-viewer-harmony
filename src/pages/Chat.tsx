@@ -36,12 +36,18 @@ const Chat = () => {
         throw new Error("Failed to get user data");
       }
 
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("You must be logged in to fetch tickets");
+      }
+
       const response = await fetch(
         "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/chat-bot",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             query: message.trim(),
