@@ -27,7 +27,6 @@ const Chat = () => {
   useEffect(() => {
     const fetchTicketSummaries = async () => {
       try {
-        // Get the current user
         const { data: userData, error: userError } = await supabase.auth.getUser();
 
         if (userError) {
@@ -54,7 +53,6 @@ const Chat = () => {
           return;
         }
 
-        // Extract ticket summaries from the "db" field
         const ticketSummaries = data?.db?.tickets || [];
         setTicketContext(
           ticketSummaries.map(
@@ -81,9 +79,9 @@ const Chat = () => {
     return ticketContext
       .map(
         (ticket) =>
-          `Ticket ${ticket.external_ticket_id}: ${ticket.summary}\nURL: ${ticket.web_url}`
+          `Ticket ID: [${ticket.external_ticket_id}](${ticket.web_url})\nSummary: ${ticket.summary}`
       )
-      .join("\n");
+      .join("\n\n");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,7 +112,7 @@ const Chat = () => {
 
       const systemMessage = {
         role: "system",
-        content: `You are a helpful assistant with access to the following ticket summaries. Use this context to provide relevant answers:\n\n${formatTicketContext()}\n\nWhen referring to tickets, use their external_ticket_id and provide the hyperlink (web_url) for reference.`,
+        content: `You are a helpful assistant with access to the following ticket summaries. Use this context to provide relevant answers:\n\n${formatTicketContext()}\n\nWhen referring to tickets, always hyperlink the ticket ID with its URL. Follow the format provided for clarity.`,
       };
 
       const response = await fetch(
