@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,74 +11,140 @@ interface Message {
   content: string;
 }
 
+interface TicketContext {
+  id: string;
+  summary: string;
+}
+
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [ticketContext, setTicketContext] = useState<TicketContext[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchTicketSummaries = async () => {
+      try {
+        // Get the current user
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+
+        if (userError) {
+          console.error("Error retrieving user:", userError);
+          return;
+        }
+
+        if (!userData?.user) {
+          console.error("No authenticated user found");
+          return;
+        }
+
+        const userProfileId = userData.user.id;
+
+        // Fetch ticket summaries for the current user
+        const { data, error } = await supabase
+          .from("dashboard_data")
+          .select("db")
+          .eq("profile_id", userProfileId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching user-specific data:", error);
+          return;
+        }
+
+        // Extract ticket summaries from the "db" field
+        const ticketSummaries = data?.db?.tickets || [];
+        setTicketContext(
+          ticketSummaries.map((ticket: { id: string; summary: string }) => ({
+            id: ticket.id,
+            summary: ticket.summary,
+          }))
+        );
+      } catch (error) {
+        console.error("Error in fetchTicketSummaries:", error);
+      }
+    };
+
+    fetchTicketSummaries();
+  }, []);
+
+  const formatTicketContext = () => {
+    return ticketContext
+      .map((ticket) => `Ticket ${ticket.id}: ${ticket.summary}`)
+      .join("\n");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
-    
-    // Add user message
+
     const newMessage: Message = {
       role: "user",
-      content: message.trim()
+      content: message.trim(),
     };
-    
-    setMessages(prev => [...prev, newMessage]);
+
+    setMessages((prev) => [...prev, newMessage]);
     setMessage("");
     setIsLoading(true);
 
     try {
-      // Get API key from serverless function
-      const keyResponse = await supabase.functions.invoke('get-api-key', {
-        method: 'POST',
+      const keyResponse = await supabase.functions.invoke("get-api-key", {
+        method: "POST",
       });
 
       if (keyResponse.error) {
-        throw new Error('Failed to retrieve API key');
+        throw new Error("Failed to retrieve API key");
       }
 
-      const { data: { secret: openRouterKey } } = keyResponse;
+      const {
+        data: { secret: openRouterKey },
+      } = keyResponse;
 
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openRouterKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Support AI Chat'
-        },
-        body: JSON.stringify({
-          model: 'deepseek/deepseek-chat',
-          messages: [...messages, newMessage].map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })),
-          temperature: 0.7,
-          max_tokens: 1000,
-        }),
-      });
+      const systemMessage = {
+        role: "system",
+        content: `You are a helpful assistant with access to the following ticket summaries. Use this context to provide relevant answers:\n\n${formatTicketContext()}\n\nWhen referring to tickets, use their IDs. Base your responses on this historical ticket data when relevant.`,
+      };
+
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${openRouterKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "Support AI Chat",
+          },
+          body: JSON.stringify({
+            model: "deepseek/deepseek-chat",
+            messages: [systemMessage, ...messages, newMessage],
+            temperature: 0.7,
+            max_tokens: 1000,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to get response from AI');
+        throw new Error("Failed to get response from AI");
       }
 
       const data = await response.json();
       const aiResponse = data.choices[0]?.message?.content;
 
       if (aiResponse) {
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: aiResponse
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: aiResponse,
+          },
+        ]);
       } else {
-        throw new Error('Invalid response format from AI');
+        throw new Error("Invalid response format from AI");
       }
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error("Chat error:", error);
       toast({
         title: "Error",
         description: "Failed to get AI response. Please try again.",
@@ -93,9 +159,11 @@ const Chat = () => {
     <div className="flex flex-col h-[calc(100vh-6rem)]">
       <div className="flex-1 w-full max-w-3xl mx-auto bg-background/95 rounded-xl border border-border/20 backdrop-blur-sm">
         <div className="p-4 border-b border-border/20">
-          <h2 className="text-lg font-semibold text-primary-foreground">Chat Assistant</h2>
+          <h2 className="text-lg font-semibold text-primary-foreground">
+            Chat Assistant
+          </h2>
         </div>
-        
+
         <ScrollArea className="flex-1 px-4 py-6 h-[calc(100vh-16rem)]">
           <div className="space-y-6">
             {messages.map((msg, index) => (
@@ -129,7 +197,7 @@ const Chat = () => {
             )}
           </div>
         </ScrollArea>
-        
+
         <div className="p-4 bg-background/95 border-t border-border/20 rounded-b-xl backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="relative">
             <div className="flex gap-3 items-end">
@@ -155,8 +223,8 @@ const Chat = () => {
                   disabled={isLoading}
                 />
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 size="lg"
                 disabled={!message.trim() || isLoading}
                 className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6 rounded-xl"
