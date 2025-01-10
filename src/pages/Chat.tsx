@@ -12,8 +12,9 @@ interface Message {
 }
 
 interface TicketContext {
-  id: string;
+  external_ticket_id: string;
   summary: string;
+  web_url: string;
 }
 
 const Chat = () => {
@@ -56,10 +57,17 @@ const Chat = () => {
         // Extract ticket summaries from the "db" field
         const ticketSummaries = data?.db?.tickets || [];
         setTicketContext(
-          ticketSummaries.map((ticket: { id: string; summary: string }) => ({
-            id: ticket.id,
-            summary: ticket.summary,
-          }))
+          ticketSummaries.map(
+            (ticket: {
+              external_ticket_id: string;
+              summary: string;
+              web_url: string;
+            }) => ({
+              external_ticket_id: ticket.external_ticket_id,
+              summary: ticket.summary,
+              web_url: ticket.web_url,
+            })
+          )
         );
       } catch (error) {
         console.error("Error in fetchTicketSummaries:", error);
@@ -71,7 +79,10 @@ const Chat = () => {
 
   const formatTicketContext = () => {
     return ticketContext
-      .map((ticket) => `Ticket ${ticket.id}: ${ticket.summary}`)
+      .map(
+        (ticket) =>
+          `Ticket ${ticket.external_ticket_id}: ${ticket.summary}\nURL: ${ticket.web_url}`
+      )
       .join("\n");
   };
 
@@ -103,7 +114,7 @@ const Chat = () => {
 
       const systemMessage = {
         role: "system",
-        content: `You are a helpful assistant with access to the following ticket summaries. Use this context to provide relevant answers:\n\n${formatTicketContext()}\n\nWhen referring to tickets, use their IDs. Base your responses on this historical ticket data when relevant.`,
+        content: `You are a helpful assistant with access to the following ticket summaries. Use this context to provide relevant answers:\n\n${formatTicketContext()}\n\nWhen referring to tickets, use their external_ticket_id and provide the hyperlink (web_url) for reference.`,
       };
 
       const response = await fetch(
