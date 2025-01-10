@@ -52,7 +52,7 @@ const Chat = () => {
           'X-Title': 'Support AI Chat'
         },
         body: JSON.stringify({
-          model: 'deepseek-ai/deepseek-coder-33b-instruct',
+          model: 'deepseek/deepseek-chat',
           messages: [...messages, newMessage].map(msg => ({
             role: msg.role,
             content: msg.content
