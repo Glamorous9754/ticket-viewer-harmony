@@ -15,32 +15,7 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [ticketContext, setTicketContext] = useState<string>("");
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchTicketContext = async () => {
-      try {
-        const { data: ticketData, error } = await supabase.functions.invoke(
-          "get-ticket-context",
-          {
-            method: "POST",
-          }
-        );
-
-        if (error) {
-          console.error("Error fetching ticket context:", error);
-          return;
-        }
-
-        setTicketContext(ticketData.ticketContext);
-      } catch (error) {
-        console.error("Error in fetchTicketContext:", error);
-      }
-    };
-
-    fetchTicketContext();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,38 +31,21 @@ const Chat = () => {
     setIsLoading(true);
 
     try {
-      const keyResponse = await supabase.functions.invoke("get-api-key", {
-        method: "POST",
-      });
-
-      if (keyResponse.error) {
-        throw new Error("Failed to retrieve API key");
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        throw new Error("Failed to get user data");
       }
 
-      const {
-        data: { secret: openRouterKey },
-      } = keyResponse;
-
-      const systemMessage = {
-        role: "system",
-        content: `You are a helpful assistant with access to the following ticket context. Use this context to provide relevant answers:\n\n${ticketContext}\n\nWhen referring to tickets, always use the markdown link format provided. Follow the format for clarity.`,
-      };
-
       const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/chat-bot",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${openRouterKey}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": window.location.origin,
-            "X-Title": "Support AI Chat",
           },
           body: JSON.stringify({
-            model: "deepseek/deepseek-chat",
-            messages: [systemMessage, ...messages, newMessage],
-            temperature: 0.7,
-            max_tokens: 1000,
+            query: message.trim(),
+            profile_id: userData.user.id,
           }),
         }
       );
@@ -97,7 +55,7 @@ const Chat = () => {
       }
 
       const data = await response.json();
-      const aiResponse = data.choices[0]?.message?.content;
+      const aiResponse = data.response;
 
       if (aiResponse) {
         setMessages((prev) => [
