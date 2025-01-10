@@ -55,7 +55,7 @@ const Chat = () => {
       }
 
       const data = await response.json();
-      const aiResponse = data.response;
+      const aiResponse = data.summary;
 
       if (aiResponse) {
         setMessages((prev) => [
