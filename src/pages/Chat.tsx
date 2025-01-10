@@ -3,6 +3,8 @@ import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -12,10 +14,12 @@ interface Message {
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isLoading) return;
     
     // Add user message
     const newMessage: Message = {
@@ -25,15 +29,59 @@ const Chat = () => {
     
     setMessages(prev => [...prev, newMessage]);
     setMessage("");
-    
-    // TODO: Implement AI response logic
-    // For now, add a mock response
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "This is a placeholder response. The AI integration will be implemented soon."
-      }]);
-    }, 1000);
+    setIsLoading(true);
+
+    try {
+      const { data: { secret: openRouterKey } } = await supabase
+        .from('secrets')
+        .select('secret')
+        .eq('name', 'OPEN_ROUTER_KEY')
+        .single();
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openRouterKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Support AI Chat'
+        },
+        body: JSON.stringify({
+          model: 'deepseek-ai/deepseek-coder-33b-instruct',
+          messages: [...messages, newMessage].map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content;
+
+      if (aiResponse) {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: aiResponse
+        }]);
+      } else {
+        throw new Error('Invalid response format from AI');
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get AI response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,6 +111,17 @@ const Chat = () => {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] rounded-2xl px-4 py-3 text-base bg-muted/50 text-muted-foreground border border-border/20 mr-12">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
         
@@ -88,12 +147,13 @@ const Chat = () => {
                       handleSubmit(e);
                     }
                   }}
+                  disabled={isLoading}
                 />
               </div>
               <Button 
                 type="submit" 
                 size="lg"
-                disabled={!message.trim()}
+                disabled={!message.trim() || isLoading}
                 className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6 rounded-xl"
               >
                 <Send className="w-5 h-5" />
