@@ -11,78 +11,36 @@ interface Message {
   content: string;
 }
 
-interface TicketContext {
-  external_ticket_id: string;
-  summary: string;
-  web_url: string;
-}
-
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [ticketContext, setTicketContext] = useState<TicketContext[]>([]);
+  const [ticketContext, setTicketContext] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchTicketSummaries = async () => {
+    const fetchTicketContext = async () => {
       try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-
-        if (userError) {
-          console.error("Error retrieving user:", userError);
-          return;
-        }
-
-        if (!userData?.user) {
-          console.error("No authenticated user found");
-          return;
-        }
-
-        const userProfileId = userData.user.id;
-
-        // Fetch ticket summaries for the current user
-        const { data, error } = await supabase
-          .from("dashboard_data")
-          .select("db")
-          .eq("profile_id", userProfileId)
-          .single();
+        const { data: ticketData, error } = await supabase.functions.invoke(
+          "get-ticket-context",
+          {
+            method: "POST",
+          }
+        );
 
         if (error) {
-          console.error("Error fetching user-specific data:", error);
+          console.error("Error fetching ticket context:", error);
           return;
         }
 
-        const ticketSummaries = data?.db?.tickets || [];
-        setTicketContext(
-          ticketSummaries.map(
-            (ticket: {
-              external_ticket_id: string;
-              summary: string;
-              web_url: string;
-            }) => ({
-              external_ticket_id: ticket.external_ticket_id,
-              summary: ticket.summary,
-              web_url: ticket.web_url,
-            })
-          )
-        );
+        setTicketContext(ticketData.ticketContext);
       } catch (error) {
-        console.error("Error in fetchTicketSummaries:", error);
+        console.error("Error in fetchTicketContext:", error);
       }
     };
 
-    fetchTicketSummaries();
+    fetchTicketContext();
   }, []);
-
-  const formatTicketContext = () => {
-    return ticketContext
-      .map(
-        (ticket) =>
-          `Ticket ID: [${ticket.external_ticket_id}](${ticket.web_url})\nSummary: ${ticket.summary}`
-      )
-      .join("\n\n");
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +70,7 @@ const Chat = () => {
 
       const systemMessage = {
         role: "system",
-        content: `You are a helpful assistant with access to the following ticket summaries. Use this context to provide relevant answers:\n\n${formatTicketContext()}\n\nWhen referring to tickets, always hyperlink the ticket ID with its URL. Follow the format provided for clarity.`,
+        content: `You are a helpful assistant with access to the following ticket context. Use this context to provide relevant answers:\n\n${ticketContext}\n\nWhen referring to tickets, always use the markdown link format provided. Follow the format for clarity.`,
       };
 
       const response = await fetch(
