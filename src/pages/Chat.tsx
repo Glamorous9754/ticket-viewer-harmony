@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, AlertCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Message {
   role: "user" | "assistant";
@@ -110,9 +111,15 @@ const Chat = () => {
           <h2 className="text-lg font-semibold text-primary-foreground">
             Chat Assistant
           </h2>
+          <Alert variant="warning" className="mt-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Your chat messages are not stored and will be lost when you leave this page
+            </AlertDescription>
+          </Alert>
         </div>
 
-        <ScrollArea className="flex-1 px-4 py-6 h-[calc(100vh-16rem)]">
+        <ScrollArea className="flex-1 px-4 py-6 h-[calc(100vh-16rem)] md:h-[calc(100vh-18rem)]">
           <div className="space-y-6">
             {messages.map((msg, index) => (
               <div
@@ -122,10 +129,10 @@ const Chat = () => {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-base ${
+                  className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-3 text-base ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground ml-12"
-                      : "bg-muted/50 text-muted-foreground border border-border/20 mr-12 prose prose-sm prose-neutral dark:prose-invert"
+                      ? "bg-primary text-primary-foreground ml-4 md:ml-12"
+                      : "bg-muted/50 text-muted-foreground border border-border/20 mr-4 md:mr-12 prose prose-sm prose-neutral dark:prose-invert"
                   }`}
                 >
                   {msg.role === "user" ? (
@@ -138,7 +145,7 @@ const Chat = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl px-4 py-3 text-base bg-muted/50 text-muted-foreground border border-border/20 mr-12">
+                <div className="max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-3 text-base bg-muted/50 text-muted-foreground border border-border/20 mr-4 md:mr-12">
                   <div className="flex space-x-2">
                     <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
                     <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -152,7 +159,7 @@ const Chat = () => {
 
         <div className="p-4 bg-background/95 border-t border-border/20 rounded-b-xl backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="relative">
-            <div className="flex gap-3 items-end">
+            <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-end">
               <div className="flex-1">
                 <Textarea
                   value={message}
@@ -179,7 +186,7 @@ const Chat = () => {
                 type="submit"
                 size="lg"
                 disabled={!message.trim() || isLoading}
-                className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6 rounded-xl"
+                className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6 rounded-xl w-full md:w-auto"
               >
                 <Send className="w-5 h-5" />
               </Button>

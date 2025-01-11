@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CustomerIntelligenceIssue {
   title: string;
@@ -45,18 +46,16 @@ const CustomerIntelligence = () => {
 
         let parsedDb = data?.db;
 
-        // Parse the db field if necessary
         if (typeof parsedDb === "string") {
           parsedDb = JSON.parse(parsedDb);
         }
 
-        // Check and set customer_intelligence_issues
         if (parsedDb?.customer_intelligence_issues) {
           setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
         } else {
           console.warn("No customer intelligence issues found in the database.");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching data from Supabase:", error.message);
       } finally {
         setLoading(false);
@@ -66,15 +65,29 @@ const CustomerIntelligence = () => {
     fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Customer Intelligence Hub
-        </h1>
-        <p className="text-gray-500">Loading data...</p>
+  const LoadingSkeleton = () => (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-3/4 md:w-1/2" />
+        <Skeleton className="h-4 w-1/2 md:w-1/3" />
       </div>
-    );
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(6)].map((_, index) => (
+          <div key={index} className="border rounded-lg p-4 space-y-4">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return <LoadingSkeleton />;
   }
 
   if (!customerIntelligenceData || customerIntelligenceData.length === 0) {
@@ -89,7 +102,7 @@ const CustomerIntelligence = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 md:px-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Customer Intelligence Hub
@@ -99,7 +112,7 @@ const CustomerIntelligence = () => {
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
         {customerIntelligenceData.map((issue, index) => {
           const isRising = issue.color === "red";
 
