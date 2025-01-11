@@ -13,6 +13,16 @@ interface FeatureRequest {
   url?: string;
 }
 
+interface Feature {
+  summary: string;
+  priority: number;
+  segments: string[];
+  complexity: "Low" | "Medium" | "High";
+  createdAt: string;
+  description: string;
+  url: string | null;
+}
+
 interface ParsedDb {
   feature_requests?: {
     requests: FeatureRequest[];
@@ -20,17 +30,7 @@ interface ParsedDb {
 }
 
 const FeatureRequests = () => {
-  const [features, setFeatures] = useState<
-    {
-      summary: string;
-      priority: number;
-      segments: string[];
-      complexity: string;
-      createdAt: string;
-      description: string;
-      url: string | null;
-    }[]
-  >([]);
+  const [features, setFeatures] = useState<Feature[]>([]);
   const [segments, setSegments] = useState<string[]>([]); // Unique tags from `tags` fields
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
@@ -64,7 +64,6 @@ const FeatureRequests = () => {
           return;
         }
 
-        // Parse `db` field with type assertion
         const parsedDb = data?.db as ParsedDb | undefined;
 
         if (parsedDb?.feature_requests) {
@@ -74,7 +73,11 @@ const FeatureRequests = () => {
             summary: feature.title,
             priority: feature.impact_score || 0,
             segments: feature.tags || [],
-            complexity: feature.complexity || "Low",
+            complexity: (["Low", "Medium", "High"].includes(
+              feature.complexity || "Low"
+            )
+              ? feature.complexity
+              : "Low") as "Low" | "Medium" | "High", // Constrain complexity
             createdAt: feature.since,
             description: feature.description || "No description available",
             url: feature.url || null,
@@ -82,10 +85,9 @@ const FeatureRequests = () => {
 
           setFeatures(mappedFeatures);
 
-          // Extract unique tags from `tags` field
           const uniqueTags = [
             ...new Set(requests.flatMap((feature) => feature.tags || [])),
-          ];
+          ] as string[];
           setSegments(uniqueTags);
         } else {
           console.warn("No feature requests found in the database.");
