@@ -13,6 +13,10 @@ interface CustomerIntelligenceIssue {
   color: "red" | "green";
 }
 
+interface DbStructure {
+  customer_intelligence_issues?: CustomerIntelligenceIssue[];
+}
+
 const CustomerIntelligence = () => {
   const [customerIntelligenceData, setCustomerIntelligenceData] = useState<CustomerIntelligenceIssue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,11 +48,7 @@ const CustomerIntelligence = () => {
           return;
         }
 
-        let parsedDb = data?.db;
-        if (typeof parsedDb === "string") {
-          parsedDb = JSON.parse(parsedDb);
-        }
-
+        const parsedDb = data?.db as DbStructure | undefined; // Type assertion
         if (parsedDb?.customer_intelligence_issues) {
           setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
         } else {
