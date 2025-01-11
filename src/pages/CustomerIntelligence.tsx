@@ -43,13 +43,18 @@ const CustomerIntelligence = () => {
           return;
         }
 
-        if (data && typeof data.db === "string") {
-          const parsedDb = JSON.parse(data.db);
-          if (parsedDb.customer_intelligence_issues) {
-            setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
-          }
-        } else if (data?.db?.customer_intelligence_issues) {
-          setCustomerIntelligenceData(data.db.customer_intelligence_issues);
+        let parsedDb = data?.db;
+
+        // Parse the db field if necessary
+        if (typeof parsedDb === "string") {
+          parsedDb = JSON.parse(parsedDb);
+        }
+
+        // Check and set customer_intelligence_issues
+        if (parsedDb?.customer_intelligence_issues) {
+          setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
+        } else {
+          console.warn("No customer intelligence issues found in the database.");
         }
       } catch (error) {
         console.error("Error fetching data from Supabase:", error.message);
@@ -72,7 +77,7 @@ const CustomerIntelligence = () => {
     );
   }
 
-  if (!customerIntelligenceData) {
+  if (!customerIntelligenceData || customerIntelligenceData.length === 0) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
