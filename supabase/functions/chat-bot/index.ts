@@ -73,7 +73,7 @@ async function sendToOpenRouter(messages: Array<{ role: string; content: string 
 
   // (NEW) We pass the entire array of messages instead of a single "user" prompt
   const payload = {
-    model: "google/gemini-flash-1.5-8b",
+    model: "deepseek/deepseek-chat",
     messages, // array of { role, content }
   };
 
