@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -39,19 +40,16 @@ const Chat = () => {
       content: message.trim(),
     };
 
-    // Add the new user message to state
     setMessages((prev) => [...prev, newMessage]);
     setMessage("");
     setIsLoading(true);
 
     try {
-      // Example: Get user data from Supabase (if needed)
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         throw new Error("Failed to get user data");
       }
 
-      // Example: Ensure user is logged in
       const {
         data: { session },
         error: sessionError,
@@ -60,7 +58,6 @@ const Chat = () => {
         throw new Error("You must be logged in to fetch tickets");
       }
 
-      // 3. Send the entire conversation (including the new user message) in the request body
       const response = await fetch(
         "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/chat-bot",
         {
@@ -70,7 +67,6 @@ const Chat = () => {
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            conversationHistory: [...messages, newMessage],
             query: message.trim(),
             profile_id: userData.user.id,
           }),
@@ -83,9 +79,7 @@ const Chat = () => {
 
       const data = await response.json();
       const aiResponse = data.summary;
-      console.log("AI Response:", data);
 
-      // 4. Add the AI’s response to the conversation
       if (aiResponse) {
         setMessages((prev) => [
           ...prev,
@@ -131,10 +125,14 @@ const Chat = () => {
                   className={`max-w-[80%] rounded-2xl px-4 py-3 text-base ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground ml-12"
-                      : "bg-muted/50 text-muted-foreground border border-border/20 mr-12"
+                      : "bg-muted/50 text-muted-foreground border border-border/20 mr-12 prose prose-sm prose-neutral dark:prose-invert"
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === "user" ? (
+                    msg.content
+                  ) : (
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))}
