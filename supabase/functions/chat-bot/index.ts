@@ -41,7 +41,7 @@ const corsHeaders = {
 async function fetchRecentTickets(profileId: string): Promise<Ticket[]> {
   console.log(`🔍 Fetching recent tickets for profile_id: ${profileId}`);
   const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 30);
   const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
   console.log(`📅 Date range: ${sevenDaysAgoISO} to ${new Date().toISOString()}`);
