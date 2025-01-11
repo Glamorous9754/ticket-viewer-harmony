@@ -77,25 +77,19 @@ const CustomerIntelligence = () => {
 
       <div className="space-y-4">
         {loading ? (
-          // Skeleton loading state
+          // Skeleton loading state matching exact dimensions
           Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 mb-4">
                 <Skeleton className="w-5 h-5 rounded-full" />
                 <div className="space-y-2 flex-1">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-36" />
                 </div>
-              </div>
-              <div className="space-y-3">
-                <Skeleton className="h-20 w-full" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-8 w-24 rounded-full" />
-                  <Skeleton className="h-8 w-24 rounded-full" />
-                </div>
+                <Skeleton className="w-5 h-5" />
               </div>
             </div>
           ))
