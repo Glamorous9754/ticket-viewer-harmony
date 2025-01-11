@@ -11,9 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  timestamp?: number;
 }
 
 const MAX_MESSAGES = 5;
+const SESSION_DURATION = 40 * 60 * 1000; // 40 minutes in milliseconds
 
 const Chat = () => {
   const [message, setMessage] = useState("");
@@ -30,12 +32,22 @@ const Chat = () => {
   useEffect(() => {
     const savedMessages = localStorage.getItem("conversationHistory");
     if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
+      const parsedMessages = JSON.parse(savedMessages);
+      // Filter out messages older than 40 minutes
+      const currentTime = Date.now();
+      const validMessages = parsedMessages.filter((msg: Message) => 
+        msg.timestamp && (currentTime - msg.timestamp) < SESSION_DURATION
+      );
+      setMessages(validMessages);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("conversationHistory", JSON.stringify(messages));
+    const messagesWithTimestamp = messages.map(msg => ({
+      ...msg,
+      timestamp: msg.timestamp || Date.now()
+    }));
+    localStorage.setItem("conversationHistory", JSON.stringify(messagesWithTimestamp));
     scrollToBottom();
   }, [messages]);
 
@@ -49,17 +61,25 @@ const Chat = () => {
     e.preventDefault();
     if (!message.trim() || isLoading || messages.length >= MAX_MESSAGES) return;
 
-    if (messages.length === MAX_MESSAGES - 1) {
+    // Filter out messages older than 40 minutes
+    const currentTime = Date.now();
+    const validMessages = messages.filter(msg => 
+      msg.timestamp && (currentTime - msg.timestamp) < SESSION_DURATION
+    );
+
+    if (validMessages.length >= MAX_MESSAGES) {
       toast({
         title: "Message limit reached",
-        description: "You've reached the maximum of 5 messages for this session.",
+        description: "You've reached the maximum of 5 messages for this 40-minute session.",
         variant: "default",
       });
+      return;
     }
 
     const newMessage: Message = {
       role: "user",
       content: message.trim(),
+      timestamp: currentTime,
     };
 
     setMessages((prev) => [...prev, newMessage]);
@@ -113,25 +133,32 @@ const Chat = () => {
     }
   };
 
+  // Filter out messages older than 40 minutes for display
+  const currentTime = Date.now();
+  const validMessages = messages.filter(msg => 
+    msg.timestamp && (currentTime - msg.timestamp) < SESSION_DURATION
+  );
+
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] px-4 md:px-0">
       <div className="flex-1 w-full max-w-3xl mx-auto bg-background/95 rounded-xl border border-border/20 backdrop-blur-sm flex flex-col">
-        <div className="p-4 border-b border-border/20">
-          <h2 className="text-lg font-semibold text-primary-foreground">
-            Chat Assistant
-          </h2>
-          <Alert variant="default" className="mt-2 bg-muted/50">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Your chat messages are not stored and will be lost when you leave this page. 
-              Maximum of 5 messages per session.
-            </AlertDescription>
-          </Alert>
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm rounded-t-xl border-b border-border/20">
+          <div className="p-4">
+            <h2 className="text-lg font-semibold text-primary-foreground">
+              Chat Assistant
+            </h2>
+            <Alert variant="default" className="mt-2 bg-muted/50">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Maximum of 5 messages per 40-minute session. Messages will expire after 40 minutes.
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
 
-        <ScrollArea className="flex-1 px-4 py-6">
+        <ScrollArea className="flex-1 px-4 py-6 overflow-y-auto">
           <div className="space-y-6">
-            {messages.map((msg, index) => (
+            {validMessages.map((msg, index) => (
               <div
                 key={index}
                 className={`flex ${
@@ -168,7 +195,7 @@ const Chat = () => {
           </div>
         </ScrollArea>
 
-        <div className="p-4 bg-background/95 border-t border-border/20 rounded-b-xl backdrop-blur-sm">
+        <div className="sticky bottom-0 p-4 bg-background/95 border-t border-border/20 rounded-b-xl backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="relative">
             <div className="flex gap-3 items-end">
               <div className="flex-1">
@@ -191,13 +218,13 @@ const Chat = () => {
                       handleSubmit(e);
                     }
                   }}
-                  disabled={isLoading || messages.length >= MAX_MESSAGES}
+                  disabled={isLoading || validMessages.length >= MAX_MESSAGES}
                 />
               </div>
               <Button
                 type="submit"
                 size="lg"
-                disabled={!message.trim() || isLoading || messages.length >= MAX_MESSAGES}
+                disabled={!message.trim() || isLoading || validMessages.length >= MAX_MESSAGES}
                 className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6 rounded-xl"
               >
                 <Send className="w-5 h-5" />
