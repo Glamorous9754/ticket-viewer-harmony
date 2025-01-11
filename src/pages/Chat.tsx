@@ -102,8 +102,11 @@ const Chat = () => {
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            query: message.trim(),
             profile_id: userData.user.id,
+            conversationHistory: validMessages.map(({ role, content }) => ({
+              role,
+              content,
+            })),
           }),
         }
       );
@@ -116,7 +119,7 @@ const Chat = () => {
       if (aiResponse) {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: aiResponse },
+          { role: "assistant", content: aiResponse, timestamp: Date.now() },
         ]);
       } else {
         throw new Error("Invalid response format from AI");
