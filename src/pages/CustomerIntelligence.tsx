@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CustomerIntelligenceIssue {
   title: string;
@@ -44,19 +45,16 @@ const CustomerIntelligence = () => {
         }
 
         let parsedDb = data?.db;
-
-        // Parse the db field if necessary
         if (typeof parsedDb === "string") {
           parsedDb = JSON.parse(parsedDb);
         }
 
-        // Check and set customer_intelligence_issues
         if (parsedDb?.customer_intelligence_issues) {
           setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
         } else {
           console.warn("No customer intelligence issues found in the database.");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching data from Supabase:", error.message);
       } finally {
         setLoading(false);
@@ -66,30 +64,8 @@ const CustomerIntelligence = () => {
     fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Customer Intelligence Hub
-        </h1>
-        <p className="text-gray-500">Loading data...</p>
-      </div>
-    );
-  }
-
-  if (!customerIntelligenceData || customerIntelligenceData.length === 0) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Customer Intelligence Hub
-        </h1>
-        <p className="text-gray-500">No data available</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 md:px-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Customer Intelligence Hub
@@ -100,23 +76,51 @@ const CustomerIntelligence = () => {
       </div>
 
       <div className="space-y-4">
-        {customerIntelligenceData.map((issue, index) => {
-          const isRising = issue.color === "red";
-
-          return (
-            <TrendingIssue
+        {loading ? (
+          // Skeleton loading state
+          Array.from({ length: 3 }).map((_, index) => (
+            <div
               key={index}
-              title={issue.title}
-              count={issue.mentions}
-              lastDate={issue.since}
-              sampleTickets={issue.sample_tickets}
-              commonPhrases={issue.common_phrases}
-              suggestedCategory={issue.suggested_category}
-              color={issue.color}
-              isRising={isRising}
-            />
-          );
-        })}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4"
+            >
+              <div className="flex items-center gap-4">
+                <Skeleton className="w-5 h-5 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-20 w-full" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 w-24 rounded-full" />
+                  <Skeleton className="h-8 w-24 rounded-full" />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : customerIntelligenceData && customerIntelligenceData.length > 0 ? (
+          customerIntelligenceData.map((issue, index) => {
+            const isRising = issue.color === "red";
+            return (
+              <TrendingIssue
+                key={index}
+                title={issue.title}
+                count={issue.mentions}
+                lastDate={issue.since}
+                sampleTickets={issue.sample_tickets}
+                commonPhrases={issue.common_phrases}
+                suggestedCategory={issue.suggested_category}
+                color={issue.color}
+                isRising={isRising}
+              />
+            );
+          })
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No data available</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, AlertCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
@@ -18,7 +19,6 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // 1. On first render, retrieve the conversation from localStorage
   useEffect(() => {
     const savedMessages = localStorage.getItem("conversationHistory");
     if (savedMessages) {
@@ -26,7 +26,6 @@ const Chat = () => {
     }
   }, []);
 
-  // 2. Whenever `messages` changes, store them in localStorage
   useEffect(() => {
     localStorage.setItem("conversationHistory", JSON.stringify(messages));
   }, [messages]);
@@ -46,17 +45,10 @@ const Chat = () => {
 
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        throw new Error("Failed to get user data");
-      }
+      if (userError) throw new Error("Failed to get user data");
 
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error("You must be logged in to fetch tickets");
-      }
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) throw new Error("You must be logged in to fetch tickets");
 
       const response = await fetch(
         "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/chat-bot",
@@ -73,9 +65,7 @@ const Chat = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to get response from AI");
-      }
+      if (!response.ok) throw new Error("Failed to get response from AI");
 
       const data = await response.json();
       const aiResponse = data.summary;
@@ -83,10 +73,7 @@ const Chat = () => {
       if (aiResponse) {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "assistant",
-            content: aiResponse,
-          },
+          { role: "assistant", content: aiResponse },
         ]);
       } else {
         throw new Error("Invalid response format from AI");
@@ -104,12 +91,18 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)]">
+    <div className="flex flex-col h-[calc(100vh-6rem)] px-4 md:px-0">
       <div className="flex-1 w-full max-w-3xl mx-auto bg-background/95 rounded-xl border border-border/20 backdrop-blur-sm">
         <div className="p-4 border-b border-border/20">
           <h2 className="text-lg font-semibold text-primary-foreground">
             Chat Assistant
           </h2>
+          <Alert variant="default" className="mt-2 bg-muted/50">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Your chat messages are not stored and will be lost when you leave this page
+            </AlertDescription>
+          </Alert>
         </div>
 
         <ScrollArea className="flex-1 px-4 py-6 h-[calc(100vh-16rem)]">
@@ -122,7 +115,7 @@ const Chat = () => {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-base ${
+                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-base ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground ml-12"
                       : "bg-muted/50 text-muted-foreground border border-border/20 mr-12 prose prose-sm prose-neutral dark:prose-invert"
@@ -138,7 +131,7 @@ const Chat = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl px-4 py-3 text-base bg-muted/50 text-muted-foreground border border-border/20 mr-12">
+                <div className="max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-base bg-muted/50 text-muted-foreground border border-border/20 mr-12">
                   <div className="flex space-x-2">
                     <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
                     <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
