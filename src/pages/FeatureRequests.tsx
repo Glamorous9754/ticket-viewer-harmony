@@ -3,8 +3,34 @@ import { supabase } from "../integrations/supabase/client";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
+interface FeatureRequest {
+  title: string;
+  impact_score?: number;
+  tags?: string[];
+  complexity?: string;
+  since: string;
+  description?: string;
+  url?: string;
+}
+
+interface ParsedDb {
+  feature_requests?: {
+    requests: FeatureRequest[];
+  };
+}
+
 const FeatureRequests = () => {
-  const [features, setFeatures] = useState([]);
+  const [features, setFeatures] = useState<
+    {
+      summary: string;
+      priority: number;
+      segments: string[];
+      complexity: string;
+      createdAt: string;
+      description: string;
+      url: string | null;
+    }[]
+  >([]);
   const [segments, setSegments] = useState<string[]>([]); // Unique tags from `tags` fields
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
@@ -38,11 +64,8 @@ const FeatureRequests = () => {
           return;
         }
 
-        // Ensure `db` field is parsed as JSON
-        let parsedDb;
-        if (data?.db) {
-          parsedDb = typeof data.db === "string" ? JSON.parse(data.db) : data.db;
-        }
+        // Parse `db` field with type assertion
+        const parsedDb = data?.db as ParsedDb | undefined;
 
         if (parsedDb?.feature_requests) {
           const { requests } = parsedDb.feature_requests;
@@ -54,12 +77,12 @@ const FeatureRequests = () => {
             complexity: feature.complexity || "Low",
             createdAt: feature.since,
             description: feature.description || "No description available",
-            url: feature.url || null, // Pass the URL to the FeatureCard component
+            url: feature.url || null,
           }));
 
           setFeatures(mappedFeatures);
 
-          // Extract unique tags from the `tags` field across all requests
+          // Extract unique tags from `tags` field
           const uniqueTags = [
             ...new Set(requests.flatMap((feature) => feature.tags || [])),
           ];
@@ -67,7 +90,7 @@ const FeatureRequests = () => {
         } else {
           console.warn("No feature requests found in the database.");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching data from Supabase:", error.message);
       } finally {
         setIsLoading(false);
