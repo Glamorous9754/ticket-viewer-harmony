@@ -126,10 +126,38 @@ const BusinessIntelligence = () => {
           <Skeleton className="h-4 w-96" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Skeleton className="h-[600px] w-full" />
+          {/* Working Well Section Skeleton */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-white rounded-lg p-6 border border-border/20">
+              <Skeleton className="h-6 w-48 mb-4" />
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <Skeleton className="h-[600px] w-full" />
+          
+          {/* Risk Alerts Section Skeleton */}
+          <div className="bg-white rounded-lg p-6 border border-border/20">
+            <Skeleton className="h-6 w-32 mb-4" />
+            <div className="space-y-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 border rounded-lg">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-2/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

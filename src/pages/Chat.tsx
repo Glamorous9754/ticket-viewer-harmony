@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Send, AlertCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,13 @@ interface Message {
   content: string;
 }
 
+const MAX_MESSAGES = 5;
+
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,9 +33,23 @@ const Chat = () => {
     localStorage.setItem("conversationHistory", JSON.stringify(messages));
   }, [messages]);
 
+  useEffect(() => {
+    if (!isLoading && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isLoading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || messages.length >= MAX_MESSAGES) return;
+
+    if (messages.length === MAX_MESSAGES - 1) {
+      toast({
+        title: "Message limit reached",
+        description: "You've reached the maximum of 5 messages for this session.",
+        variant: "warning",
+      });
+    }
 
     const newMessage: Message = {
       role: "user",
@@ -100,7 +117,8 @@ const Chat = () => {
           <Alert variant="default" className="mt-2 bg-muted/50">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Your chat messages are not stored and will be lost when you leave this page
+              Your chat messages are not stored and will be lost when you leave this page. 
+              Maximum of 5 messages per session.
             </AlertDescription>
           </Alert>
         </div>
@@ -148,6 +166,7 @@ const Chat = () => {
             <div className="flex gap-3 items-end">
               <div className="flex-1">
                 <Textarea
+                  ref={textareaRef}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type your message..."
@@ -165,13 +184,13 @@ const Chat = () => {
                       handleSubmit(e);
                     }
                   }}
-                  disabled={isLoading}
+                  disabled={isLoading || messages.length >= MAX_MESSAGES}
                 />
               </div>
               <Button
                 type="submit"
                 size="lg"
-                disabled={!message.trim() || isLoading}
+                disabled={!message.trim() || isLoading || messages.length >= MAX_MESSAGES}
                 className="bg-primary hover:bg-primary/90 transition-colors h-[56px] px-6 rounded-xl"
               >
                 <Send className="w-5 h-5" />
