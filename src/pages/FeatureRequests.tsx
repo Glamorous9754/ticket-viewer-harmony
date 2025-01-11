@@ -5,7 +5,7 @@ import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState([]);
-  const [segments, setSegments] = useState<string[]>([]); // Dynamic segments
+  const [segments, setSegments] = useState<string[]>([]); // Unique tags from `tags` fields
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +45,7 @@ const FeatureRequests = () => {
         }
 
         if (parsedDb?.feature_requests) {
-          const { requests, segments: dynamicSegments } = parsedDb.feature_requests;
+          const { requests } = parsedDb.feature_requests;
 
           const mappedFeatures = requests.map((feature) => ({
             summary: feature.title,
@@ -58,7 +58,12 @@ const FeatureRequests = () => {
           }));
 
           setFeatures(mappedFeatures);
-          setSegments(dynamicSegments || []);
+
+          // Extract unique tags from the `tags` field across all requests
+          const uniqueTags = [
+            ...new Set(requests.flatMap((feature) => feature.tags || [])),
+          ];
+          setSegments(uniqueTags);
         } else {
           console.warn("No feature requests found in the database.");
         }
@@ -74,8 +79,8 @@ const FeatureRequests = () => {
 
   const sortedAndFilteredFeatures = features
     .filter((feature) =>
-      filterBy === "all" 
-        ? true 
+      filterBy === "all"
+        ? true
         : feature.segments.some((tag) => tag.toLowerCase() === filterBy.toLowerCase())
     )
     .sort((a, b) => {
@@ -102,7 +107,7 @@ const FeatureRequests = () => {
           filterBy={filterBy}
           onSortChange={setSortBy}
           onFilterChange={setFilterBy}
-          segments={segments}
+          segments={segments} // Pass the dynamic segments
         />
       </div>
 
