@@ -14,7 +14,7 @@ interface Message {
   timestamp?: number;
 }
 
-const MAX_MESSAGES = 5;
+const MAX_MESSAGES = 20;
 const SESSION_DURATION = 40 * 60 * 1000; // 40 minutes in milliseconds
 
 const Chat = () => {
