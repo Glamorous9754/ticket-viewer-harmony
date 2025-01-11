@@ -17,6 +17,19 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // 1. On first render, retrieve the conversation from localStorage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem("conversationHistory");
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
+  }, []);
+
+  // 2. Whenever `messages` changes, store them in localStorage
+  useEffect(() => {
+    localStorage.setItem("conversationHistory", JSON.stringify(messages));
+  }, [messages]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
@@ -26,30 +39,38 @@ const Chat = () => {
       content: message.trim(),
     };
 
+    // Add the new user message to state
     setMessages((prev) => [...prev, newMessage]);
     setMessage("");
     setIsLoading(true);
 
     try {
+      // Example: Get user data from Supabase (if needed)
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         throw new Error("Failed to get user data");
       }
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Example: Ensure user is logged in
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
       if (sessionError || !session) {
         throw new Error("You must be logged in to fetch tickets");
       }
 
+      // 3. Send the entire conversation (including the new user message) in the request body
       const response = await fetch(
         "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/chat-bot",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-             Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
+            conversationHistory: [...messages, newMessage],
             query: message.trim(),
             profile_id: userData.user.id,
           }),
@@ -62,7 +83,9 @@ const Chat = () => {
 
       const data = await response.json();
       const aiResponse = data.summary;
+      console.log("AI Response:", data);
 
+      // 4. Add the AI’s response to the conversation
       if (aiResponse) {
         setMessages((prev) => [
           ...prev,
@@ -119,9 +142,9 @@ const Chat = () => {
               <div className="flex justify-start">
                 <div className="max-w-[80%] rounded-2xl px-4 py-3 text-base bg-muted/50 text-muted-foreground border border-border/20 mr-12">
                   <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" />
                   </div>
                 </div>
               </div>
