@@ -20,7 +20,12 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     const savedMessages = localStorage.getItem("conversationHistory");
@@ -31,6 +36,7 @@ const Chat = () => {
 
   useEffect(() => {
     localStorage.setItem("conversationHistory", JSON.stringify(messages));
+    scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
@@ -47,7 +53,7 @@ const Chat = () => {
       toast({
         title: "Message limit reached",
         description: "You've reached the maximum of 5 messages for this session.",
-        variant: "warning",
+        variant: "default",
       });
     }
 
@@ -109,7 +115,7 @@ const Chat = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] px-4 md:px-0">
-      <div className="flex-1 w-full max-w-3xl mx-auto bg-background/95 rounded-xl border border-border/20 backdrop-blur-sm">
+      <div className="flex-1 w-full max-w-3xl mx-auto bg-background/95 rounded-xl border border-border/20 backdrop-blur-sm flex flex-col">
         <div className="p-4 border-b border-border/20">
           <h2 className="text-lg font-semibold text-primary-foreground">
             Chat Assistant
@@ -123,7 +129,7 @@ const Chat = () => {
           </Alert>
         </div>
 
-        <ScrollArea className="flex-1 px-4 py-6 h-[calc(100vh-16rem)]">
+        <ScrollArea className="flex-1 px-4 py-6">
           <div className="space-y-6">
             {messages.map((msg, index) => (
               <div
@@ -158,6 +164,7 @@ const Chat = () => {
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
