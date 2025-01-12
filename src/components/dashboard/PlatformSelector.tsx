@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Link2Off } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Platform } from "./types/platform";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const PlatformSelector = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<Platform>(null);
+  const [isDisconnecting, setIsDisconnecting] = useState<Platform>(null);
   const [isFetchingTickets, setIsFetchingTickets] = useState(false);
   const [searchParams] = useSearchParams();
   const [authenticatedPlatform, setAuthenticatedPlatform] = useState<Platform>(() => {
@@ -86,6 +87,41 @@ export const PlatformSelector = () => {
         variant: "destructive",
       });
       setIsLoading(null);
+    }
+  };
+
+  const handleDisconnect = async (platform: Platform) => {
+    setIsDisconnecting(platform);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        throw new Error("You must be logged in to disconnect platforms");
+      }
+
+      const { error } = await supabase
+        .from('platform_connections')
+        .delete()
+        .eq('profile_id', session.session.user.id)
+        .eq('platform_type', platform);
+
+      if (error) throw error;
+
+      setAuthenticatedPlatform(null);
+      localStorage.removeItem('authenticatedPlatform');
+      
+      toast({
+        title: "Success",
+        description: `Successfully disconnected from ${platform}!`,
+      });
+    } catch (error) {
+      console.error(`Error disconnecting ${platform}:`, error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to disconnect",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDisconnecting(null);
     }
   };
 
@@ -197,36 +233,53 @@ export const PlatformSelector = () => {
             <h3 className="text-xl font-medium mb-4">{platform.name}</h3>
             <p className="text-gray-600 mb-4">{platform.description}</p>
             <div className="space-y-2">
-              <Button
-                onClick={() => handleConnect(platform.id)}
-                className="w-full"
-                disabled={isLoading !== null || 
-                         (authenticatedPlatform && authenticatedPlatform !== platform.id)}
-              >
-                {isLoading === platform.id ? (
-                  "Connecting..."
-                ) : (
-                  `Connect ${platform.name}`
-                )}
-              </Button>
-
-              {authenticatedPlatform === platform.id && (
+              {authenticatedPlatform === platform.id ? (
+                <>
+                  <Button
+                    onClick={() => handleFetchData(platform.id)}
+                    disabled={isFetchingTickets}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isFetchingTickets ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Fetching...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        {platform.id === 'gmail' ? 'Fetch Emails' : 'Fetch Tickets'}
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => handleDisconnect(platform.id)}
+                    disabled={isDisconnecting === platform.id}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    {isDisconnecting === platform.id ? (
+                      "Disconnecting..."
+                    ) : (
+                      <>
+                        <Link2Off className="mr-2 h-4 w-4" />
+                        Disconnect
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  onClick={() => handleFetchData(platform.id)}
-                  disabled={isFetchingTickets}
-                  variant="outline"
+                  onClick={() => handleConnect(platform.id)}
                   className="w-full"
+                  disabled={isLoading !== null || 
+                           (authenticatedPlatform && authenticatedPlatform !== platform.id)}
                 >
-                  {isFetchingTickets ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Fetching...
-                    </>
+                  {isLoading === platform.id ? (
+                    "Connecting..."
                   ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      {platform.id === 'gmail' ? 'Fetch Emails' : 'Fetch Tickets'}
-                    </>
+                    `Connect ${platform.name}`
                   )}
                 </Button>
               )}
