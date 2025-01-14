@@ -93,22 +93,10 @@ export const PlatformSelector = () => {
   const handleDisconnect = async (platform: Platform) => {
     setIsDisconnecting(platform);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) {
-        throw new Error("You must be logged in to disconnect platforms");
-      }
-
-      const { error } = await supabase
-        .from('platform_connections')
-        .delete()
-        .eq('profile_id', session.session.user.id)
-        .eq('platform_type', platform);
-
-      if (error) throw error;
-
+      // Cleanup local state
       setAuthenticatedPlatform(null);
-      localStorage.removeItem('authenticatedPlatform');
-      
+      localStorage.removeItem("authenticatedPlatform");
+  
       toast({
         title: "Success",
         description: `Successfully disconnected from ${platform}!`,
@@ -124,6 +112,7 @@ export const PlatformSelector = () => {
       setIsDisconnecting(null);
     }
   };
+  
 
   const handleFetchData = async (platform: Platform) => {
     setIsFetchingTickets(true);
