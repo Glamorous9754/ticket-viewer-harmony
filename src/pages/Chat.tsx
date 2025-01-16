@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
+import { EmptyStateMessage } from "../components/dashboard/EmptyStateMessage";
 
 interface Message {
   role: "user" | "assistant";
@@ -166,6 +167,10 @@ const Chat = () => {
   const validMessages = messages.filter(msg => 
     msg.timestamp && (currentTime - msg.timestamp) < SESSION_DURATION
   );
+
+  if (!hasActiveConnection && connectionChecked && validMessages.length === 0) {
+    return <EmptyStateMessage />;
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] px-4 md:px-0">
