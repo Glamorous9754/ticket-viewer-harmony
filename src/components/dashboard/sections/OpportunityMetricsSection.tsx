@@ -12,6 +12,7 @@ interface OpportunityMetricsProps {
     sampleTickets: string[];
     commonPhrases: string[];
     suggestedCategory: string;
+    forceUpwardArrow?: boolean;
     recommendedSolutions?: string[];
   }>;
 }

@@ -12,6 +12,7 @@ interface WorkingWellProps {
     sampleTickets: string[];
     commonPhrases: string[];
     suggestedCategory: string;
+    forceUpwardArrow?: boolean;
     recommendedSolutions?: string[];
   }>;
 }

@@ -158,9 +158,9 @@ const BusinessIntelligence = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <WorkingWellSection items={workingWell} />
+        <WorkingWellSection items={workingWell.map(item => ({ ...item, forceUpwardArrow: true }))} />
         <RiskAlertsSection alerts={riskAlerts} />
-        <OpportunityMetricsSection opportunities={opportunities} />
+        <OpportunityMetricsSection opportunities={opportunities.map(item => ({ ...item, forceUpwardArrow: true }))} />
         <MarketInsightsSection insights={insights} />
       </div>
     </div>

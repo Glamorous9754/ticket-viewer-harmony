@@ -9,7 +9,8 @@ interface TrendingIssueProps {
   sampleTickets: string[];
   commonPhrases: string[];
   suggestedCategory: string;
-  color?: string; // new optional prop
+  color?: string;
+  forceUpwardArrow?: boolean; // New prop to force upward arrow for BI tab
 }
 
 const TrendingIssue = ({
@@ -21,6 +22,7 @@ const TrendingIssue = ({
   commonPhrases,
   suggestedCategory,
   color,
+  forceUpwardArrow = false, // Default to false for CI tab
 }: TrendingIssueProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -37,9 +39,23 @@ const TrendingIssue = ({
         return "border-yellow-300";
       case "orange":
         return "border-orange-300";
-      // ...Add more if needed
       default:
-        return "border-gray-300"; // fallback
+        return "border-gray-300";
+    }
+  };
+
+  // Determine which arrow to show based on context and color
+  const renderTrendingArrow = () => {
+    if (forceUpwardArrow) {
+      // Business Intelligence tab - always show upward arrow
+      return <TrendingUp className="w-5 h-5 text-primary" />;
+    } else {
+      // Customer Intelligence tab - arrow direction based on color
+      if (color === "red") {
+        return <TrendingUp className="w-5 h-5 text-red-500" />;
+      } else {
+        return <TrendingDown className="w-5 h-5 text-green-500" />;
+      }
     }
   };
 
@@ -54,11 +70,7 @@ const TrendingIssue = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-4">
-          {isRising ? (
-            <TrendingUp className="w-5 h-5 text-red-500" />
-          ) : (
-            <TrendingDown className="w-5 h-5 text-green-500" />
-          )}
+          {renderTrendingArrow()}
           <div>
             <h3 className="font-medium text-gray-900">{title}</h3>
             <p className="text-sm text-gray-500">
@@ -116,17 +128,6 @@ const TrendingIssue = ({
                 {suggestedCategory}
               </span>
             </div>
-
-            {/* {color && (
-              <div>
-                <h4 className="font-medium text-sm text-gray-700 mb-2">
-                  Color
-                </h4>
-                <p className="text-sm bg-white p-3 rounded border border-gray-200">
-                  {color}
-                </p>
-              </div>
-            )} */}
           </div>
         </div>
       )}
