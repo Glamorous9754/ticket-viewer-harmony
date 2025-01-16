@@ -15,7 +15,7 @@ const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Google OAuth details
-const googleRedirectUri = "https://your-supabase-project.supabase.co/functions/v1/google-oauth-callback";
+const googleRedirectUri = "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/google-oauth-callback";
 
 // Frontend Redirect URL
 const frontendRedirectUri = "https://preview--ticket-viewer-harmony.lovable.app/profile/integrations"; // Replace with your actual frontend URL
