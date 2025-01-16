@@ -5,6 +5,7 @@ import RiskAlertsSection from "../components/dashboard/sections/RiskAlertsSectio
 import OpportunityMetricsSection from "../components/dashboard/sections/OpportunityMetricsSection";
 import MarketInsightsSection from "../components/dashboard/sections/MarketInsightsSection";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
 
 interface ProductMarketInsight {
   color: string;
@@ -19,12 +20,12 @@ const BusinessIntelligence = () => {
   const [riskAlerts, setRiskAlerts] = useState([]);
   const [opportunities, setOpportunities] = useState([]);
   const [insights, setInsights] = useState([]);
+  const [hasActiveConnection, setHasActiveConnection] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const { data: userData, error: userError } = await supabase.auth.getUser();
-
         if (userError) {
           console.error("Error retrieving authenticated user:", userError);
           return;
@@ -36,6 +37,16 @@ const BusinessIntelligence = () => {
         }
 
         const userProfileId = userData.user.id;
+
+        // Check for active platform connections
+        const { data: connections, error: connectionsError } = await supabase
+          .from("platform_connections")
+          .select("is_active")
+          .eq("profile_id", userProfileId)
+          .eq("is_active", true)
+          .limit(1);
+
+        setHasActiveConnection(connections && connections.length > 0);
 
         const { data, error } = await supabase
           .from("dashboard_data")
@@ -108,7 +119,7 @@ const BusinessIntelligence = () => {
             );
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching data from Supabase:", error.message);
       } finally {
         setIsLoading(false);
@@ -117,51 +128,6 @@ const BusinessIntelligence = () => {
 
     fetchData();
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-64 mb-2" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Working Well Section Skeleton */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white rounded-lg p-6 border border-border/20">
-              <Skeleton className="h-6 w-48 mb-4" />
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-start gap-4">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-5 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          {/* Risk Alerts Section Skeleton */}
-          <div className="bg-white rounded-lg p-6 border border-border/20">
-            <Skeleton className="h-6 w-32 mb-4" />
-            <div className="space-y-4">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="p-4 border rounded-lg">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-2/3" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -174,6 +140,11 @@ const BusinessIntelligence = () => {
         </p>
       </div>
       
+      {!hasActiveConnection && !isLoading && (workingWell.length > 0 || 
+       riskAlerts.length > 0 || opportunities.length > 0 || insights.length > 0) && (
+        <OutdatedDataMessage />
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <WorkingWellSection items={workingWell} />
         <RiskAlertsSection alerts={riskAlerts} />
