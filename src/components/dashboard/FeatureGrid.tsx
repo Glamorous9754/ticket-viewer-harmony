@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import FeatureCard from "./FeatureCard";
+import { EmptyStateMessage } from "./EmptyStateMessage";
 
 interface Feature {
   summary: string;
@@ -41,6 +42,10 @@ export const FeatureGrid = ({ features, isLoading }: FeatureGridProps) => {
         ))}
       </div>
     );
+  }
+
+  if (!features || features.length === 0) {
+    return <EmptyStateMessage />;
   }
 
   return (
