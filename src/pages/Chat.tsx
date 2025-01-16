@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
+import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,6 +22,8 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasActiveConnection, setHasActiveConnection] = useState(true);
+  const [connectionChecked, setConnectionChecked] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -30,10 +33,32 @@ const Chat = () => {
   };
 
   useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData?.user) return;
+
+        const { data: connections } = await supabase
+          .from("platform_connections")
+          .select("is_active")
+          .eq("profile_id", userData.user.id)
+          .eq("is_active", true)
+          .limit(1);
+
+        setHasActiveConnection(connections && connections.length > 0);
+        setConnectionChecked(true);
+      } catch (error) {
+        console.error("Error checking connection:", error);
+      }
+    };
+
+    checkConnection();
+  }, []);
+
+  useEffect(() => {
     const savedMessages = localStorage.getItem("conversationHistory");
     if (savedMessages) {
       const parsedMessages = JSON.parse(savedMessages);
-      // Filter out messages older than 40 minutes
       const currentTime = Date.now();
       const validMessages = parsedMessages.filter((msg: Message) => 
         msg.timestamp && (currentTime - msg.timestamp) < SESSION_DURATION
@@ -150,6 +175,9 @@ const Chat = () => {
             <h2 className="text-lg font-semibold text-primary-foreground">
               Chat Assistant
             </h2>
+            {!hasActiveConnection && connectionChecked && messages.length > 0 && (
+              <OutdatedDataMessage />
+            )}
             <Alert variant="default" className="mt-2 bg-muted/50">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>

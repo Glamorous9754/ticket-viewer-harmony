@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
 
 interface CustomerIntelligenceIssue {
   title: string;
@@ -20,6 +21,7 @@ interface DbStructure {
 const CustomerIntelligence = () => {
   const [customerIntelligenceData, setCustomerIntelligenceData] = useState<CustomerIntelligenceIssue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasActiveConnection, setHasActiveConnection] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,6 +39,16 @@ const CustomerIntelligence = () => {
 
         const userProfileId = userData.user.id;
 
+        // Check for active platform connections
+        const { data: connections, error: connectionsError } = await supabase
+          .from("platform_connections")
+          .select("is_active")
+          .eq("profile_id", userProfileId)
+          .eq("is_active", true)
+          .limit(1);
+
+        setHasActiveConnection(connections && connections.length > 0);
+
         const { data, error } = await supabase
           .from("dashboard_data")
           .select("db")
@@ -48,7 +60,7 @@ const CustomerIntelligence = () => {
           return;
         }
 
-        const parsedDb = data?.db as DbStructure | undefined; // Type assertion
+        const parsedDb = data?.db as DbStructure | undefined;
         if (parsedDb?.customer_intelligence_issues) {
           setCustomerIntelligenceData(parsedDb.customer_intelligence_issues);
         } else {
@@ -75,9 +87,12 @@ const CustomerIntelligence = () => {
         </p>
       </div>
 
+      {!hasActiveConnection && !loading && customerIntelligenceData.length > 0 && (
+        <OutdatedDataMessage />
+      )}
+
       <div className="space-y-4">
         {loading ? (
-          // Skeleton loading state matching exact dimensions
           Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}
