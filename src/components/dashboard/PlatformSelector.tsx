@@ -93,15 +93,24 @@ export const PlatformSelector = () => {
   const handleDisconnect = async (platform: Platform) => {
     setIsDisconnecting(platform);
     try {
-      // Cleanup local state
+      // Invoke the "disconnect" Edge Function
+      const { data, error } = await supabase.functions.invoke("log-out", {
+        body: { platform },
+      });
+  
+      if (error) {
+        throw error;
+      }
+  
+      // Clear local state/storage, if needed
       setAuthenticatedPlatform(null);
       localStorage.removeItem("authenticatedPlatform");
   
       toast({
         title: "Success",
-        description: `Successfully disconnected from ${platform}!`,
+        description: data?.message || `Successfully disconnected from ${platform}!`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error disconnecting ${platform}:`, error);
       toast({
         title: "Error",
@@ -112,6 +121,8 @@ export const PlatformSelector = () => {
       setIsDisconnecting(null);
     }
   };
+  
+  
   
 
   const handleFetchData = async (platform: Platform) => {
@@ -130,13 +141,13 @@ export const PlatformSelector = () => {
       let endpoint = '';
       switch (platform) {
         case 'zoho':
-          endpoint = 'https://topaitools.pro/sync-zoho-tickets';
+          endpoint = 'http://localhost:8080/sync-zoho-tickets';
           break;
         case 'zendesk':
-          endpoint = 'https://topaitools.pro/sync-zendesk-tickets';
-          break;
+          endpoint = 'http://localhost:8080/sync-zendesk-tickets';
+          break;  
         case 'gmail':
-          endpoint = 'https://topaitools.pro/sync-gmail-tickets';
+          endpoint = 'http://localhost:8080/sync-gmail-tickets';
           break;
         default:
           throw new Error("Invalid platform for fetching data");
