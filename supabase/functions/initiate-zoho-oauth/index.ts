@@ -15,7 +15,7 @@ const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Zoho OAuth details
-const redirectUri = "https://topaitools.com/sync-zoho-ticketes";
+const redirectUri = "https://iedlbysyadijjcpwgbvd.supabase.co/functions/v1/zoho-oauth-callback";
 
 // Frontend Redirect URL
 const frontendRedirectUri = "https://preview--ticket-viewer-harmony.lovable.app/profile/integrations"; // e.g., "https://yourfrontend.com/profile/integrations"
