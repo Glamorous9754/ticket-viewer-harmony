@@ -141,13 +141,13 @@ export const PlatformSelector = () => {
       let endpoint = '';
       switch (platform) {
         case 'zoho':
-          endpoint = 'http://localhost:8080/sync-zoho-tickets';
+          endpoint = 'https://topaitools.pro/sync-zoho-tickets';
           break;
         case 'zendesk':
-          endpoint = 'http://localhost:8080/sync-zendesk-tickets';
+          endpoint = 'https://topaitools.pro/sync-zendesk-tickets';
           break;  
         case 'gmail':
-          endpoint = 'http://localhost:8080/sync-gmail-tickets';
+          endpoint = 'https://topaitools.pro/sync-gmail-tickets';
           break;
         default:
           throw new Error("Invalid platform for fetching data");
