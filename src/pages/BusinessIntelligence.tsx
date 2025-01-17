@@ -137,6 +137,8 @@ const BusinessIntelligence = () => {
     opportunities.length === 0 && 
     insights.length === 0;
 
+  const hasData = !hasNoData;
+
   if (hasNoData) {
     return <EmptyStateMessage />;
   }
@@ -152,9 +154,12 @@ const BusinessIntelligence = () => {
         </p>
       </div>
       
-      {!hasActiveConnection && !isLoading && (workingWell.length > 0 || 
+      {!isLoading && (workingWell.length > 0 || 
        riskAlerts.length > 0 || opportunities.length > 0 || insights.length > 0) && (
-        <OutdatedDataMessage />
+        <OutdatedDataMessage 
+          hasActiveConnection={hasActiveConnection}
+          hasData={hasData}
+        />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

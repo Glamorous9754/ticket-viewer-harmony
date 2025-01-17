@@ -131,16 +131,19 @@ const FeatureRequests = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary-foreground mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Requests
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-gray-500">
           Track and manage requests from your customers across all platforms
         </p>
       </div>
 
-      {!hasActiveConnection && !isLoading && features.length > 0 && (
-        <OutdatedDataMessage />
+      {!isLoading && features.length > 0 && (
+        <OutdatedDataMessage 
+          hasActiveConnection={hasActiveConnection}
+          hasData={features.length > 0}
+        />
       )}
 
       {!isLoading && features.length === 0 ? (
