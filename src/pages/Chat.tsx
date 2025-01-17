@@ -14,7 +14,7 @@ interface Message {
   timestamp?: number;
 }
 
-const MAX_MESSAGES = 5;
+const MAX_MESSAGES = 15;
 const SESSION_DURATION = 40 * 60 * 1000; // 40 minutes in milliseconds
 
 const Chat = () => {
@@ -153,7 +153,7 @@ const Chat = () => {
             <Alert variant="default" className="mt-2 bg-muted/50">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Maximum of 5 messages per 40-minute session. Messages will expire after 40 minutes.
+                Maximum of 15 messages per 40-minute session. Messages will expire after 40 minutes.
               </AlertDescription>
             </Alert>
           </div>
