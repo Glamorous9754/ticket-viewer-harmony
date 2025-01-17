@@ -8,7 +8,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
-import { EmptyStateMessage } from "../components/dashboard/EmptyStateMessage";
+</lov-replace>
+
+<lov-search>
+  if (!hasActiveConnection && connectionChecked && validMessages.length === 0) {
+    return <EmptyStateMessage />;
+  }
+</lov-search>
+<lov-replace>
 
 interface Message {
   role: "user" | "assistant";
