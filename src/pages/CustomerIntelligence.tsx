@@ -3,7 +3,6 @@ import { supabase } from "../integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
-import { EmptyStateMessage } from "../components/dashboard/EmptyStateMessage";
 
 interface CustomerIntelligenceIssue {
   title: string;
@@ -129,9 +128,7 @@ const CustomerIntelligence = () => {
               />
             );
           })
-        ) : (
-          <EmptyStateMessage />
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -179,7 +179,7 @@ const Chat = () => {
   );
 
   if (!hasActiveConnection && connectionChecked && validMessages.length === 0) {
-    return <EmptyStateMessage />;
+    return null;
   }
 
   return (

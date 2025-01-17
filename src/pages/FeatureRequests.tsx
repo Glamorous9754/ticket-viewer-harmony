@@ -3,7 +3,6 @@ import { supabase } from "../integrations/supabase/client";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
 import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
-import { EmptyStateMessage } from "../components/dashboard/EmptyStateMessage";
 
 interface FeatureRequest {
   title: string;
@@ -146,23 +145,17 @@ const FeatureRequests = () => {
         />
       )}
 
-      {!isLoading && features.length === 0 ? (
-        <EmptyStateMessage />
-      ) : (
-        <>
-          <div className="flex justify-between items-center">
-            <FeatureFilters
-              sortBy={sortBy}
-              filterBy={filterBy}
-              onSortChange={setSortBy}
-              onFilterChange={setFilterBy}
-              segments={segments}
-            />
-          </div>
+      <div className="flex justify-between items-center">
+        <FeatureFilters
+          sortBy={sortBy}
+          filterBy={filterBy}
+          onSortChange={setSortBy}
+          onFilterChange={setFilterBy}
+          segments={segments}
+        />
+      </div>
 
-          <FeatureGrid features={sortedAndFilteredFeatures} isLoading={isLoading} />
-        </>
-      )}
+      <FeatureGrid features={sortedAndFilteredFeatures} isLoading={isLoading} />
     </div>
   );
 };
