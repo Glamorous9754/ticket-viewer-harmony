@@ -47,7 +47,7 @@ async function fetchRecentTickets(profileId: string): Promise<Ticket[]> {
   console.log(`📅 Date range: ${sevenDaysAgoISO} to ${new Date().toISOString()}`);
 
   const { data, error } = await supabase
-    .from<Ticket>("tickets")
+    .from("tickets")
     .select("summary, web_url, external_ticket_id, created_at")
     .gte("created_at", sevenDaysAgoISO)
     .eq("profile_id", profileId)
@@ -73,7 +73,7 @@ async function sendToOpenRouter(messages: Array<{ role: string; content: string 
 
   // (NEW) We pass the entire array of messages instead of a single "user" prompt
   const payload = {
-    model: "deepseek/deepseek-chat",
+    model: "openai/gpt-4o-2024-11-20",
     messages, // array of { role, content }
   };
 
@@ -97,6 +97,7 @@ async function sendToOpenRouter(messages: Array<{ role: string; content: string 
   }
 
   const responseData: OpenRouterResponse = await response.json();
+  console.log()
   console.log("📥 Parsed OpenRouter response successfully.");
 
   const summary = responseData.choices?.[0]?.message?.content || "";
@@ -153,7 +154,7 @@ async function handler(req: Request): Promise<Response> {
           `• [Ticket ID: ${ticket.external_ticket_id}] \n Ticket: summary ${ticket.summary}\n  URL: ${ticket.web_url}`
         )
         .join("===END===");
-      ticketContext = `Here are your recent tickets (last 7 days):\n\n${ticketsContext}`;
+      ticketContext = `Here are your recent tickets:\n\n${ticketsContext}`;
     }
 
     // (NEW) We'll insert a system message with ticket context
