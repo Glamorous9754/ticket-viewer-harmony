@@ -139,10 +139,9 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      <OutdatedDataMessage 
-        hasActiveConnection={hasActiveConnection} 
-        hasData={features.length > 0}
-      />
+      {!hasActiveConnection && !isLoading && features.length > 0 && (
+        <OutdatedDataMessage />
+      )}
 
       {!isLoading && features.length === 0 ? (
         <EmptyStateMessage />

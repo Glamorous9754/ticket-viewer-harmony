@@ -3,17 +3,7 @@ import { Card } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 
-interface OutdatedDataMessageProps {
-  hasActiveConnection: boolean;
-  hasData: boolean;
-}
-
-export const OutdatedDataMessage = ({ hasActiveConnection, hasData }: OutdatedDataMessageProps) => {
-  // Only show the message if there's data but no active connection
-  if (!hasData || hasActiveConnection) {
-    return null;
-  }
-
+export const OutdatedDataMessage = () => {
   return (
     <Card className="p-6 mb-6 bg-yellow-50 border-yellow-200">
       <div className="flex items-start gap-4">
