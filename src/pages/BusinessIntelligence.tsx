@@ -6,6 +6,7 @@ import OpportunityMetricsSection from "../components/dashboard/sections/Opportun
 import MarketInsightsSection from "../components/dashboard/sections/MarketInsightsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
+import { EmptyStateMessage } from "../components/dashboard/EmptyStateMessage";
 
 interface ProductMarketInsight {
   color: string;
@@ -136,7 +137,9 @@ const BusinessIntelligence = () => {
     opportunities.length === 0 && 
     insights.length === 0;
 
-  const hasData = !hasNoData;
+  if (hasNoData) {
+    return <EmptyStateMessage />;
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -149,12 +152,9 @@ const BusinessIntelligence = () => {
         </p>
       </div>
       
-      {!isLoading && (workingWell.length > 0 || 
+      {!hasActiveConnection && !isLoading && (workingWell.length > 0 || 
        riskAlerts.length > 0 || opportunities.length > 0 || insights.length > 0) && (
-        <OutdatedDataMessage 
-          hasActiveConnection={hasActiveConnection}
-          hasData={hasData}
-        />
+        <OutdatedDataMessage />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

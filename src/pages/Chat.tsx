@@ -25,7 +25,6 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasActiveConnection, setHasActiveConnection] = useState(true);
   const [connectionChecked, setConnectionChecked] = useState(false);
-  const [hasData, setHasData] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -40,7 +39,6 @@ const Chat = () => {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError || !userData?.user) return;
 
-        // Check for active connections
         const { data: connections } = await supabase
           .from("platform_connections")
           .select("is_active")
@@ -48,15 +46,7 @@ const Chat = () => {
           .eq("is_active", true)
           .limit(1);
 
-        // Check for data in dashboard_data
-        const { data: dashboardData } = await supabase
-          .from("dashboard_data")
-          .select("db")
-          .eq("profile_id", userData.user.id)
-          .single();
-
         setHasActiveConnection(connections && connections.length > 0);
-        setHasData(dashboardData?.db !== null && Object.keys(dashboardData?.db || {}).length > 0);
         setConnectionChecked(true);
       } catch (error) {
         console.error("Error checking connection:", error);
@@ -179,7 +169,7 @@ const Chat = () => {
   );
 
   if (!hasActiveConnection && connectionChecked && validMessages.length === 0) {
-    return null;
+    return <EmptyStateMessage />;
   }
 
   return (
@@ -191,10 +181,7 @@ const Chat = () => {
               Chat Assistant
             </h2>
             {!hasActiveConnection && connectionChecked && messages.length > 0 && (
-              <OutdatedDataMessage 
-                hasActiveConnection={hasActiveConnection}
-                hasData={hasData}
-              />
+              <OutdatedDataMessage />
             )}
             <Alert variant="default" className="mt-2 bg-muted/50">
               <AlertCircle className="h-4 w-4" />
