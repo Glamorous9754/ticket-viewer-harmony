@@ -88,9 +88,10 @@ const CustomerIntelligence = () => {
         </p>
       </div>
 
-      {!hasActiveConnection && !loading && customerIntelligenceData.length > 0 && (
-        <OutdatedDataMessage />
-      )}
+      <OutdatedDataMessage 
+        hasActiveConnection={hasActiveConnection} 
+        hasData={customerIntelligenceData.length > 0} 
+      />
 
       <div className="space-y-4">
         {loading ? (

@@ -141,8 +141,13 @@ const BusinessIntelligence = () => {
     return <EmptyStateMessage />;
   }
 
+  const hasData = workingWell.length > 0 || 
+                 riskAlerts.length > 0 || 
+                 opportunities.length > 0 || 
+                 insights.length > 0;
+
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Business Intelligence
@@ -152,10 +157,10 @@ const BusinessIntelligence = () => {
         </p>
       </div>
       
-      {!hasActiveConnection && !isLoading && (workingWell.length > 0 || 
-       riskAlerts.length > 0 || opportunities.length > 0 || insights.length > 0) && (
-        <OutdatedDataMessage />
-      )}
+      <OutdatedDataMessage 
+        hasActiveConnection={hasActiveConnection} 
+        hasData={hasData}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <WorkingWellSection items={workingWell.map(item => ({ ...item, forceUpwardArrow: true }))} />

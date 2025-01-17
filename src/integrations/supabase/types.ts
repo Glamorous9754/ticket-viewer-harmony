@@ -141,6 +141,7 @@ export type Database = {
           thread_id: string
           to_email: string | null
           updated_at: string | null
+          web_url: string | null
         }
         Insert: {
           body?: string | null
@@ -156,6 +157,7 @@ export type Database = {
           thread_id: string
           to_email?: string | null
           updated_at?: string | null
+          web_url?: string | null
         }
         Update: {
           body?: string | null
@@ -171,6 +173,7 @@ export type Database = {
           thread_id?: string
           to_email?: string | null
           updated_at?: string | null
+          web_url?: string | null
         }
         Relationships: [
           {
