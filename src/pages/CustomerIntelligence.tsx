@@ -3,7 +3,6 @@ import { supabase } from "../integrations/supabase/client";
 import TrendingIssue from "../components/dashboard/TrendingIssue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
-import { EmptyStateMessage } from "../components/dashboard/EmptyStateMessage";
 
 interface CustomerIntelligenceIssue {
   title: string;
@@ -88,8 +87,11 @@ const CustomerIntelligence = () => {
         </p>
       </div>
 
-      {!hasActiveConnection && !loading && customerIntelligenceData.length > 0 && (
-        <OutdatedDataMessage />
+      {!loading && customerIntelligenceData.length > 0 && (
+        <OutdatedDataMessage 
+          hasActiveConnection={hasActiveConnection}
+          hasData={customerIntelligenceData.length > 0}
+        />
       )}
 
       <div className="space-y-4">
@@ -126,9 +128,7 @@ const CustomerIntelligence = () => {
               />
             );
           })
-        ) : (
-          <EmptyStateMessage />
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client";
 import { FeatureGrid } from "@/components/dashboard/FeatureGrid";
 import { FeatureFilters } from "@/components/dashboard/FeatureFilters";
-import { OutdatedDataMessage } from "../components/dashboard/OutdatedDataMessage";
-import { EmptyStateMessage } from "../components/dashboard/EmptyStateMessage";
 
 interface FeatureRequest {
   title: string;
@@ -33,11 +31,10 @@ interface ParsedDb {
 
 const FeatureRequests = () => {
   const [features, setFeatures] = useState<Feature[]>([]);
-  const [segments, setSegments] = useState<string[]>([]);
+  const [segments, setSegments] = useState<string[]>([]); // Unique tags from `tags` fields
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [isLoading, setIsLoading] = useState(true);
-  const [hasActiveConnection, setHasActiveConnection] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,16 +52,6 @@ const FeatureRequests = () => {
         }
 
         const userProfileId = userData.user.id;
-
-        // Check for active platform connections
-        const { data: connections, error: connectionsError } = await supabase
-          .from("platform_connections")
-          .select("is_active")
-          .eq("profile_id", userProfileId)
-          .eq("is_active", true)
-          .limit(1);
-
-        setHasActiveConnection(connections && connections.length > 0);
 
         const { data, error } = await supabase
           .from("dashboard_data")
@@ -90,7 +77,7 @@ const FeatureRequests = () => {
               feature.complexity || "Low"
             )
               ? feature.complexity
-              : "Low") as "Low" | "Medium" | "High",
+              : "Low") as "Low" | "Medium" | "High", // Constrain complexity
             createdAt: feature.since,
             description: feature.description || "No description available",
             url: feature.url || null,
@@ -139,27 +126,17 @@ const FeatureRequests = () => {
         </p>
       </div>
 
-      {!hasActiveConnection && !isLoading && features.length > 0 && (
-        <OutdatedDataMessage />
-      )}
+      <div className="flex justify-between items-center">
+        <FeatureFilters
+          sortBy={sortBy}
+          filterBy={filterBy}
+          onSortChange={setSortBy}
+          onFilterChange={setFilterBy}
+          segments={segments} // Pass the dynamic segments
+        />
+      </div>
 
-      {!isLoading && features.length === 0 ? (
-        <EmptyStateMessage />
-      ) : (
-        <>
-          <div className="flex justify-between items-center">
-            <FeatureFilters
-              sortBy={sortBy}
-              filterBy={filterBy}
-              onSortChange={setSortBy}
-              onFilterChange={setFilterBy}
-              segments={segments}
-            />
-          </div>
-
-          <FeatureGrid features={sortedAndFilteredFeatures} isLoading={isLoading} />
-        </>
-      )}
+      <FeatureGrid features={sortedAndFilteredFeatures} isLoading={isLoading} />
     </div>
   );
 };
