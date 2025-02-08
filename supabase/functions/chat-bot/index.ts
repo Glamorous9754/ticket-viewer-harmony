@@ -40,18 +40,18 @@ const corsHeaders = {
 // Fetch tickets from the last 7 days
 async function fetchRecentTickets(profileId: string): Promise<Ticket[]> {
   console.log(`🔍 Fetching recent tickets for profile_id: ${profileId}`);
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 30);
-  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
-  console.log(`📅 Date range: ${sevenDaysAgoISO} to ${new Date().toISOString()}`);
+  console.log(`📅 Date range: ${thirtyDaysAgoISO} to ${new Date().toISOString()}`);
 
   const { data, error } = await supabase
     .from("tickets")
     .select("summary, web_url, external_ticket_id, created_at")
-    .gte("created_at", sevenDaysAgoISO)
+    .gte("created_at", thirtyDaysAgoISO)
     .eq("profile_id", profileId)
-    .limit(300);
+    .limit(1000);
 
   if (error) {
     console.error("🔴 Error fetching tickets from Supabase:", error.message);
@@ -73,7 +73,7 @@ async function sendToOpenRouter(messages: Array<{ role: string; content: string 
 
   // (NEW) We pass the entire array of messages instead of a single "user" prompt
   const payload = {
-    model: "openai/gpt-4o-2024-11-20",
+    model: "deepseek/deepseek-chat",
     messages, // array of { role, content }
   };
 
